@@ -3,16 +3,26 @@ using System;
 
 namespace graphic_editor;
 
+/// <summary>
+/// Точка входа в приложение.
+/// Содержит методы инициализации и запуска Avalonia приложения.
+/// </summary>
 sealed class Program
 {
-    // Initialization code. Don't use any Avalonia, third-party APIs or any
-    // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
-    // yet and stuff might break.
+    /// <summary>
+    /// Основная точка входа в приложение.
+    /// Не используйте Avalonia, сторонние API или любой код, зависящий от SynchronizationContext,
+    /// до вызова AppMain: вещи ещё не инициализированы и могут сломаться.
+    /// </summary>
+    /// <param name="args">Аргументы командной строки.</param>
     [STAThread]
     public static void Main(string[] args) => BuildAvaloniaApp()
         .StartWithClassicDesktopLifetime(args);
 
-    // Avalonia configuration, don't remove; also used by visual designer.
+    /// <summary>
+    /// Конфигурация Avalonia приложения. Не удаляйте; также используется визуальным дизайнером.
+    /// </summary>
+    /// <returns>Построитель приложения Avalonia.</returns>
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()

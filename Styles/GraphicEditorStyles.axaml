@@ -1,0 +1,787 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- ========== КНОПКИ ========== -->
+    
+    <!-- Кнопки меню -->
+    <Style Selector="Button.MenuButton">
+        <Setter Property="FontSize" Value="24"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Padding" Value="40,20"/>
+        <Setter Property="Background" Value="#3C5A8C"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Width" Value="450"/>
+        <Setter Property="Margin" Value="0,0,0,20"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.2"/>
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <Style Selector="Button.MenuButton:pointerover">
+        <Setter Property="Background" Value="#4C6A9C"/>
+    </Style>
+
+    <Style Selector="Button.MenuButton:pressed">
+        <Setter Property="Opacity" Value="0.9"/>
+    </Style>
+    
+    <Style Selector="Button.SubButton">
+        <Setter Property="FontSize" Value="24"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Padding" Value="40,20"/>
+        <Setter Property="Background" Value="#3C5A8C"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Width" Value="350"/>
+        <Setter Property="Margin" Value="0,0,0,10"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.2"/>
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <Style Selector="Button.SubButton:pointerover">
+        <Setter Property="Background" Value="#4C6A9C"/>
+    </Style>
+
+    <Style Selector="Button.SubButton:pressed">
+        <Setter Property="Opacity" Value="0.9"/>
+    </Style>
+
+    <!-- Кнопки сложности -->
+    <Style Selector="Button.DifficultyButton">
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="Padding" Value="30,15"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Width" Value="350"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.2"/>
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <Style Selector="Button.DifficultyEasy">
+        <Setter Property="Background" Value="#50783C"/>
+    </Style>
+
+    <Style Selector="Button.DifficultyEasy:pointerover">
+        <Setter Property="Background" Value="#60884C"/>
+    </Style>
+
+    <Style Selector="Button.DifficultyMedium">
+        <Setter Property="Background" Value="#786428"/>
+    </Style>
+
+    <Style Selector="Button.DifficultyMedium:pointerover">
+        <Setter Property="Background" Value="#887438"/>
+    </Style>
+
+    <Style Selector="Button.DifficultyHard">
+        <Setter Property="Background" Value="#782828"/>
+    </Style>
+
+    <Style Selector="Button.DifficultyHard:pointerover">
+        <Setter Property="Background" Value="#883838"/>
+    </Style>
+
+    <!-- Игровые кнопки -->
+    <Style Selector="Button.GameButton">
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="Padding" Value="20,10"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.2"/>
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <Style Selector="Button.RotateButton">
+        <Setter Property="Background" Value="#3C5A8C"/>
+    </Style>
+
+    <Style Selector="Button.RotateButton:pointerover">
+        <Setter Property="Background" Value="#4C6A9C"/>
+    </Style>
+
+    <Style Selector="Button.RandomButton">
+        <Setter Property="Background" Value="#50783C"/>
+    </Style>
+
+    <Style Selector="Button.RandomButton:pointerover">
+        <Setter Property="Background" Value="#60884C"/>
+    </Style>
+
+    <Style Selector="Button.StartButton">
+        <Setter Property="Background" Value="#783C3C"/>
+    </Style>
+
+    <Style Selector="Button.StartButton:pointerover">
+        <Setter Property="Background" Value="#884C4C"/>
+    </Style>
+
+    <Style Selector="Button.StartButton:disabled">
+        <Setter Property="Background" Value="#505050"/>
+        <Setter Property="Opacity" Value="0.5"/>
+    </Style>
+
+    <Style Selector="Button.ResetButton">
+        <Setter Property="Background" Value="#3C5A8C"/>
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="Padding" Value="30,12"/>
+    </Style>
+
+    <Style Selector="Button.ResetButton:pointerover">
+        <Setter Property="Background" Value="#4C6A9C"/>
+    </Style>
+
+    <Style Selector="Button.MenuExitButton">
+        <Setter Property="Background" Value="#503C64"/>
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="Padding" Value="30,12"/>
+    </Style>
+
+    <Style Selector="Button.MenuExitButton:pointerover">
+        <Setter Property="Background" Value="#604C74"/>
+    </Style>
+
+    <!-- Кнопка отправки в чате -->
+    <Style Selector="Button.ChatSendButton">
+        <Setter Property="Background" Value="#3C5A8C"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Padding" Value="15,8"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="Height" Value="38"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.2"/>
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <Style Selector="Button.ChatSendButton:pointerover">
+        <Setter Property="Background" Value="#4C6A9C"/>
+    </Style>
+
+    <Style Selector="Button.ChatSendButton:pressed">
+        <Setter Property="Opacity" Value="0.8"/>
+    </Style>
+
+    <!-- ========== ТЕКСТ ========== -->
+    
+    <Style Selector="TextBlock.Title">
+        <Setter Property="FontSize" Value="48"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,0,40"/>
+    </Style>
+
+    <Style Selector="TextBlock.Subtitle">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,0,40"/>
+    </Style>
+
+    <Style Selector="TextBlock.DifficultyTitle">
+        <Setter Property="FontSize" Value="24"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <Style Selector="TextBlock.Status">
+        <Setter Property="FontSize" Value="22"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <Style Selector="TextBlock.Instruction">
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Foreground" Value="LightGray"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="TextAlignment" Value="Center"/>
+    </Style>
+
+    <Style Selector="TextBlock.Stats">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Foreground" Value="LightGray"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,5,0,0"/>
+    </Style>
+
+    <Style Selector="TextBlock.BoardLabel">
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <Style Selector="TextBlock.Coordinate">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="LightGray"/>
+    </Style>
+
+    <!-- Стили для сообщений в чате -->
+    <Style Selector="TextBlock.ChatSender">
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="FontSize" Value="13"/>
+    </Style>
+
+    <Style Selector="TextBlock.ChatSenderYou">
+        <Setter Property="Foreground" Value="#90EE90"/> <!-- LightGreen -->
+    </Style>
+
+    <Style Selector="TextBlock.ChatSenderOther">
+        <Setter Property="Foreground" Value="#87CEFA"/> <!-- LightSkyBlue -->
+    </Style>
+
+    <Style Selector="TextBlock.ChatTimestamp">
+        <Setter Property="Foreground" Value="#969696"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="VerticalAlignment" Value="Bottom"/>
+    </Style>
+
+    <Style Selector="TextBlock.ChatMessage">
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Margin" Value="0,2,0,0"/>
+    </Style>
+
+    <!-- ========== ПАНЕЛИ И КОНТЕЙНЕРЫ ========== -->
+    
+    <Style Selector="Border.Panel">
+        <Setter Property="Background" Value="#1E3250"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Padding" Value="20,15"/>
+    </Style>
+
+    <Style Selector="Border.BoardHeader">
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="15,8"/>
+    </Style>
+
+    <Style Selector="Border.BoardHeader.Player">
+        <Setter Property="Background" Value="#287850"/>
+    </Style>
+
+    <Style Selector="Border.BoardHeader.Enemy">
+        <Setter Property="Background" Value="#782828"/>
+    </Style>
+
+    <!-- Клетки игрового поля -->
+    <Style Selector="Border.GameCell">
+        <Setter Property="BorderBrush" Value="#3C5A78"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Background" Value="#325078"/>
+    </Style>
+
+    <Style Selector="Border.GameCell.Empty">
+        <Setter Property="Background" Value="#325078"/>
+    </Style>
+
+    <Style Selector="Border.GameCell.Ship">
+        <Setter Property="Background" Value="#46648C"/>
+    </Style>
+
+    <Style Selector="Border.GameCell.Miss">
+        <Setter Property="Background" Value="#3C6496"/>
+    </Style>
+
+    <Style Selector="Border.GameCell.Hit">
+        <Setter Property="Background" Value="#B47828"/>
+    </Style>
+
+    <Style Selector="Border.GameCell.Sunk">
+        <Setter Property="Background" Value="#963232"/>
+    </Style>
+
+    <Style Selector="Border.GameCell.Blocked">
+        <Setter Property="Background" Value="#283C5A"/>
+    </Style>
+    
+    <!-- Стили для курсоров -->
+    <!--<Style Selector="Border.GameCell[cursor=Hand]">
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <Style Selector="Border.PlacementCell[cursor=Hand]">
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>-->
+
+    <!-- Эффекты при наведении на ячейки -->
+    <Style Selector="Border.GameCell:pointerover">
+        <Setter Property="Opacity" Value="0.9"/>
+        <Setter Property="RenderTransform">
+            <ScaleTransform ScaleX="1.02" ScaleY="1.02"/>
+        </Setter>
+    </Style>
+
+    <Style Selector="Border.PlacementCell:pointerover">
+        <Setter Property="Opacity" Value="0.9"/>
+        <Setter Property="RenderTransform">
+            <ScaleTransform ScaleX="1.02" ScaleY="1.02"/>
+        </Setter>
+    </Style>
+
+    <!-- Стили для элементов внутри ячеек -->
+    <Style Selector="Canvas > Ellipse">
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Клетки расстановки -->
+    <Style Selector="Border.PlacementCell">
+        <Setter Property="BorderBrush" Value="#3C5A78"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Background" Value="#325078"/>
+    </Style>
+
+    <Style Selector="Border.PlacementCell.Empty">
+        <Setter Property="Background" Value="#325078"/>
+    </Style>
+
+    <Style Selector="Border.PlacementCell.Ship">
+        <Setter Property="Background" Value="#46648C"/>
+    </Style>
+
+    <Style Selector="Border.PlacementCell.CanPlace">
+        <Setter Property="Background" Value="#64B464"/>
+    </Style>
+
+    <Style Selector="Border.PlacementCell.CannotPlace">
+        <Setter Property="Background" Value="#B46464"/>
+    </Style>
+    
+    <!-- Стили для заблокированных элементов -->
+    <Style Selector="Border.GameCell[IsEnabled=False]">
+        <Setter Property="Opacity" Value="0.6"/>
+        <Setter Property="Cursor" Value="Arrow"/>
+    </Style>
+
+    <Style Selector="Border.PlacementCell[IsEnabled=False]">
+        <Setter Property="Opacity" Value="0.6"/>
+        <Setter Property="Cursor" Value="Arrow"/>
+    </Style>
+
+    <!-- Стили для активных/неактивных кнопок -->
+    <Style Selector="Button:disabled">
+        <Setter Property="Opacity" Value="0.5"/>
+        <Setter Property="Cursor" Value="Arrow"/>
+    </Style>
+
+    <!-- Canvas игрового поля -->
+    <Style Selector="Canvas.GameBoard">
+        <Setter Property="Width" Value="420"/>
+        <Setter Property="Height" Value="420"/>
+        <Setter Property="Background" Value="#1E3250"/>
+    </Style>
+
+    <!-- ========== ЧАТ ========== -->
+    
+    <!-- Контейнер чата -->
+    <Style Selector="StackPanel.ChatContainer">
+        <Setter Property="Width" Value="320"/>
+        <Setter Property="Spacing" Value="10"/>
+    </Style>
+
+    <!-- ScrollViewer для сообщений чата -->
+    <Style Selector="ScrollViewer.ChatScroll">
+        <Setter Property="Height" Value="350"/>
+        <Setter Property="Background" Value="#192337"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="8"/>
+        <Setter Property="BorderBrush">
+            <SolidColorBrush Color="#6496C8" Opacity="0.4"/>
+        </Setter>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <!-- Панель для списка сообщений -->
+    <Style Selector="StackPanel.ChatMessages">
+        <Setter Property="Spacing" Value="0"/>
+    </Style>
+
+    <!-- Контейнер одного сообщения -->
+    <Style Selector="StackPanel.ChatMessageContainer">
+        <Setter Property="Margin" Value="5,3"/>
+    </Style>
+
+    <!-- Заголовок сообщения (отправитель + время) -->
+    <Style Selector="StackPanel.ChatMessageHeader">
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="Spacing" Value="8"/>
+    </Style>
+
+    <!-- Разделитель между сообщениями -->
+    <Style Selector="Border.ChatSeparator">
+        <Setter Property="Height" Value="1"/>
+        <Setter Property="Background">
+            <SolidColorBrush Color="White" Opacity="0.2"/>
+        </Setter>
+        <Setter Property="Margin" Value="0,5,0,0"/>
+    </Style>
+
+    <!-- Поле ввода чата -->
+    <Style Selector="TextBox.ChatInput">
+        <Setter Property="MaxLength" Value="200"/>
+        <Setter Property="Height" Value="38"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Background" Value="#232D41"/>
+        <Setter Property="Foreground" Value="Black"/>
+        <Setter Property="BorderBrush" Value="#465A82"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Padding" Value="10,8"/>
+        <Setter Property="Watermark" Value="Напишите сообщение..."/>
+    </Style>
+
+    <Style Selector="TextBox.ChatInput:focus">
+        <Setter Property="BorderBrush" Value="#5A7AAA"/>
+    </Style>
+
+    <!-- ========== ОКНА ========== -->
+    
+    <Style Selector="Window">
+        <Setter Property="Background" Value="#141E32"/>
+    </Style>
+
+    <!-- Модальные окна (диалоги) -->
+    <Style Selector="Window.DialogWindow">
+        <Setter Property="Background" Value="#141E32"/>
+        <Setter Property="WindowStartupLocation" Value="CenterOwner"/>
+        <Setter Property="CanResize" Value="False"/>
+    </Style>
+
+    <!-- ========== ЭКРАНЫ И КОНТЕЙНЕРЫ ========== -->
+    
+    <!-- Контейнер экрана загрузки -->
+    <Style Selector="Grid.LoadingScreen">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Фоновая панель загрузки -->
+    <Style Selector="Border.LoadingPanel">
+        <Setter Property="Width" Value="600"/>
+        <Setter Property="Height" Value="400"/>
+        <Setter Property="CornerRadius" Value="20"/>
+        <Setter Property="Background">
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#C8142850" Offset="0"/>
+                <GradientStop Color="#C8283C64" Offset="1"/>
+            </LinearGradientBrush>
+        </Setter>
+        <Setter Property="BoxShadow" Value="0 10 30 #96000000"/>
+    </Style>
+
+    <!-- Контейнер содержимого загрузки -->
+    <Style Selector="StackPanel.LoadingContent">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Spacing" Value="30"/>
+        <Setter Property="Margin" Value="40"/>
+    </Style>
+
+    <!-- Заголовок загрузки -->
+    <Style Selector="TextBlock.LoadingTitle">
+        <Setter Property="FontSize" Value="48"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="TextAlignment" Value="Center"/>
+        <Setter Property="Foreground">
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                <GradientStop Color="#64C8FF" Offset="0"/>
+                <GradientStop Color="#FFFFFF" Offset="0.5"/>
+                <GradientStop Color="#64C8FF" Offset="1"/>
+            </LinearGradientBrush>
+        </Setter>
+    </Style>
+
+    <!-- Подзаголовок загрузки -->
+    <Style Selector="TextBlock.LoadingSubtitle">
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="Foreground" Value="#96B4DC"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,-15,0,0"/>
+    </Style>
+
+    <!-- Статус загрузки -->
+    <Style Selector="TextBlock.LoadingStatus">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,20,0,0"/>
+    </Style>
+
+    <!-- Контейнер прогресс-бара -->
+    <Style Selector="Border.ProgressBarContainer">
+        <Setter Property="Width" Value="400"/>
+        <Setter Property="Height" Value="20"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Background" Value="#64FFFFFF"/>
+        <Setter Property="BorderBrush" Value="#96FFFFFF"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+    </Style>
+
+    <!-- Заполнение прогресс-бара -->
+    <Style Selector="Border.ProgressBarFill">
+        <Setter Property="Height" Value="16"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="2,0,0,0"/>
+        <Setter Property="Background">
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                <GradientStop Color="#3296FF" Offset="0"/>
+                <GradientStop Color="#64C8FF" Offset="1"/>
+            </LinearGradientBrush>
+        </Setter>
+    </Style>
+
+    <!-- ========== ПАНЕЛИ МЕНЮ ========== -->
+    
+    <!-- Главная панель меню -->
+    <Style Selector="StackPanel.MenuPanel">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Spacing" Value="20"/>
+    </Style>
+
+    <!-- Описание меню -->
+    <Style Selector="TextBlock.MenuDescription">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- ========== ДИАЛОГОВЫЕ ОКНА ========== -->
+    
+    <!-- Панель диалога -->
+    <Style Selector="StackPanel.DialogPanel">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Spacing" Value="20"/>
+        <Setter Property="Margin" Value="20"/>
+    </Style>
+    
+    <Style Selector="StackPanel.DialogPanel TextBlock">
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontSize" Value="16"/>
+    </Style>
+
+    <!-- Текст диалога -->
+    <Style Selector="TextBlock.DialogText">
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="TextAlignment" Value="Center"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Панель кнопок диалога -->
+    <Style Selector="StackPanel.DialogButtons">
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Spacing" Value="15"/>
+    </Style>
+
+    <!-- Кнопка диалога -->
+    <Style Selector="Button.DialogButton">
+        <Setter Property="MinWidth" Value="100"/>
+        <Setter Property="Padding" Value="20,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Background" Value="#3C5A8C"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.2"/>
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <Style Selector="Button.DialogButton:pointerover">
+        <Setter Property="Background" Value="#4C6A9C"/>
+    </Style>
+
+    <!-- Текст заголовка окна победы/поражения -->
+    <Style Selector="TextBlock.GameOverTitle">
+        <Setter Property="FontSize" Value="32"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="TextAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Текст победителя -->
+    <Style Selector="TextBlock.WinnerText">
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="LightGray"/>
+        <Setter Property="TextAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- ========== ПАНЕЛИ РАССТАНОВКИ ========== -->
+    
+    <!-- Основная панель расстановки -->
+    <Style Selector="StackPanel.PlacementPanel">
+        <Setter Property="Margin" Value="20"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Панель кнопок расстановки -->
+    <Style Selector="StackPanel.PlacementButtons">
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Spacing" Value="20"/>
+        <Setter Property="Margin" Value="0,20,0,0"/>
+    </Style>
+
+    <!-- ========== ИГРОВЫЕ ПАНЕЛИ ========== -->
+    
+    <!-- Основная игровая панель -->
+    <Style Selector="StackPanel.GameMainPanel">
+        <Setter Property="Margin" Value="20"/>
+    </Style>
+
+    <!-- Панель контента (доски + чат) -->
+    <Style Selector="StackPanel.GameContentPanel">
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Spacing" Value="20"/>
+    </Style>
+
+    <!-- Панель досок -->
+    <Style Selector="StackPanel.BoardsPanel">
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Spacing" Value="50"/>
+    </Style>
+
+    <!-- Отдельная панель одной доски -->
+    <Style Selector="StackPanel.BoardPanel">
+        <Setter Property="Spacing" Value="10"/>
+    </Style>
+
+    <!-- Панель игровых кнопок -->
+    <Style Selector="StackPanel.GameButtons">
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Spacing" Value="20"/>
+        <Setter Property="Margin" Value="0,20,0,0"/>
+    </Style>
+
+    <!-- ========== ОКНО ПОДКЛЮЧЕНИЯ К СЕРВЕРУ ========== -->
+    
+    <!-- Панель подключения -->
+    <Style Selector="StackPanel.NetworkConnectPanel">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Spacing" Value="15"/>
+        <Setter Property="Margin" Value="20"/>
+    </Style>
+    
+    <Style Selector="StackPanel.NetworkConnectPanel TextBlock.Subtitle">
+        <Setter Property="FontSize" Value="24"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,0,20"/>
+    </Style>
+
+    <!-- Поле ввода -->
+    <Style Selector="TextBox.NetworkInput">
+        <Setter Property="MinWidth" Value="300"/>
+        <Setter Property="Padding" Value="10,8"/>
+        <Setter Property="Background" Value="#232D41"/>
+        <Setter Property="Foreground" Value="Black"/>
+        <Setter Property="BorderBrush" Value="#465A82"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Watermark" Value="Введите значение..."/>
+    </Style>
+
+    <Style Selector="TextBox.NetworkInput:focus">
+        <Setter Property="BorderBrush" Value="#5A7AAA"/>
+    </Style>
+    
+    <Style Selector="Button.NetworkConnectButton">
+        <Setter Property="Background" Value="#3C5A8C"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Padding" Value="20,10"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Margin" Value="0,10,0,0"/>
+    </Style>
+
+    <Style Selector="Button.NetworkConnectButton:pointerover">
+        <Setter Property="Background" Value="#4C6A9C"/>
+    </Style>
+
+    <!-- Текст ошибки подключения -->
+    <Style Selector="TextBlock.ConnectionError">
+        <Setter Property="Foreground" Value="#FF6B6B"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Margin" Value="0,5,0,0"/>
+    </Style>
+    
+    <!-- Стили для графических элементов в ячейках (создаются в коде) -->
+    <Style Selector="Ellipse">
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Стили для линий (крестики в ячейках) -->
+    <Style Selector="Line">
+        <Setter Property="StrokeThickness" Value="3"/>
+    </Style>
+
+    <!-- Специфичные стили для линий в ячейках -->
+    <Style Selector="Border.GameCell Line">
+        <Setter Property="StrokeThickness" Value="3"/>
+    </Style>
+
+    <Style Selector="Border.PlacementCell Line">
+        <Setter Property="StrokeThickness" Value="3"/>
+    </Style>
+
+</Styles>

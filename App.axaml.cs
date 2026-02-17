@@ -9,13 +9,24 @@ using graphic_editor.Views;
 
 namespace graphic_editor;
 
+/// <summary>
+/// Основной класс приложения Avalonia.
+/// Отвечает за инициализацию приложения, создание главного окна и управление жизненным циклом.
+/// </summary>
 public partial class App : Application
 {
+    /// <summary>
+    /// Инициализирует приложение, загружая XAML-ресурсы.
+    /// </summary>
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
     }
 
+    /// <summary>
+    /// Вызывается после завершения инициализации фреймворка Avalonia.
+    /// Создает и запускает игровой сервер, настраивает главное окно.
+    /// </summary>
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -32,6 +43,12 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
+    /// <summary>
+    /// Отключает валидацию DataAnnotations в Avalonia для совместимости.
+    /// </summary>
+    /// <remarks>
+    /// Это необходимо для предотвращения конфликтов с CommunityToolkit.Mvvm.
+    /// </remarks>
     private void DisableAvaloniaDataAnnotationValidation()
     {
         // Get an array of plugins to remove
