@@ -5,7 +5,6 @@ using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using Avalonia.Markup.Xaml;
 using graphic_editor.ViewModels;
-using graphic_editor.Views;
 
 namespace graphic_editor;
 

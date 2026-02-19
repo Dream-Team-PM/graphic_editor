@@ -1,20 +1,377 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:graphic_editor.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="graphic_editor.Views.MainWindow"
-        x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="graphic_editor">
+        mc:Ignorable="d"
+        d:DesignWidth="1920" d:DesignHeight="1080"
+        x:Class="graphic_editor.MainWindow"
+        Title="INKognida — Безымянный.vec"
+        Background="#1C1C1E"
+        WindowState="Maximized"
+        RequestedThemeVariant="Dark"
+        FontFamily="Segoe UI, system-ui">
 
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
-    </Design.DataContext>
+    <Window.Resources>
+        <DrawingBrush x:Key="CheckerBrush" 
+                      TileMode="Tile" 
+                      DestinationRect="0,0,16,16">
+            <DrawingBrush.Drawing>
+                <DrawingGroup>
+                    <GeometryDrawing Brush="#252526" Geometry="M0,0 L16,0 16,16 0,16 Z"/>
+                    <GeometryDrawing Brush="#2F2F32" Geometry="M0,0 L8,0 8,8 0,8 Z M8,8 L16,8 16,16 8,16 Z"/>
+                </DrawingGroup>
+            </DrawingBrush.Drawing>
+        </DrawingBrush>
+    </Window.Resources>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <Window.Styles>
+        <Style Selector="Window">
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
 
+        <Style Selector="Menu">
+            <Setter Property="Background" Value="#2C2C2E"/>
+        </Style>
+
+        <!-- Tool buttons (RadioButton для взаимоисключения) -->
+        <Style Selector="RadioButton.ToolButton">
+            <Setter Property="Width" Value="50"/>
+            <Setter Property="Height" Value="50"/>
+            <Setter Property="Margin" Value="3"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="22"/>
+        </Style>
+        <Style Selector="RadioButton.ToolButton:pointerover">
+            <Setter Property="Background" Value="#3C3C3E"/>
+        </Style>
+        <Style Selector="RadioButton.ToolButton:checked">
+            <Setter Property="Background" Value="#0078D4"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <Style Selector="Border.Panel">
+            <Setter Property="Background" Value="#252526"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <!-- Стили для контекстного меню -->
+        <Style Selector="ContextMenu">
+            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="MenuItem">
+            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="Foreground" Value="#CCCCCC"/>
+        </Style>
+        <Style Selector="MenuItem:pointerover">
+            <Setter Property="Background" Value="#0078D4"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="Auto,*,Auto">
+
+        <!-- 1. Главное меню -->
+        <DockPanel Grid.Row="0" Grid.ColumnSpan="3" Background="#2C2C2E" Height="32">
+            <Menu DockPanel.Dock="Top" Background="Transparent">
+                <MenuItem Header="_Файл">
+                    <MenuItem Header="Новый…" InputGesture="Ctrl+N"/>
+                    <MenuItem Header="Открыть…" InputGesture="Ctrl+O"/>
+                    <MenuItem Header="Сохранить" InputGesture="Ctrl+S"/>
+                    <MenuItem Header="Сохранить как…" InputGesture="Ctrl+Shift+S"/>
+                    <Separator/>
+                    <MenuItem Header="Выход" InputGesture="Alt+F4"/>
+                </MenuItem>
+                <MenuItem Header="_Правка">
+                    <MenuItem Header="Отменить" InputGesture="Ctrl+Z"/>
+                    <MenuItem Header="Повторить" InputGesture="Ctrl+Y"/>
+                    <Separator/>
+                    <MenuItem Header="Вырезать" InputGesture="Ctrl+X"/>
+                    <MenuItem Header="Копировать" InputGesture="Ctrl+C"/>
+                    <MenuItem Header="Вставить" InputGesture="Ctrl+V"/>
+                </MenuItem>
+                <MenuItem Header="_Вид">
+                    <MenuItem Header="Показать линейки" IsChecked="True"/>
+                    <MenuItem Header="Показать сетку" IsChecked="True"/>
+                    <Separator/>
+                    <MenuItem Header="Приблизить" InputGesture="Ctrl+OemPlus"/>
+                    <MenuItem Header="Отдалить" InputGesture="Ctrl+OemMinus"/>
+                    <MenuItem Header="Масштаб 100%" InputGesture="Ctrl+0"/>
+                </MenuItem>
+                <MenuItem Header="_Слой"/>
+                <MenuItem Header="_Объект"/>
+                <MenuItem Header="_Справка"/>
+            </Menu>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,12,4" Spacing="4">
+                <Button Content="↶" Width="32" ToolTip.Tip="Отменить (Ctrl+Z)"/>
+                <Button Content="↷" Width="32" ToolTip.Tip="Повторить (Ctrl+Y)"/>
+                <Button Content="Экспорт" Background="#0078D4" Foreground="White" Padding="12,4"/>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- 2. Контекстная панель параметров -->
+        <Border Grid.Row="1" Grid.ColumnSpan="3" Background="#2C2C2E" Height="36" 
+                BorderBrush="#3F3F46" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0" Spacing="16">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Инструмент:" VerticalAlignment="Center" Foreground="#999"/>
+                    <TextBlock x:Name="SelectedToolText" Text="Перо" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Separator Width="1" Height="20" Background="#3F3F46"/>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="Обводка:" VerticalAlignment="Center"/>
+                    <ComboBox Width="80" SelectedIndex="1">
+                        <ComboBoxItem Content="Нет"/>
+                        <ComboBoxItem Content="1 пкс"/>
+                        <ComboBoxItem Content="2 пкс"/>
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="Заливка:" VerticalAlignment="Center"/>
+                    <Border Width="28" Height="20" Background="#FF4A90" CornerRadius="2" BorderBrush="#555" BorderThickness="1"/>
+                </StackPanel>
+                <Slider x:Name="StrokeSlider" Width="120" Minimum="0" Maximum="100" Value="75" 
+                        TickFrequency="5" IsSnapToTickEnabled="True"
+                        ValueChanged="StrokeSlider_ValueChanged"/>
+                <TextBlock x:Name="StrokePercentText" Text="75%" VerticalAlignment="Center" Width="40"/>
+            </StackPanel>
+        </Border>
+
+        <!-- 3. Основная рабочая область -->
+        <Grid Grid.Row="2" Grid.ColumnSpan="3" ColumnDefinitions="Auto,*,Auto" RowDefinitions="*,Auto">
+
+            <!-- Левая панель инструментов -->
+            <Border Grid.Column="0" Classes="Panel" Width="68" Margin="4,4,0,4">
+                <ScrollViewer>
+                    <StackPanel Margin="4" Spacing="2">
+                        <TextBlock Text="TOOLS" FontWeight="Bold" FontSize="11" Margin="6,4,6,8" Foreground="#999" HorizontalAlignment="Center"/>
+                        
+                        <RadioButton Classes="ToolButton" Content="🖱" Tag="Выделение" ToolTip.Tip="Выделение (V)" IsChecked="True" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="✂️" Tag="Прямое выделение" ToolTip.Tip="Прямое выделение (A)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        
+                        <Separator Margin="8,4" Height="1" Background="#3F3F46"/>
+                        
+                        <RadioButton Classes="ToolButton" Content="⬛" Tag="Прямоугольник" ToolTip.Tip="Прямоугольник (M)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="⭕" Tag="Эллипс" ToolTip.Tip="Эллипс (L)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="▱" Tag="Многоугольник" ToolTip.Tip="Многоугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="✒️" Tag="Перо" ToolTip.Tip="Перо (P)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        
+                        <Separator Margin="8,4" Height="1" Background="#3F3F46"/>
+                        
+                        <RadioButton Classes="ToolButton" Content="🔤" Tag="Текст" ToolTip.Tip="Текст (T)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="✋" Tag="Рука" ToolTip.Tip="Рука (H)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="🔍" Tag="Масштаб" ToolTip.Tip="Масштаб (Z)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <GridSplitter Grid.Column="0" Width="4" Background="Transparent" HorizontalAlignment="Right"/>
+
+            <!-- Холст + линейки + вкладки документов -->
+            <Grid Grid.Column="1" RowDefinitions="Auto,Auto,*,Auto" Margin="0,4,0,4">
+                <!-- Вкладки документов -->
+                <Border Grid.Row="0" Background="#2C2C2E" Height="32" BorderBrush="#3F3F46" BorderThickness="0,0,0,1">
+                    <StackPanel Orientation="Horizontal" Spacing="2" Margin="8,0">
+                        <Border Background="#252526" Padding="12,6,32,6" CornerRadius="4,4,0,0">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="Безымянный.vec" FontWeight="SemiBold"/>
+                                <TextBlock Text="×" Foreground="#999" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Button Content="＋" Width="32" Height="32" Background="Transparent" Foreground="#999"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Горизонтальная линейка -->
+                <Border Grid.Row="1" Height="20" Background="#252526" BorderBrush="#3F3F46" BorderThickness="0,1">
+                    <Canvas>
+                        <TextBlock Canvas.Left="40" Text="0" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="140" Text="100" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="240" Text="200" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="340" Text="300" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="440" Text="400" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="540" Text="500" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="640" Text="600" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="740" Text="700" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="840" Text="800" FontSize="10" Foreground="#888"/>
+                    </Canvas>
+                </Border>
+
+                <!-- Холст с контекстным меню -->
+                <Grid Grid.Row="2" ColumnDefinitions="20,*">
+                    <!-- Вертикальная линейка -->
+                    <Border Background="#252526" BorderBrush="#3F3F46" BorderThickness="1,0">
+                        <Canvas>
+                            <TextBlock Canvas.Top="40" Text="0" FontSize="10" Foreground="#888" HorizontalAlignment="Center"/>
+                            <TextBlock Canvas.Top="140" Text="100" FontSize="10" Foreground="#888" HorizontalAlignment="Center"/>
+                            <TextBlock Canvas.Top="240" Text="200" FontSize="10" Foreground="#888" HorizontalAlignment="Center"/>
+                        </Canvas>
+                    </Border>
+
+                    <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                        <Border x:Name="CanvasBorder" Width="900" Height="620"
+                                Background="{StaticResource CheckerBrush}"
+                                BorderBrush="#0078D4" BorderThickness="2" CornerRadius="4"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                BoxShadow="0 10 30 0 #00000088">
+                            
+                            <!-- Контекстное меню по правой кнопке мыши -->
+                            <Border.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Поворот">
+                                        <MenuItem x:Name="MenuRotateLeft" Header="↶ Влево (90°)" Click="RotateLeft_Click"/>
+                                        <MenuItem x:Name="MenuRotateRight" Header="↷ Вправо (90°)" Click="RotateRight_Click"/>
+                                        <MenuItem x:Name="MenuRotate180" Header="↻ На 180°" Click="Rotate180_Click"/>
+                                        <MenuItem x:Name="MenuRotateFree" Header="Произвольно…" Click="RotateFree_Click"/>
+                                    </MenuItem>
+                                    
+                                    <MenuItem Header="Масштаб">
+                                        <MenuItem x:Name="MenuScaleUp" Header="🔍 Увеличить (150%)" Click="ScaleUp_Click"/>
+                                        <MenuItem x:Name="MenuScaleDown" Header="🔎 Уменьшить (50%)" Click="ScaleDown_Click"/>
+                                        <MenuItem x:Name="MenuScaleFit" Header="По размеру окна" Click="ScaleFit_Click"/>
+                                        <MenuItem x:Name="MenuScaleOriginal" Header="Оригинальный размер" Click="ScaleOriginal_Click"/>
+                                    </MenuItem>
+                                    
+                                    <MenuItem Header="Отражение">
+                                        <MenuItem x:Name="MenuFlipHorizontal" Header="↔ По горизонтали" Click="FlipHorizontal_Click"/>
+                                        <MenuItem x:Name="MenuFlipVertical" Header="↕ По вертикали" Click="FlipVertical_Click"/>
+                                    </MenuItem>
+                                    
+                                    <Separator/>
+                                    
+                                    <MenuItem Header="Перемещение">
+                                        <MenuItem x:Name="MenuMoveUp" Header="↑ Вверх (10px)" Click="MoveUp_Click"/>
+                                        <MenuItem x:Name="MenuMoveDown" Header="↓ Вниз (10px)" Click="MoveDown_Click"/>
+                                        <MenuItem x:Name="MenuMoveLeft" Header="← Влево (10px)" Click="MoveLeft_Click"/>
+                                        <MenuItem x:Name="MenuMoveRight" Header="→ Вправо (10px)" Click="MoveRight_Click"/>
+                                        <MenuItem x:Name="MenuMoveCenter" Header="По центру" Click="MoveCenter_Click"/>
+                                    </MenuItem>
+                                    
+                                    <Separator/>
+                                    
+                                    <MenuItem Header="Цвет">
+                                        <MenuItem x:Name="MenuColorRed" Header="🔴 Красный" Click="ColorRed_Click"/>
+                                        <MenuItem x:Name="MenuColorGreen" Header="🟢 Зелёный" Click="ColorGreen_Click"/>
+                                        <MenuItem x:Name="MenuColorBlue" Header="🔵 Синий" Click="ColorBlue_Click"/>
+                                        <MenuItem x:Name="MenuColorYellow" Header="🟡 Жёлтый" Click="ColorYellow_Click"/>
+                                        <MenuItem x:Name="MenuColorWhite" Header="⚪ Белый" Click="ColorWhite_Click"/>
+                                        <MenuItem x:Name="MenuColorBlack" Header="⚫ Чёрный" Click="ColorBlack_Click"/>
+                                        <MenuItem x:Name="MenuColorPicker" Header="Выбрать цвет…" Click="ColorPicker_Click"/>
+                                    </MenuItem>
+                                    
+                                    <Separator/>
+                                    
+                                    <MenuItem x:Name="MenuDelete" Header="🗑️ Удалить объект" Click="DeleteObject_Click"/>
+                                    <MenuItem x:Name="MenuDuplicate" Header="📋 Дублировать" Click="DuplicateObject_Click"/>
+                                </ContextMenu>
+                            </Border.ContextMenu>
+                            
+                            <Grid>
+                                <Canvas>
+                                    <Line StartPoint="0,0" EndPoint="900,0" Stroke="#3A3A3C" StrokeThickness="1"/>
+                                </Canvas>
+                                <TextBlock Text="Ваш векторный холст здесь&#x0A;(VectorCanvasControl)&#x0A;&#x0A;ПКМ для контекстного меню" 
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Foreground="#555555" FontSize="18" TextAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </ScrollViewer>
+                </Grid>
+
+                <Border Grid.Row="3" Height="20" Background="#252526"/>
+            </Grid>
+
+            <GridSplitter Grid.Column="1" Width="4" Background="Transparent" HorizontalAlignment="Right"/>
+
+            <!-- Правая панель -->
+            <Border Grid.Column="2" Classes="Panel" Width="300" Margin="0,4,4,4">
+                <TabControl Background="Transparent" TabStripPlacement="Top">
+                    <TabItem Header="Свойства">
+                        <ScrollViewer Padding="12">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="Трансформация" FontWeight="SemiBold"/>
+                                <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto">
+                                    <TextBlock Text="X:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Row="0" Grid.Column="1" Text="120" Background="#3C3C3E"/>
+                                    <TextBlock Text="Y:" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                    <TextBox Grid.Row="0" Grid.Column="3" Text="240" Background="#3C3C3E"/>
+                                </Grid>
+
+                                <TextBlock Text="Внешний вид" FontWeight="SemiBold" Margin="0,8,0,4"/>
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Заливка"/>
+                                    <Border Height="28" Background="#FF4A90" CornerRadius="3" BorderBrush="#555" BorderThickness="1"/>
+                                    <TextBlock Text="Обводка"/>
+                                    <Border Height="28" Background="Transparent" CornerRadius="3" BorderBrush="#FFFFFF" BorderThickness="2"/>
+                                </StackPanel>
+
+                                <Slider x:Name="OpacitySlider" Minimum="0" Maximum="100" Value="100" 
+                                        TickPlacement="BottomRight" ValueChanged="OpacitySlider_ValueChanged"/>
+                                <TextBlock x:Name="OpacityText" Text="Непрозрачность: 100%" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <TabItem Header="Слои">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8" Spacing="4">
+                                <Button Content="＋" Width="36" Height="28" ToolTip.Tip="Новый слой"/>
+                                <Button Content="🗑️" Width="36" Height="28" ToolTip.Tip="Удалить"/>
+                                <Button Content="🔒" Width="36" Height="28" ToolTip.Tip="Заблокировать"/>
+                            </StackPanel>
+
+                            <ListBox Background="Transparent" BorderThickness="0">
+                                <ListBoxItem>
+                                    <Grid ColumnDefinitions="20,*,Auto">
+                                        <CheckBox Grid.Column="0" IsChecked="True" Content="👁" BorderThickness="0" Background="Transparent"/>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                            <Border Width="24" Height="24" Background="#FF4A90" CornerRadius="2"/>
+                                            <TextBlock Text="Слой 1" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="2" Text="🔒" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="#888"/>
+                                    </Grid>
+                                </ListBoxItem>
+                                <ListBoxItem>
+                                    <Grid ColumnDefinitions="20,*,Auto">
+                                        <CheckBox Grid.Column="0" IsChecked="True" Content="👁" BorderThickness="0" Background="Transparent"/>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                            <Border Width="24" Height="24" Background="#3A86FF" CornerRadius="2"/>
+                                            <TextBlock Text="Фон" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </ListBoxItem>
+                            </ListBox>
+                        </DockPanel>
+                    </TabItem>
+
+                    <TabItem Header="История"/>
+                </TabControl>
+            </Border>
+        </Grid>
+
+        <!-- 4. Статус-бар -->
+        <Border Grid.Row="3" Grid.ColumnSpan="3" Background="#1C1C1E" Height="26" 
+                BorderBrush="#3F3F46" BorderThickness="0,1,0,0">
+            <Grid Margin="12,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="StatusText" Text="Готово" VerticalAlignment="Center" Foreground="#CCC"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" Margin="0,0,20,0">
+                    <TextBlock Text="X: 342  Y: 189" Foreground="#999"/>
+                    <TextBlock Text="Ш: 480  В: 320" Foreground="#999"/>
+                </StackPanel>
+                <TextBlock Grid.Column="2" Text="100%" VerticalAlignment="Center" Foreground="#CCC" Margin="0,0,20,0"/>
+                <TextBlock Grid.Column="3" Text="RGB" VerticalAlignment="Center" Foreground="#999"/>
+            </Grid>
+        </Border>
+    </Grid>
 </Window>
