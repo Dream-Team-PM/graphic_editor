@@ -1,10 +1,14 @@
+using System;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
-using System.Linq;
 using Avalonia.Markup.Xaml;
+using Avalonia.Controls;
+using Avalonia.Platform;
 using graphic_editor.ViewModels;
+using System.Threading.Tasks;
+using Avalonia.Threading;
 
 namespace graphic_editor;
 
@@ -37,6 +41,10 @@ public partial class App : Application
             {
                 DataContext = new MainWindowViewModel(),
             };
+            
+            desktop.MainWindow.Icon = new WindowIcon(
+                AssetLoader.Open(new Uri("avares://graphic_editor/Assets/Calligrakrita-base.png"))
+            );
         }
 
         base.OnFrameworkInitializationCompleted();

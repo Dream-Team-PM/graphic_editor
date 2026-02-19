@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using Avalonia.Styling;
 
 namespace graphic_editor;
 
@@ -24,6 +25,10 @@ public partial class MainWindow : Window
         SelectedToolText.Text = "Выделение";
         StrokePercentText.Text = "75%";
         OpacityText.Text = $"Непрозрачность: 100%";
+        if (ThemeSlider != null)
+        {
+            ThemeSlider.Value = RequestedThemeVariant == ThemeVariant.Light ? 1 : 0;
+        }
     }
 
     private void ToolButton_Checked(object? sender, RoutedEventArgs e)
@@ -198,5 +203,12 @@ public partial class MainWindow : Window
         {
             statusText.Text = message;
         }
+    }
+
+    private void ThemeSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
+    {
+        this.RequestedThemeVariant = e.NewValue >= 0.5 ? ThemeVariant.Light : ThemeVariant.Dark;
+        // Settings.Default.Theme = this.RequestedThemeVariant.ToString();
+        ShowStatus($"Тема: {(e.NewValue >= 0.5 ? "Светлая ☀️" : "Тёмная 🌙")}");
     }
 }
