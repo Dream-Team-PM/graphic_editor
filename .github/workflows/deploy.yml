@@ -2,40 +2,22 @@
 
 on:
   push:
-    branches:
-      - main   # запускать при пуше в main
+    branches: [main]
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          node-version: 18
+          dotnet-version: "9.0.x"
 
-      - name: Install dependencies
-        run: npm install
+      - name: Restore
+        run: dotnet restore ./graphic_editor.sln
 
-      - name: Run tests
-        run: npm test
-
-      - name: Build project
-        run: npm run build
-
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd /var/www/project
-            git pull origin main
-            npm install --production
-            pm2 restart app
- 
+      - name: Build
+        run: dotnet build ./graphic_editor.sln -c Release --no-restore
