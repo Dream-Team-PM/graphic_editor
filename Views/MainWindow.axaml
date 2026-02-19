@@ -139,6 +139,11 @@
             <Setter Property="BorderBrush" Value="#D0D0D0"/>
         </Style>
 
+        <Style Selector="Window[RequestedThemeVariant=Dark] Border.ThemePanel">
+            <Setter Property="Background" Value="#2C2C2E"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
+        </Style>
+
         <!-- Линейки -->
         <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemeRuler">
             <Setter Property="Background" Value="#F5F5F5"/>
@@ -425,7 +430,11 @@
 
         <!-- Вкладки документов -->
         <Style Selector="Window[RequestedThemeVariant=Light] Border.DocumentTab">
-            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="Background" Value="#BCBCBC"/>
+        </Style>
+
+        <Style Selector="Window[RequestedThemeVariant=Dark] Border.DocumentTab">
+            <Setter Property="Background" Value="#252526"/>
         </Style>
 
         <Style Selector="Window[RequestedThemeVariant=Light] Border.DocumentTab TextBlock">
@@ -444,10 +453,24 @@
             <Setter Property="Foreground" Value="#777777"/>
         </Style>
 
+        <Style Selector="Window[RequestedThemeVariant=Dark] Border.ThemeRuler">
+            <Setter Property="Background" Value="#252526"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
+        </Style>
+
+        <Style Selector="Window[RequestedThemeVariant=Dark] Border.ThemeRuler TextBlock">
+            <Setter Property="Foreground" Value="#888888"/>
+        </Style>
+
         <!-- Контекстная панель параметров -->
         <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemePanel">
             <Setter Property="Background" Value="#FFFFFF"/>
             <Setter Property="BorderBrush" Value="#D0D0D0"/>
+        </Style>
+
+        <Style Selector="Window[RequestedThemeVariant=Dark] Border.ThemePanel">
+            <Setter Property="Background" Value="#2C2C2E"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
         </Style>
 
         <!-- Текст в панелях -->
@@ -513,13 +536,33 @@
             <Setter Property="BorderBrush" Value="#BBBBBB"/>
         </Style>
 
+        <Style Selector="Window[RequestedThemeVariant=Light] Border.Styling">
+            <Setter Property="BorderBrush" Value="#000000"/>
+        </Style>
         <Style Selector="Window[RequestedThemeVariant=Dark] Border.Styling">
             <Setter Property="BorderBrush" Value="#FFFFFF"/>
         </Style>
+
+        <Style Selector="Window[RequestedThemeVariant=Light] Grid.MainForeGround">
+            <Setter Property="Background" Value="#FFFFFF"/>
+        </Style>
+
+        <Style Selector="Window[RequestedThemeVariant=Dark] Grid.MainForeGround">
+            <Setter Property="Background" Value="#000000"/>
+        </Style>
+
+        <Style Selector="Window[RequestedThemeVariant=Light] Grid.MainTheme">
+            <Setter Property="Background" Value="#333333"/>
+        </Style>
+
+        <Style Selector="Window[RequestedThemeVariant=Light] StackPanel.ParamBackground">
+            <Setter Property="Background" Value="#FFFFFF"/>
+        </Style>
+
         
     </Window.Styles>
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="Auto,*,Auto">
+    <Grid Classes="MainTheme" RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="Auto,*,Auto">
 
         <!-- 1. Главное меню -->
         <Border Grid.Row="0" Grid.ColumnSpan="3" Classes="ThemePanel" Height="32">
@@ -561,22 +604,39 @@
                 </Menu>
 
                 <!-- Кнопки и переключатель темы справа -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0" Spacing="8">
-                    <Button Classes="ToolActionBtn" Content="↶" Width="32" Height="24" ToolTip.Tip="Отменить (Ctrl+Z)"/>
-                    <Button Classes="ToolActionBtn" Content="↷" Width="32" Height="24" ToolTip.Tip="Повторить (Ctrl+Y)"/>
-                    <Button Content="Экспорт" Background="#0078D4" Foreground="White" Padding="12,4" Height="24"/>
+                <StackPanel Classes="Switcher" Grid.Column="1" Orientation="Horizontal" 
+                            VerticalAlignment="Center" Margin="0,0,14,0" Spacing="4">
                     
-                    <Border Classes="DarkSeparator" Width="1" Height="20" Margin="4,0"/>
+                    <!-- Кнопки с центрированием содержимого -->
+                    <Button Classes="ToolActionBtn" Content="↶" Width="32" Height="24" 
+                            VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                            ToolTip.Tip="Отменить (Ctrl+Z)"/>
+                    
+                    <Button Classes="ToolActionBtn" Content="↷" Width="32" Height="24"
+                            VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                            ToolTip.Tip="Повторить (Ctrl+Y)"/>
+                    
+                    <Button Content="Экспорт" Background="#0078D4" Foreground="White" 
+                            Padding="12,4" Height="28"
+                            VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                    
+                    <Border Classes="DarkSeparator" Width="1" Height="20" Margin="4,0" 
+                            VerticalAlignment="Center"/>
                     
                     <!-- Переключатель темы -->
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6">
-                        <TextBlock Classes="ThemeIcon" Text="🌙" FontSize="14" VerticalAlignment="Center"/>
-                        <Slider x:Name="ThemeSlider" Width="80" Minimum="0" Maximum="1" Value="0" 
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="4">
+                        <TextBlock Classes="ThemeIcon" Text="🌙" FontSize="14" 
+                                   VerticalAlignment="Center" Margin="0,0,0,2"/>
+                        
+                        <Slider x:Name="ThemeSlider" Width="80" Height="50" Minimum="0" Maximum="1" Value="0" 
                                 VerticalAlignment="Center"
                                 TickFrequency="1" IsSnapToTickEnabled="True"
                                 ToolTip.Tip="Переключение темы: 0 — тёмная, 1 — светлая"
-                                ValueChanged="ThemeSlider_ValueChanged"/>
-                        <TextBlock Classes="ThemeIcon" Text="☀️" FontSize="14" VerticalAlignment="Center"/>
+                                ValueChanged="ThemeSlider_ValueChanged"
+                                Margin="0,0,8,0"/>
+                        
+                        <TextBlock Classes="ThemeIcon" Text="☀️" FontSize="14" 
+                                   VerticalAlignment="Center" Margin="0,0,0,2"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>
@@ -584,8 +644,8 @@
 
         <!-- 2. Контекстная панель параметров -->
         <Border Grid.Row="1" Grid.ColumnSpan="3" Classes="ThemePanel" Height="36" 
-                BorderBrush="#3F3F46" BorderThickness="0,0,0,1">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0" Spacing="16">
+                 BorderThickness="0,0,0,1">
+            <StackPanel Classes="ParamBackground" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0" Spacing="16">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock Classes="subtle" Text="Инструмент:" VerticalAlignment="Center" Foreground="#999"/>
                     <TextBlock x:Name="SelectedToolText" Text="Перо" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -611,7 +671,7 @@
         </Border>
 
         <!-- 3. Основная рабочая область -->
-        <Grid Grid.Row="2" Grid.ColumnSpan="3" ColumnDefinitions="Auto,*,Auto" RowDefinitions="*,Auto">
+        <Grid Grid.Row="2" Grid.ColumnSpan="3" Classes="MainForeGround" ColumnDefinitions="Auto,*,Auto" RowDefinitions="*,Auto">
 
             <!-- Левая панель инструментов -->
             <Border Grid.Column="0" Classes="Panel" Width="98" Margin="4,4,0,4">
@@ -751,7 +811,7 @@
                     </ScrollViewer>
                 </Grid>
 
-                <Border Grid.Row="3" Classes="ThemeRuler" Height="20" Background="#252526"/>
+                <Border Grid.Row="3" Classes="ThemeRuler" Height="20"/>
             </Grid>
 
             <GridSplitter Grid.Column="1" Width="4" Background="Transparent" HorizontalAlignment="Right"/>
