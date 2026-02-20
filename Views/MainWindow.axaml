@@ -5,6 +5,9 @@
         mc:Ignorable="d"
         d:DesignWidth="1920" d:DesignHeight="1080"
         x:Class="graphic_editor.MainWindow"
+        xmlns:local="using:graphic_editor.Controls"
+        xmlns:converters="using:graphic_editor.Converters"
+        xmlns:vm="using:graphic_editor.ViewModels"
         Title="INKognida — Безымянный.vec"
         Background="#1C1C1E"
         WindowState="Maximized"
@@ -22,6 +25,8 @@
                 </DrawingGroup>
             </DrawingBrush.Drawing>
         </DrawingBrush>
+        <converters:InvertedBoolConverter x:Key="InvertedBool"/>
+        <converters:IsZeroToVisibleConverter x:Key="IsZeroToVisible"/>
     </Window.Resources>
 
     <Window.Styles>
@@ -800,12 +805,34 @@
                             </Border.ContextMenu>
                             
                             <Grid>
-                                <Canvas>
-                                    <Line StartPoint="0,0" EndPoint="900,0" StrokeThickness="1"/>
-                                </Canvas>
-                                <TextBlock Classes="CanvasText" Text="Ваш векторный холст здесь&#x0A;(VectorCanvasControl)&#x0A;&#x0A;ПКМ для контекстного меню" 
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           FontSize="18" TextAlignment="Center"/>
+                                <Rectangle 
+                                x:DataType="vm:MainWindowViewModel"
+                                Fill="White"
+                                IsVisible="{Binding Canvas.IsCanvasActive}"
+                                Opacity="1"/>
+                                <local:VectorCanvasControl 
+                                    x:DataType="vm:MainWindowViewModel"
+                                    x:Name="VectorCanvas"
+                                   CanvasViewModel="{Binding Canvas}"
+                                    ActiveFigures="{Binding Canvas.ActiveLayerFigures}"
+                                   Zoom="{Binding Canvas.Zoom}"
+                                   OffsetX="{Binding Canvas.OffsetX}"
+                                   PointerMoved="OnCanvasPointerMoved"
+                                   PointerPressed="OnCanvasPointerPressed"/>
+
+                                <!-- Текст-подсказка (исчезает при активации) -->
+    <TextBlock x:DataType="vm:MainWindowViewModel" Classes="CanvasText"
+               Text="Ваш векторный холст here&#x0A;(Добавьте прямоугольник или эллипс)&#x0A;&#x0A;ПКМ для контекстного меню"
+               HorizontalAlignment="Center" VerticalAlignment="Center"
+               FontSize="18" TextAlignment="Center"
+               IsVisible="{Binding Canvas.IsCanvasActive, Converter={x:Static converters:InvertedBoolConverter.Instance}}"/>
+    
+    <!-- Подсказка при активном холсте -->
+    <TextBlock x:DataType="vm:MainWindowViewModel" Classes="CanvasText"
+               Text="✏️ Выберите инструмент и рисуйте"
+               HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,20"
+               FontSize="14" Foreground="#888"
+               IsVisible="{Binding Canvas.IsCanvasActive}"/>
                             </Grid>
                         </Border>
                     </ScrollViewer>
@@ -853,26 +880,16 @@
                                 <Button Content="🔒" Width="36" Height="28" ToolTip.Tip="Заблокировать"/>
                             </StackPanel>
 
-                            <ListBox Background="Transparent" BorderThickness="0">
-                                <ListBoxItem>
-                                    <Grid ColumnDefinitions="20,*,Auto">
-                                        <CheckBox Grid.Column="0" IsChecked="True" Content="👁" BorderThickness="0" Background="Transparent"/>
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                            <Border Width="24" Height="24" Background="#FF4A90" CornerRadius="2"/>
-                                            <TextBlock Text="Слой 1" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                        <TextBlock Grid.Column="2" Text="🔒" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="#888"/>
-                                    </Grid>
-                                </ListBoxItem>
-                                <ListBoxItem>
-                                    <Grid ColumnDefinitions="20,*,Auto">
-                                        <CheckBox Grid.Column="0" IsChecked="True" Content="👁" BorderThickness="0" Background="Transparent"/>
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                            <Border Width="24" Height="24" Background="#3A86FF" CornerRadius="2"/>
-                                            <TextBlock Text="Фон" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </ListBoxItem>
+                            <ListBox x:DataType="vm:MainWindowViewModel" ItemsSource="{Binding Canvas.Layers}" 
+         SelectedItem="{Binding Canvas.ActiveLayer}" Background="Transparent" BorderThickness="0">
+                                <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="20,*,Auto">
+                                                <CheckBox Grid.Column="0" IsChecked="{Binding IsVisible}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
                             </ListBox>
                         </DockPanel>
                     </TabItem>

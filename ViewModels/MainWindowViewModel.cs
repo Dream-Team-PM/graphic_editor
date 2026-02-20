@@ -8,6 +8,7 @@ using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using graphic_editor.Models;
+using graphic_editor.Helpers;
 
 namespace graphic_editor.ViewModels;
 
@@ -197,6 +198,12 @@ public partial class MainWindowViewModel : ViewModelBase
 	[RelayCommand]
 	private void CanvasClicked(Point_1 point) 
 	{
+        DebugLog.Write($"[DEBUG] CanvasClicked: Tool={SelectedTool}, IsCanvasActive={Canvas.IsCanvasActive}");
+        if (!Canvas.IsCanvasActive)
+        {
+            Canvas.ActivateCanvas();
+            StatusMessage = "Слой создан. Можно рисовать! ✏️";
+        }
 		if (SelectedTool == "Выделение")
         {
             Canvas.SelectFigureAt(point);
@@ -209,6 +216,17 @@ public partial class MainWindowViewModel : ViewModelBase
         else if (SelectedTool == "Эллипс")
         {
             AddEllipse();
+        } 
+        else if (SelectedTool == "Перо")
+        {
+            var penPoint = new PenPointViewModel(point.X, point.Y)
+            {
+                LineColor = StrokeColor.Color,      // Цвет обводки = цвет точки
+                FillColor = StrokeColor.Color,      // Заливка = цвет обводки
+                Thickness = StrokeWidth              // Толщина влияет на размер точки
+            };
+            Canvas.AddFigure(penPoint);
+            StatusMessage = $"Точка: ({point.X:F0}, {point.Y:F0})";
         }
 	}
 

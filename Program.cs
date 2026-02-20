@@ -15,10 +15,12 @@ sealed class Program
     /// до вызова AppMain: вещи ещё не инициализированы и могут сломаться.
     /// </summary>
     /// <param name="args">Аргументы командной строки.</param>
-    [STAThread]
-    public static void Main(string[] args) => BuildAvaloniaApp()
-        .StartWithClassicDesktopLifetime(args);
-
+    
+    public static void Main(string[] args)
+{
+    BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+    Console.ReadLine();  // ✅ Держит консоль открытой
+}
     /// <summary>
     /// Конфигурация Avalonia приложения. Не удаляйте; также используется визуальным дизайнером.
     /// </summary>

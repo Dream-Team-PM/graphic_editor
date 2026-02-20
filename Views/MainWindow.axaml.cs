@@ -7,6 +7,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Input;
 using graphic_editor.ViewModels;
+using graphic_editor.Helpers;
 
 namespace graphic_editor;
 
@@ -26,6 +27,7 @@ public partial class MainWindow : Window
         InitializeComponent();
 		_viewModel = new MainWindowViewModel();
 		DataContext = _viewModel;
+//        _viewModel.Canvas.ActivateCanvas();
 
         // Начальные значения
         SelectedToolText.Text = "Выделение";
@@ -42,22 +44,48 @@ public partial class MainWindow : Window
         {
             ThemeSlider.Value = _viewModel.CurrentTheme == ThemeVariant.Light ? 1 : 0;
         }
+DebugLog.Write($"[DEBUG] ActivateCanvas: ActiveLayer=, IsCanvasActive=");
     }
 
 	private void OnCanvasPointerMoved(object? sender, PointerEventArgs e) 
 	{
 		if (_viewModel == null) return;
-		var position = e.GetPosition(this);
-		_viewModel.UpdateCoordinatesCommand.Execute((position.X, position.Y));
+        var screenPos = e.GetPosition(VectorCanvas);
+        var canvasPoint = VectorCanvas.ScreenToCanvas(screenPos);
+        _viewModel.UpdateCoordinatesCommand.Execute((canvasPoint.X, canvasPoint.Y));
 	}
 
-	private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e) 
+private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e) 
+{
+    DebugLog.Write($"[DEBUG] OnCanvasPointerPressed fired");
+    
+    if (_viewModel == null) 
     {
-		if (_viewModel == null) return;
-		var position = e.GetPosition(this);
-		var point = new graphic_editor.Models.Point_1(position.X, position.Y);
-		_viewModel.CanvasClickedCommand.Execute(point);
+        DebugLog.Write($"[DEBUG] _viewModel is null");
+        return;
     }
+    
+    if (VectorCanvas == null)
+    {
+        DebugLog.Write($"[DEBUG] VectorCanvas is null");
+        return;
+    }
+    
+    var screenPos = e.GetPosition(VectorCanvas);
+    var point = VectorCanvas.ScreenToCanvas(screenPos);
+    
+    DebugLog.Write($"[DEBUG] Canvas point: {point}");
+    
+    if (_viewModel.CanvasClickedCommand.CanExecute(point))
+    {
+        _viewModel.CanvasClickedCommand.Execute(point);
+        DebugLog.Write($"[DEBUG] Command executed");
+    }
+    else
+    {
+        DebugLog.Write($"[DEBUG] Command cannot execute");
+    }
+}
 
     private void ToolButton_Checked(object? sender, RoutedEventArgs e)
     {

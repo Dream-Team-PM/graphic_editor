@@ -2,6 +2,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="using:graphic_editor.Controls"
+             x:Class="graphic_editor.Controls.VectorCanvasControl"
              >
     
     <Canvas x:Name="DrawingCanvas" 

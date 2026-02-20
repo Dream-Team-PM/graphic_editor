@@ -5,20 +5,51 @@ using System.Linq;
 using Avalonia.Threading;
 using graphic_editor.Models;
 using System.Drawing;
+using graphic_editor.Helpers;
     
 namespace graphic_editor.ViewModels;
 public class CanvasViewModel: ViewModelBase
 {
     private FigureViewModel? _selectedFigure;
+    private LayerViewModel? _activeLayer;
     private double _zoom = 1.0;
     private double _offsetX;
     private double _offsetY;
+    private bool _isCanvasActive;
 
     public CanvasViewModel()
     {
-        Figures = new ObservableCollection<FigureViewModel>();
+        DebugLog.Write("[DEBUG] CanvasViewModel constructor");
+        Console.Out.Flush();
+        Layers = new ObservableCollection<LayerViewModel>();
+        var defaultLayer = new LayerViewModel("Слой 1");
+        Layers.Add(defaultLayer);
+        ActiveLayer = defaultLayer;
+        _isCanvasActive = true;
     }
-    public ObservableCollection<FigureViewModel> Figures { get; }
+    public ObservableCollection<LayerViewModel> Layers { get; }
+    
+    public LayerViewModel? ActiveLayer
+    {
+        get => _activeLayer;
+        set
+        {
+            if (SetProperty(ref _activeLayer, value))
+            {
+                OnPropertyChanged(nameof(ActiveLayerFigures));
+                OnPropertyChanged(nameof(IsCanvasActive));
+            }
+        }
+    }
+    
+    public ObservableCollection<FigureViewModel> ActiveLayerFigures => 
+        ActiveLayer?.Figures ?? new ObservableCollection<FigureViewModel>();
+    
+    public bool IsCanvasActive
+    {
+        get => _isCanvasActive;
+        private set => SetProperty(ref _isCanvasActive, value);
+    }
     public FigureViewModel? SelectedFigure
     {
         get => _selectedFigure;
@@ -58,18 +89,36 @@ public class CanvasViewModel: ViewModelBase
         set => SetProperty(ref _offsetY, value);
     }
 
+    public void ActivateCanvas()
+    {
+        DebugLog.Write($"[DEBUG] ActivateCanvas: ActiveLayer={ActiveLayer?.Name ?? "null"}, IsCanvasActive={IsCanvasActive}");
+        if (ActiveLayer == null)
+        {
+            var newLayer = new LayerViewModel($"Слой {Layers.Count + 1}");
+            Layers.Add(newLayer);
+            ActiveLayer = newLayer;
+            DebugLog.Write($"[DEBUG] Created layer: {newLayer.Name}");
+            OnPropertyChanged(nameof(Layers));
+        }
+        IsCanvasActive = true;
+        OnPropertyChanged(nameof(IsCanvasActive));
+    }
+
     public void AddFigure(FigureViewModel figure)
     {
-        Figures.Add(figure);
+        if (ActiveLayer == null) ActivateCanvas();
+        ActiveLayer?.Figures.Add(figure);
         SelectedFigure = figure;
+        OnPropertyChanged(nameof(ActiveLayerFigures));
     }
 
     public void RemoveSelectedFigure()
     {
-        if (SelectedFigure != null)
+        if (SelectedFigure != null && ActiveLayer != null)
         {
-            Figures.Remove(SelectedFigure);
+            ActiveLayer.Figures.Remove(SelectedFigure);
             SelectedFigure = null;
+            OnPropertyChanged(nameof(ActiveLayerFigures));
         }
     }
 
@@ -85,7 +134,8 @@ public class CanvasViewModel: ViewModelBase
 
     public void SelectFigureAt(Point_1 point)
     {
-        var figure = Figures
+        if (ActiveLayer == null) return;
+        var figure = ActiveLayer.Figures
             .Reverse()
             .FirstOrDefault(f => f.IsIn(point));
 
@@ -128,8 +178,8 @@ public class CanvasViewModel: ViewModelBase
     {
         if (SelectedFigure != null)
         {
-            Figures.Remove(SelectedFigure);
-            Figures.Add(SelectedFigure);
+            ActiveLayer.Figures.Remove(SelectedFigure);
+            ActiveLayer.Figures.Add(SelectedFigure);
         }
     }
     
@@ -137,8 +187,8 @@ public class CanvasViewModel: ViewModelBase
     {
         if (SelectedFigure != null)
         {
-            Figures.Remove(SelectedFigure);
-            Figures.Insert(0, SelectedFigure);
+            ActiveLayer.Figures.Remove(SelectedFigure);
+            ActiveLayer.Figures.Insert(0, SelectedFigure);
         }
     }
 }
