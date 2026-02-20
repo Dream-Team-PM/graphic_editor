@@ -7,11 +7,13 @@
 		<ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+      <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
+<!--      <AvaloniaXaml Include="Controls\VectorCanvasControl.axaml" />-->
   </ItemGroup>
 
   <ItemGroup>

@@ -5,6 +5,8 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Avalonia.Input;
+using graphic_editor.ViewModels;
 
 namespace graphic_editor;
 
@@ -17,35 +19,66 @@ public partial class MainWindow : Window
     private double _objectRotation = 0;
     private string _objectColor = "#FF4A90";
 
+	private MainWindowViewModel? _viewModel;
+
     public MainWindow()
     {
         InitializeComponent();
+		_viewModel = new MainWindowViewModel();
+		DataContext = _viewModel;
 
         // Начальные значения
         SelectedToolText.Text = "Выделение";
         StrokePercentText.Text = "75%";
         OpacityText.Text = $"Непрозрачность: 100%";
+
+		if (this.FindControl<Canvas>("MainCanvas") is Canvas canvas) 
+		{
+			canvas.AddHandler(PointerMovedEvent, OnCanvasPointerMoved);
+			canvas.AddHandler(PointerPressedEvent, OnCanvasPointerPressed);
+		}
+
         if (ThemeSlider != null)
         {
-            ThemeSlider.Value = RequestedThemeVariant == ThemeVariant.Light ? 1 : 0;
+            ThemeSlider.Value = _viewModel.CurrentTheme == ThemeVariant.Light ? 1 : 0;
         }
+    }
+
+	private void OnCanvasPointerMoved(object? sender, PointerEventArgs e) 
+	{
+		if (_viewModel == null) return;
+		var position = e.GetPosition(this);
+		_viewModel.UpdateCoordinatesCommand.Execute((position.X, position.Y));
+	}
+
+	private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e) 
+    {
+		if (_viewModel == null) return;
+		var position = e.GetPosition(this);
+		var point = new graphic_editor.Models.Point_1(position.X, position.Y);
+		_viewModel.CanvasClickedCommand.Execute(point);
     }
 
     private void ToolButton_Checked(object? sender, RoutedEventArgs e)
     {
         if (sender is RadioButton btn && btn.IsChecked == true && btn.Tag is string toolName)
         {
+			_viewModel.SelectedTool = toolName;
             SelectedToolText.Text = toolName;
         }
     }
 
     private void StrokeSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
+		if (_viewModel != null)
+            _viewModel.StrokeWidth = (int)e.NewValue;
         StrokePercentText.Text = $"{(int)e.NewValue}%";
     }
 
     private void OpacitySlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
+		if (_viewModel != null)
+            _viewModel.Opacity = e.NewValue;
         OpacityText.Text = $"Непрозрачность: {(int)e.NewValue}%";
     }
 
@@ -205,10 +238,15 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ThemeSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
+	private void ThemeSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
-        this.RequestedThemeVariant = e.NewValue >= 0.5 ? ThemeVariant.Light : ThemeVariant.Dark;
-        // Settings.Default.Theme = this.RequestedThemeVariant.ToString();
-        ShowStatus($"Тема: {(e.NewValue >= 0.5 ? "Светлая ☀️" : "Тёмная 🌙")}");
+        if (_viewModel == null) return;
+        
+        _viewModel.CurrentTheme = e.NewValue >= 0.5 
+            ? ThemeVariant.Light 
+            : ThemeVariant.Dark;
+        
+        this.RequestedThemeVariant = _viewModel.CurrentTheme;
+		ShowStatus($"Тема: {(e.NewValue >= 0.5 ? "Светлая ☀️" : "Тёмная 🌙")}");
     }
 }

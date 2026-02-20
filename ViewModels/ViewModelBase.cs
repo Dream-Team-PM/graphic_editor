@@ -1,15 +1,25 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿// ViewModels/ViewModelBase.cs
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace graphic_editor.ViewModels;
 
-/// <summary>
-/// Базовый класс для всех ViewModel в приложении.
-/// Наследует от ObservableObject из CommunityToolkit.Mvvm для реализации INotifyPropertyChanged.
-/// </summary>
-/// <remarks>
-/// Все ViewModel должны наследоваться от этого класса для поддержки привязки данных.
-/// Предоставляет механизм уведомлений об изменении свойств.
-/// </remarks>
-public abstract class ViewModelBase : ObservableObject
+public abstract class ViewModelBase : INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value))
+            return false;
+
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
+    }
 }
