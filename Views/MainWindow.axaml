@@ -679,29 +679,39 @@
         <Grid Grid.Row="2" Grid.ColumnSpan="3" Classes="MainForeGround" ColumnDefinitions="Auto,*,Auto" RowDefinitions="*,Auto">
 
             <!-- Левая панель инструментов -->
-            <Border Grid.Column="0" Classes="Panel" Width="98" Margin="4,4,0,4">
-                <ScrollViewer>
-                    <StackPanel Margin="4" Spacing="2">
-                        <TextBlock Text="TOOLS" FontWeight="Bold" FontSize="11" Margin="6,4,6,8" Foreground="#999" HorizontalAlignment="Center"/>
-                        
-                        <RadioButton Classes="ToolButton" Content="🖱" Tag="Выделение" ToolTip.Tip="Выделение (V)" IsChecked="True" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
-                        <RadioButton Classes="ToolButton" Content="✂️" Tag="Прямое выделение" ToolTip.Tip="Прямое выделение (A)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
-                        
-                        <Separator Margin="8,4" Height="1" Background="#3F3F46"/>
-                        
-                        <RadioButton Classes="ToolButton" Content="⬛" Tag="Прямоугольник" ToolTip.Tip="Прямоугольник (M)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
-                        <RadioButton Classes="ToolButton" Content="⭕" Tag="Эллипс" ToolTip.Tip="Эллипс (L)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
-                        <RadioButton Classes="ToolButton" Content="▱" Tag="Многоугольник" ToolTip.Tip="Многоугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
-                        <RadioButton Classes="ToolButton" Content="✒️" Tag="Перо" ToolTip.Tip="Перо (P)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
-                        
-                        <Separator Margin="8,4" Height="1" Background="#3F3F46"/>
-                        
-                        <RadioButton Classes="ToolButton" Content="🔤" Tag="Текст" ToolTip.Tip="Текст (T)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
-                        <RadioButton Classes="ToolButton" Content="✋" Tag="Рука" ToolTip.Tip="Рука (H)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
-                        <RadioButton Classes="ToolButton" Content="🔍" Tag="Масштаб" ToolTip.Tip="Масштаб (Z)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
-                    </StackPanel>
-                </ScrollViewer>
-            </Border>
+            <Grid RowDefinitions="*,Auto">
+        
+        <!-- Скролл с инструментами -->
+        <ScrollViewer Grid.Row="0">
+            <StackPanel Margin="4" Spacing="2">
+                <TextBlock Text="TOOLS" FontWeight="Bold" FontSize="11" Margin="6,4,6,8" Foreground="#999" HorizontalAlignment="Center"/>
+                
+                <RadioButton Classes="ToolButton" Content="🖱" Tag="Выделение" ToolTip.Tip="Выделение (V)" IsChecked="True" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                <RadioButton Classes="ToolButton" Content="✂️" Tag="Прямое выделение" ToolTip.Tip="Прямое выделение (A)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                
+                <Separator Margin="8,4" Height="1" Background="#3F3F46"/>
+                
+                <RadioButton Classes="ToolButton" Content="⬛" Tag="Прямоугольник" ToolTip.Tip="Прямоугольник (M)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                <RadioButton Classes="ToolButton" Content="⭕" Tag="Эллипс" ToolTip.Tip="Эллипс (L)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                <RadioButton Classes="ToolButton" Content="▱" Tag="Многоугольник" ToolTip.Tip="Многоугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                <RadioButton Classes="ToolButton" Content="✒️" Tag="Перо" ToolTip.Tip="Перо (P)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                
+                <Separator Margin="8,4" Height="1" Background="#3F3F46"/>
+                
+                <RadioButton Classes="ToolButton" Content="🔤" Tag="Текст" ToolTip.Tip="Текст (T)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                <RadioButton Classes="ToolButton" Content="✋" Tag="Рука" ToolTip.Tip="Рука (H)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                <RadioButton Classes="ToolButton" Content="🔍" Tag="Масштаб" ToolTip.Tip="Масштаб (Z)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+            </StackPanel>
+        </ScrollViewer>
+        
+        <!-- Кнопка нового слоя внизу -->
+        <Button x:DataType="vm:MainWindowViewModel" Grid.Row="1" 
+                Content="📄 Новый слой" 
+                Command="{Binding CreateNewLayerCommand}"
+                ToolTip.Tip="Создать новый слой для рисования"
+                Margin="4"
+                HorizontalAlignment="Stretch"/>
+    </Grid>
 
             <GridSplitter Grid.Column="0" Width="4" Background="Transparent" HorizontalAlignment="Right"/>
 
@@ -814,7 +824,6 @@
                                     x:DataType="vm:MainWindowViewModel"
                                     x:Name="VectorCanvas"
                                    CanvasViewModel="{Binding Canvas}"
-                                    ActiveFigures="{Binding Canvas.ActiveLayerFigures}"
                                    Zoom="{Binding Canvas.Zoom}"
                                    OffsetX="{Binding Canvas.OffsetX}"
                                    PointerMoved="OnCanvasPointerMoved"

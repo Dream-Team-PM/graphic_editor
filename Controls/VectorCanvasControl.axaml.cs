@@ -11,17 +11,19 @@ using graphic_editor.ViewModels;
 using graphic_editor.Models;
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
-
+using graphic_editor.Helpers;
 
 namespace graphic_editor.Controls;
 
 public partial class VectorCanvasControl : UserControl
 {
+    private readonly Dictionary<Guid, Control> _renderedFigures = new();
+    private LayerViewModel? _currentLayer;
     public static readonly StyledProperty<CanvasViewModel?> CanvasViewModelProperty =
         AvaloniaProperty.Register<VectorCanvasControl, CanvasViewModel?>(nameof(CanvasViewModel));
     
-    public static readonly StyledProperty<ObservableCollection<FigureViewModel>?> ActiveFiguresProperty = 
-        AvaloniaProperty.Register<VectorCanvasControl, ObservableCollection<FigureViewModel>?>(nameof(ActiveFigures));
+    // public static readonly StyledProperty<ObservableCollection<FigureViewModel>?> ActiveFiguresProperty = 
+    //     AvaloniaProperty.Register<VectorCanvasControl, ObservableCollection<FigureViewModel>?>(nameof(ActiveFigures));
 
     public static readonly StyledProperty<double> ZoomProperty =
         AvaloniaProperty.Register<VectorCanvasControl, double>(nameof(Zoom), 1.0);
@@ -31,19 +33,18 @@ public partial class VectorCanvasControl : UserControl
 
     public static readonly StyledProperty<double> OffsetYProperty =
         AvaloniaProperty.Register<VectorCanvasControl, double>(nameof(OffsetY));
-
-    private readonly Dictionary<Guid, Control> _renderedFigures = new();
+    
 
     public VectorCanvasControl()
     {
         InitializeComponent();
     }
 
-    public ObservableCollection<FigureViewModel> ActiveFigures
-    {
-        get => GetValue(ActiveFiguresProperty);
-        set => SetValue(ActiveFiguresProperty, value);
-    }
+    // public ObservableCollection<FigureViewModel> ActiveFigures
+    // {
+    //     get => GetValue(ActiveFiguresProperty);
+    //     set => SetValue(ActiveFiguresProperty, value);
+    // }
 
     public CanvasViewModel? CanvasViewModel
     {
@@ -72,7 +73,7 @@ public partial class VectorCanvasControl : UserControl
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        SubscribeToFigures();
+        SubscribeToCanvasViewModel();
         RenderAllFigures();
     }
 
@@ -82,19 +83,50 @@ public partial class VectorCanvasControl : UserControl
         base.OnDetachedFromVisualTree(e);
     }
 
-    private void SubscribeToFigures()
+    private void SubscribeToCanvasViewModel()
     {
-        if (ActiveFigures != null)
+        if (CanvasViewModel != null)
         {
-            ActiveFigures.CollectionChanged += OnFiguresChanged;
+            // Подписываемся на изменения ActiveLayer
+            CanvasViewModel.PropertyChanged += OnCanvasViewModelPropertyChanged;
+            // Подписываемся на фигуры текущего активного слоя
+            SubscribeToCurrentLayer();
+            // SubscribeToLayerFigures(CanvasViewModel.ActiveLayer);
+        }
+    }
+    
+    private void UnsubscribeFromCanvasViewModel()
+    {
+        if (CanvasViewModel != null)
+        {
+            CanvasViewModel.PropertyChanged -= OnCanvasViewModelPropertyChanged;
+        }
+    }
+    
+    private void SubscribeToCurrentLayer()
+    {
+        DebugLog.Write($"[DEBUG] SubscribeToCurrentLayer: ActiveLayer={CanvasViewModel?.ActiveLayer?.Name ?? "null"}");
+        UnsubscribeFromFigures();
+        _currentLayer = CanvasViewModel?.ActiveLayer;
+    
+        if (CanvasViewModel?.ActiveLayer != null)
+        {
+            DebugLog.Write($"[DEBUG] Subscribing to Figures.CollectionChanged");
+            CanvasViewModel.ActiveLayer.Figures.CollectionChanged += OnFiguresChanged;
+            RenderAllFigures();
+        }
+        else
+        {
+            DebugLog.Write($"[DEBUG] SKIP subscribe: ActiveLayer is null");
         }
     }
 
     private void UnsubscribeFromFigures()
     {
-        if (ActiveFigures != null)
+        if (_currentLayer != null)
         {
-            ActiveFigures.CollectionChanged -= OnFiguresChanged;
+            _currentLayer.Figures.CollectionChanged -= OnFiguresChanged;
+            _currentLayer = null;
         }
     }
 
@@ -104,16 +136,19 @@ public partial class VectorCanvasControl : UserControl
 
         if (change.Property == CanvasViewModelProperty)
         {
-            UnsubscribeFromFigures();
-            SubscribeToFigures();
+            var oldVm = change.GetOldValue<CanvasViewModel>();
+            var newVm = change.GetNewValue<CanvasViewModel>();
+            DebugLog.Write($"[DEBUG] CanvasVM binding changed: Old={oldVm?.GetHashCode()}, New={newVm?.GetHashCode()}");
+            UnsubscribeFromCanvasViewModel();
+            SubscribeToCanvasViewModel();
             RenderAllFigures();
         }
-        else if (change.Property == ActiveFiguresProperty)
-        {
-            UnsubscribeFromFigures();
-            SubscribeToFigures();
-            RenderAllFigures();
-        }
+        // else if (change.Property == ActiveFiguresProperty)
+        // {
+        //     UnsubscribeFromFigures();
+        //     SubscribeToFigures();
+        //     RenderAllFigures();
+        // }
         else if (change.Property == ZoomProperty || 
                  change.Property == OffsetXProperty || 
                  change.Property == OffsetYProperty)
@@ -124,7 +159,15 @@ public partial class VectorCanvasControl : UserControl
     
     private void OnCanvasViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(CanvasViewModel.SelectedFigure))
+        DebugLog.Write($"[DEBUG] CanvasVM PropertyChanged: {e.PropertyName}");
+        if (e.PropertyName == nameof(CanvasViewModel.ActiveLayer))
+        {
+            // Активный слой изменился — подписываемся на его фигуры
+            // SubscribeToLayerFigures(CanvasViewModel.ActiveLayer);
+            DebugLog.Write($"[DEBUG] ActiveLayer changed, new value: {CanvasViewModel?.ActiveLayer?.Name ?? "null"}");
+            SubscribeToCurrentLayer();
+        }
+        else if (e.PropertyName == nameof(CanvasViewModel.SelectedFigure))
         {
             UpdateSelectionVisuals();
         }
@@ -132,14 +175,26 @@ public partial class VectorCanvasControl : UserControl
 
     private void OnFiguresChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        switch (e.Action)
+        DebugLog.Write($"[DEBUG] OnFiguresChanged: Action={e.Action}, NewItems={e.NewItems?.Count ?? 0}");
+        try {
+            switch (e.Action)
         {
             case NotifyCollectionChangedAction.Add:
                 if (e.NewItems != null)
                 {
-                    foreach (FigureViewModel figure in e.NewItems)
+                    DebugLog.Write($"[DEBUG] OnFiguresChanged.Add: Iterating {e.NewItems.Count} items");
+                    foreach (var item in e.NewItems)
                     {
-                        RenderFigure(figure);
+                        DebugLog.Write($"[DEBUG] Processing NewItem: Type={item?.GetType().Name}, Item={item}");
+                        if (item is FigureViewModel figure)
+                        {
+                            DebugLog.Write($"[DEBUG] Rendering new figure: {figure.Name}");
+                            RenderFigure(figure);
+                        }
+                        else
+                        {
+                            DebugLog.Write($"[ERROR] Item is not FigureViewModel: {item?.GetType()}");
+                        }
                     }
                 }
                 break;
@@ -172,14 +227,20 @@ public partial class VectorCanvasControl : UserControl
                 }
                 break;
         }
+        } catch (Exception ex)
+        {
+            DebugLog.Write($"[ERROR] OnFiguresChanged exception: {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private void RenderAllFigures()
     {
         ClearAllFigures();
-        if (ActiveFigures != null)
+        DebugLog.Write($"[DEBUG] RenderAllFigures: DrawingCanvas={DrawingCanvas != null}, Figures={_currentLayer?.Figures.Count ?? 0}");
+        var figures = _currentLayer?.Figures;
+        if (figures != null)
         {
-            foreach (var figure in ActiveFigures)
+            foreach (var figure in figures)
             {
                 RenderFigure(figure);
             }
@@ -189,21 +250,30 @@ public partial class VectorCanvasControl : UserControl
 
     private void RenderFigure(FigureViewModel figure)
     {
+        DebugLog.Write($"[DEBUG] RenderFigure: {figure.Name}, DrawingCanvas={DrawingCanvas != null}");
+        DebugLog.Write($"[DEBUG] RenderFigure in Control, CanvasVM Hash={CanvasViewModel?.GetHashCode()}");
+    
         if (_renderedFigures.ContainsKey(figure.Id))
             return;
-        
+    
         var control = CreateControlForFigure(figure);
         if (control != null)
         {
-            // Привязка данных к UI-элементам
             BindFigureProperties(figure, control);
-        //     
-             DrawingCanvas.Children.Add(control);
-            _renderedFigures[figure.Id] = control;
-            
-            // Обработка кликов для выделения
-            control.Tag = figure;
-            control.PointerPressed += OnFigurePointerPressed;
+        
+            // ⚠️ Проверка на null перед добавлением!
+            if (DrawingCanvas != null)
+            {
+                DrawingCanvas.Children.Add(control);
+                _renderedFigures[figure.Id] = control;
+                control.Tag = figure;
+                control.PointerPressed += OnFigurePointerPressed;
+                DebugLog.Write($"[DEBUG] Figure added to canvas");
+            }
+            else
+            {
+                DebugLog.Write("[ERROR] DrawingCanvas is null!");
+            }
         }
     }
 

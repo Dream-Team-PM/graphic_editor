@@ -251,12 +251,14 @@ public partial class MainWindowViewModel : ViewModelBase
         // TODO: Реализовать экспорт
     }
 
-
-
-
-
-
-
-
-
+    [RelayCommand]
+    private void CreateNewLayer()
+    {
+        var newLayer = new LayerViewModel($"Слой {Canvas.Layers.Count + 1}");
+        Canvas.Layers.Add(newLayer);
+        Canvas.ActiveLayer = newLayer;
+        Canvas.IsCanvasActive = true;
+        DebugLog.Write($"[DEBUG] CreateNewLayer: Created {newLayer.Name}, ActiveLayer={Canvas.ActiveLayer?.Name}");
+        StatusMessage = $"Слой '{newLayer.Name}' создан. Можно рисовать! ✏️";
+    }
 }

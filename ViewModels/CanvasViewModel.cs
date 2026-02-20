@@ -20,12 +20,14 @@ public class CanvasViewModel: ViewModelBase
     public CanvasViewModel()
     {
         DebugLog.Write("[DEBUG] CanvasViewModel constructor");
+        DebugLog.Write($"[DEBUG] StackTrace: {Environment.StackTrace}");  // ← КЛЮЧЕВОЙ ЛОГ
         Console.Out.Flush();
         Layers = new ObservableCollection<LayerViewModel>();
-        var defaultLayer = new LayerViewModel("Слой 1");
-        Layers.Add(defaultLayer);
-        ActiveLayer = defaultLayer;
-        _isCanvasActive = true;
+        DebugLog.Write($"[DEBUG] CanvasViewModel created: GetHashCode={this.GetHashCode()}");
+        // var defaultLayer = new LayerViewModel("Слой 1");
+        // Layers.Add(defaultLayer);
+        // ActiveLayer = defaultLayer;
+        // _isCanvasActive = true;
     }
     public ObservableCollection<LayerViewModel> Layers { get; }
     
@@ -42,13 +44,15 @@ public class CanvasViewModel: ViewModelBase
         }
     }
     
+    private static readonly ObservableCollection<FigureViewModel> _emptyFigures = new();
+
     public ObservableCollection<FigureViewModel> ActiveLayerFigures => 
-        ActiveLayer?.Figures ?? new ObservableCollection<FigureViewModel>();
+        ActiveLayer?.Figures ?? _emptyFigures;
     
     public bool IsCanvasActive
     {
         get => _isCanvasActive;
-        private set => SetProperty(ref _isCanvasActive, value);
+        set => SetProperty(ref _isCanvasActive, value);
     }
     public FigureViewModel? SelectedFigure
     {
@@ -99,17 +103,29 @@ public class CanvasViewModel: ViewModelBase
             ActiveLayer = newLayer;
             DebugLog.Write($"[DEBUG] Created layer: {newLayer.Name}");
             OnPropertyChanged(nameof(Layers));
+            OnPropertyChanged(nameof(ActiveLayerFigures)); 
         }
         IsCanvasActive = true;
         OnPropertyChanged(nameof(IsCanvasActive));
+        DebugLog.Write($"[DEBUG] After ActivateCanvas: IsCanvasActive={IsCanvasActive}");
     }
 
     public void AddFigure(FigureViewModel figure)
     {
-        if (ActiveLayer == null) ActivateCanvas();
+        DebugLog.Write($"[DEBUG] AddFigure: ActiveLayer={ActiveLayer?.Name ?? "null"}, Figure={figure?.Name}");
+        DebugLog.Write($"[DEBUG] AddFigure in VM: {this.GetHashCode()}, ActiveLayer={ActiveLayer?.Name}");
+    
+        if (ActiveLayer == null) 
+        {
+            DebugLog.Write("[DEBUG] AddFigure: Calling ActivateCanvas");
+            ActivateCanvas();
+        }
+    
         ActiveLayer?.Figures.Add(figure);
         SelectedFigure = figure;
         OnPropertyChanged(nameof(ActiveLayerFigures));
+    
+        DebugLog.Write($"[DEBUG] AddFigure: ActiveLayer.Figures.Count={ActiveLayer?.Figures.Count}");
     }
 
     public void RemoveSelectedFigure()
