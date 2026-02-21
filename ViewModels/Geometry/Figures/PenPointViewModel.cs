@@ -1,11 +1,15 @@
-﻿// ViewModels/Figures/PenPointViewModel.cs
+﻿// ViewModels/Geometry/Figures/PenPointViewModel.cs
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using graphic_editor.Models;
 
-namespace graphic_editor.ViewModels;
+using ReactiveUI;
+
+using graphic_editor.Models;
+using graphic_editor.ViewModels;
+
+namespace graphic_editor.Geometry;
 
 public class PenPointViewModel : FigureViewModel
 {

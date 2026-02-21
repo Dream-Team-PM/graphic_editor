@@ -1,6 +1,10 @@
 ﻿// ViewModels/ColorViewModel.cs
+
 using System.Drawing;
 using System.Globalization;
+
+using ReactiveUI;
+
 namespace graphic_editor.ViewModels;
 
 public class ColorViewModel: ViewModelBase
@@ -14,7 +18,7 @@ public class ColorViewModel: ViewModelBase
     public Color Color
     {
         get => _color;
-        set => SetProperty(ref _color, value);
+        set => this.RaiseAndSetIfChanged(ref _color, value);
     }
 
     public string HexColor

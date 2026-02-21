@@ -1,16 +1,20 @@
 ﻿// Controls/VectorCanvasControl.axaml.cs
+
 using System;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
+
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Threading;
+
 using graphic_editor.ViewModels;
 using graphic_editor.Models;
-using System.Collections.ObjectModel;
-using Avalonia.Threading;
+using graphic_editor.Geometry;
 using graphic_editor.Helpers;
 
 namespace graphic_editor.Controls;
@@ -34,7 +38,6 @@ public partial class VectorCanvasControl : UserControl
     public static readonly StyledProperty<double> OffsetYProperty =
         AvaloniaProperty.Register<VectorCanvasControl, double>(nameof(OffsetY));
     
-
     public VectorCanvasControl()
     {
         InitializeComponent();
@@ -87,11 +90,8 @@ public partial class VectorCanvasControl : UserControl
     {
         if (CanvasViewModel != null)
         {
-            // Подписываемся на изменения ActiveLayer
             CanvasViewModel.PropertyChanged += OnCanvasViewModelPropertyChanged;
-            // Подписываемся на фигуры текущего активного слоя
             SubscribeToCurrentLayer();
-            // SubscribeToLayerFigures(CanvasViewModel.ActiveLayer);
         }
     }
     
@@ -145,8 +145,8 @@ public partial class VectorCanvasControl : UserControl
         }
         // else if (change.Property == ActiveFiguresProperty)
         // {
-        //     UnsubscribeFromFigures();
-        //     SubscribeToFigures();
+        //     UnsubscribeFromCanvasViewModel();
+        //     SubscribeToCanvasViewModel();
         //     RenderAllFigures();
         // }
         else if (change.Property == ZoomProperty || 
@@ -163,7 +163,6 @@ public partial class VectorCanvasControl : UserControl
         if (e.PropertyName == nameof(CanvasViewModel.ActiveLayer))
         {
             // Активный слой изменился — подписываемся на его фигуры
-            // SubscribeToLayerFigures(CanvasViewModel.ActiveLayer);
             DebugLog.Write($"[DEBUG] ActiveLayer changed, new value: {CanvasViewModel?.ActiveLayer?.Name ?? "null"}");
             SubscribeToCurrentLayer();
         }
@@ -178,56 +177,57 @@ public partial class VectorCanvasControl : UserControl
         DebugLog.Write($"[DEBUG] OnFiguresChanged: Action={e.Action}, NewItems={e.NewItems?.Count ?? 0}");
         try {
             switch (e.Action)
-        {
-            case NotifyCollectionChangedAction.Add:
-                if (e.NewItems != null)
-                {
-                    DebugLog.Write($"[DEBUG] OnFiguresChanged.Add: Iterating {e.NewItems.Count} items");
-                    foreach (var item in e.NewItems)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    if (e.NewItems != null)
                     {
-                        DebugLog.Write($"[DEBUG] Processing NewItem: Type={item?.GetType().Name}, Item={item}");
-                        if (item is FigureViewModel figure)
+                        DebugLog.Write($"[DEBUG] OnFiguresChanged.Add: Iterating {e.NewItems.Count} items");
+                        foreach (var item in e.NewItems)
                         {
-                            DebugLog.Write($"[DEBUG] Rendering new figure: {figure.Name}");
+                            DebugLog.Write($"[DEBUG] Processing NewItem: Type={item?.GetType().Name}, Item={item}");
+                            if (item is FigureViewModel figure)
+                            {
+                                DebugLog.Write($"[DEBUG] Rendering new figure: {figure.Name}");
+                                RenderFigure(figure);
+                            }
+                            else
+                            {
+                                DebugLog.Write($"[ERROR] Item is not FigureViewModel: {item?.GetType()}");
+                            }
+                        }
+                    }
+                    break;
+
+                case NotifyCollectionChangedAction.Remove:
+                    if (e.OldItems != null)
+                    {
+                        foreach (FigureViewModel figure in e.OldItems)
+                        {
+                            RemoveFigure(figure);
+                        }
+                    }
+                    break;
+
+                case NotifyCollectionChangedAction.Reset:
+                    ClearAllFigures();
+                    RenderAllFigures();
+                    break;
+
+                case NotifyCollectionChangedAction.Replace:
+                    if (e.OldItems != null)
+                    {
+                        foreach (FigureViewModel figure in e.OldItems)
+                            RemoveFigure(figure);
+                    }
+                    if (e.NewItems != null)
+                    {
+                        foreach (FigureViewModel figure in e.NewItems)
                             RenderFigure(figure);
-                        }
-                        else
-                        {
-                            DebugLog.Write($"[ERROR] Item is not FigureViewModel: {item?.GetType()}");
-                        }
                     }
-                }
-                break;
-
-            case NotifyCollectionChangedAction.Remove:
-                if (e.OldItems != null)
-                {
-                    foreach (FigureViewModel figure in e.OldItems)
-                    {
-                        RemoveFigure(figure);
-                    }
-                }
-                break;
-
-            case NotifyCollectionChangedAction.Reset:
-                ClearAllFigures();
-                RenderAllFigures();
-                break;
-
-            case NotifyCollectionChangedAction.Replace:
-                if (e.OldItems != null)
-                {
-                    foreach (FigureViewModel figure in e.OldItems)
-                        RemoveFigure(figure);
-                }
-                if (e.NewItems != null)
-                {
-                    foreach (FigureViewModel figure in e.NewItems)
-                        RenderFigure(figure);
-                }
-                break;
-        }
-        } catch (Exception ex)
+                    break;
+            }
+        } 
+        catch (Exception ex)
         {
             DebugLog.Write($"[ERROR] OnFiguresChanged exception: {ex.Message}\n{ex.StackTrace}");
         }
@@ -260,8 +260,6 @@ public partial class VectorCanvasControl : UserControl
         if (control != null)
         {
             BindFigureProperties(figure, control);
-        
-            // ⚠️ Проверка на null перед добавлением!
             if (DrawingCanvas != null)
             {
                 DrawingCanvas.Children.Add(control);
@@ -284,7 +282,18 @@ public partial class VectorCanvasControl : UserControl
             RectangleViewModel rect => CreateRectangle(rect),
             EllipseViewModel ellipse => CreateEllipse(ellipse),
             PenPointViewModel pen => CreatePenPoint(pen), 
-            // TODO: Добавить другие фигуры
+            LineViewModel lin => CreateLine(lin),
+            // BezieCurveViewModel bezie => CreateBezieCurve(bezie),
+            // CurveViewModel curve => CreateCurve(curve),
+            // SplineViewModel spline => CreateSpline(spline),
+            // HeptagonViewModel heptagon => CreateHeptagon(heptagon),
+            // HexagonViewModel hexagon => CreateHexagon(hexagon),
+            // N_Angle_Figure_ViewModel n_figure => CreateN_Angle_Figure(n_figure),
+            // OctagonViewModel octagon => CreateOctagon(octagon),
+            // PentagonViewModel pentagon => CreatePentagon(pentagon),
+            // RhombusViewModel rhombus => CreateRhombus(rhombus),
+            // RightTriangleViewModel right_triangle => CreateRightTriangle(right_triangle),
+            // TriangleViewModel triangle => CreateTriangle(triangle),
             _ => null
         };
     }
@@ -317,6 +326,16 @@ public partial class VectorCanvasControl : UserControl
         [Canvas.TopProperty] = pen.Y - Math.Max(2, pen.Thickness / 2 + 2),
         Tag = pen
     };
+    
+    private Avalonia.Controls.Shapes.Line CreateLine(LineViewModel line) => new()
+    {
+        StartPoint = new Avalonia.Point(line.X1, line.Y1),
+        EndPoint = new Avalonia.Point(line.X2, line.Y2),
+    
+        StrokeThickness = line.Thickness > 0 ? line.Thickness : 1,
+        Stroke = new SolidColorBrush(ToAvaloniaColor(line.LineColor)),
+        Tag = line
+    };
 
     private void BindFigureProperties(FigureViewModel figure, Control control)
     {
@@ -338,8 +357,15 @@ public partial class VectorCanvasControl : UserControl
         var fillColor = figure.FillColor.A > 0 ? ToAvaloniaColor(figure.FillColor) : strokeColor;
     
         shape.Stroke = new SolidColorBrush(strokeColor);
-        shape.StrokeThickness = 1;  // Для точек обводка минимальная
-        shape.Fill = new SolidColorBrush(fillColor);
+        if (control is Avalonia.Controls.Shapes.Line)
+        {
+            shape.StrokeThickness = figure.Thickness > 0 ? figure.Thickness : 1;
+        }
+        else
+        {
+            shape.StrokeThickness = 1;
+            shape.Fill = new SolidColorBrush(fillColor);
+        }
 
         // Подписка на изменения
         figure.PropertyChanged += (s, e) =>
@@ -358,13 +384,22 @@ public partial class VectorCanvasControl : UserControl
                     ? new SolidColorBrush(ToAvaloniaColor(figure.FillColor)) 
                     : new SolidColorBrush(ToAvaloniaColor(figure.LineColor));
             }
-            else if (e.PropertyName == nameof(FigureViewModel.Thickness))
+            else if (e.PropertyName == nameof(FigureViewModel.Thickness) && control is Avalonia.Controls.Shapes.Line lineCtrl)
             {
-                shapeCtrl.StrokeThickness = figure.Thickness;
+                lineCtrl.StrokeThickness = figure.Thickness > 0 ? figure.Thickness : 1;
             }
             else if (e.PropertyName == nameof(FigureViewModel.IsSelected))
             {
                 UpdateSelectionVisual(figure, control);
+            }
+            else if (control is Avalonia.Controls.Shapes.Line line && figure is LineViewModel lineVm)
+            {
+                if (e.PropertyName is nameof(LineViewModel.X1) or nameof(LineViewModel.Y1) or 
+                    nameof(LineViewModel.X2) or nameof(LineViewModel.Y2))
+                {
+                    line.StartPoint = new Avalonia.Point(lineVm.X1, lineVm.Y1);
+                    line.EndPoint = new Avalonia.Point(lineVm.X2, lineVm.Y2);
+                }
             }
         };
     }
@@ -373,10 +408,8 @@ public partial class VectorCanvasControl : UserControl
     {
         if (figure.IsSelected)
         {
-            // Добавляем визуальное выделение (рамку)
             if (control is Shape shape && shape.Tag is FigureViewModel)
             {
-                // Можно добавить эффект свечения или рамку
                 shape.Opacity = 1.0;
             }
         }

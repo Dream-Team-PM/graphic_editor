@@ -1,5 +1,8 @@
 ﻿// ViewModels/LayerViewModel.cs
+
 using System.Collections.ObjectModel;
+
+using ReactiveUI;
 
 namespace graphic_editor.ViewModels;
 
@@ -21,19 +24,19 @@ public class LayerViewModel : ViewModelBase
     public string Name
     {
         get => _name;
-        set => SetProperty(ref _name, value);
+        set => this.RaiseAndSetIfChanged(ref _name, value);
     }
 
     public bool IsVisible
     {
         get => _isVisible;
-        set => SetProperty(ref _isVisible, value);
+        set => this.RaiseAndSetIfChanged(ref _isVisible, value);
     }
 
     public bool IsLocked
     {
         get => _isLocked;
-        set => SetProperty(ref _isLocked, value);
+        set => this.RaiseAndSetIfChanged(ref _isLocked, value);
     }
 
     public ObservableCollection<FigureViewModel> Figures => _figures;
@@ -43,12 +46,12 @@ public class LayerViewModel : ViewModelBase
     public void AddFigure(FigureViewModel figure)
     {
         _figures.Add(figure);
-        OnPropertyChanged(nameof(FigureCount));
+        this.RaisePropertyChanged(nameof(FigureCount));
     }
 
     public void RemoveFigure(FigureViewModel figure)
     {
         _figures.Remove(figure);
-        OnPropertyChanged(nameof(FigureCount));
+        this.RaisePropertyChanged(nameof(FigureCount));
     }
 }

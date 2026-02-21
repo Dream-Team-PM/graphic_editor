@@ -1,3 +1,5 @@
+// Views/MainWindow.axaml.cs
+
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -6,6 +8,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Input;
+
 using graphic_editor.ViewModels;
 using graphic_editor.Helpers;
 
@@ -27,7 +30,6 @@ public partial class MainWindow : Window
         InitializeComponent();
 		_viewModel = new MainWindowViewModel();
 		DataContext = _viewModel;
-//        _viewModel.Canvas.ActivateCanvas();
 
         // Начальные значения
         SelectedToolText.Text = "Выделение";
@@ -44,7 +46,7 @@ public partial class MainWindow : Window
         {
             ThemeSlider.Value = _viewModel.CurrentTheme == ThemeVariant.Light ? 1 : 0;
         }
-DebugLog.Write($"[DEBUG] ActivateCanvas: ActiveLayer=, IsCanvasActive=");
+        DebugLog.Write($"[DEBUG] ActivateCanvas: ActiveLayer=, IsCanvasActive=");
     }
 
 	private void OnCanvasPointerMoved(object? sender, PointerEventArgs e) 
@@ -52,47 +54,45 @@ DebugLog.Write($"[DEBUG] ActivateCanvas: ActiveLayer=, IsCanvasActive=");
 		if (_viewModel == null) return;
         var screenPos = e.GetPosition(VectorCanvas);
         var canvasPoint = VectorCanvas.ScreenToCanvas(screenPos);
+        DebugLog.Write($"[DEBUG] Canvas point: {canvasPoint}");
         _viewModel.UpdateCoordinatesCommand.Execute((canvasPoint.X, canvasPoint.Y));
+        DebugLog.Write($"[DEBUG] Direct call completed");
 	}
 
-private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e) 
-{
-    DebugLog.Write($"[DEBUG] OnCanvasPointerPressed fired");
-    
-    if (_viewModel == null) 
+    private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e) 
     {
-        DebugLog.Write($"[DEBUG] _viewModel is null");
-        return;
-    }
+        DebugLog.Write($"[DEBUG] OnCanvasPointerPressed fired");
     
-    if (VectorCanvas == null)
-    {
-        DebugLog.Write($"[DEBUG] VectorCanvas is null");
-        return;
-    }
+        if (_viewModel == null) 
+        {
+            DebugLog.Write($"[DEBUG] _viewModel is null");
+            return;
+        }
     
-    var screenPos = e.GetPosition(VectorCanvas);
-    var point = VectorCanvas.ScreenToCanvas(screenPos);
+        if (VectorCanvas == null)
+        {
+            DebugLog.Write($"[DEBUG] VectorCanvas is null");
+            return;
+        }
     
-    DebugLog.Write($"[DEBUG] Canvas point: {point}");
-    
-    if (_viewModel.CanvasClickedCommand.CanExecute(point))
-    {
-        _viewModel.CanvasClickedCommand.Execute(point);
+        var screenPos = e.GetPosition(VectorCanvas);
+        var point = VectorCanvas.ScreenToCanvas(screenPos);
+        DebugLog.Write($"[DEBUG] Canvas point: {point}");
+        _viewModel.CanvasClicked(point);
         DebugLog.Write($"[DEBUG] Command executed");
     }
-    else
-    {
-        DebugLog.Write($"[DEBUG] Command cannot execute");
-    }
-}
 
     private void ToolButton_Checked(object? sender, RoutedEventArgs e)
     {
         if (sender is RadioButton btn && btn.IsChecked == true && btn.Tag is string toolName)
         {
-			_viewModel.SelectedTool = toolName;
+            DebugLog.Write($"[DEBUG] ToolButton_Checked: Setting SelectedTool to '{toolName}' (Tag={btn.Tag})");
+            _viewModel.SelectedTool = toolName;
             SelectedToolText.Text = toolName;
+        }
+        else
+        {
+            DebugLog.Write($"[DEBUG] ToolButton_Checked: sender={sender?.GetType()}, IsChecked={(sender as RadioButton)?.IsChecked}, Tag={(sender as RadioButton)?.Tag}");
         }
     }
 

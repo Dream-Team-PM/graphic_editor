@@ -1,10 +1,13 @@
-﻿// ViewModel/Figures/FigureViewModel.cs
+﻿// ViewModel/FigureViewModel.cs
 
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Drawing;
 using System.Linq;
+
+using ReactiveUI;
+
 using graphic_editor.Models;
 
 namespace graphic_editor.ViewModels;
@@ -30,31 +33,31 @@ public abstract class FigureViewModel: ViewModelBase, IGraphicFigure
     public string Name
     {
         get => _name;
-        set => SetProperty(ref _name, value);
+        set => this.RaiseAndSetIfChanged(ref _name, value);
     }
 
     public bool IsSelected
     {
         get => _isSelected;
-        set => SetProperty(ref _isSelected, value);
+        set => this.RaiseAndSetIfChanged(ref _isSelected, value);
     }
 
     public Color LineColor
     {
         get => _lineColor;
-        set => SetProperty(ref _lineColor, value);
+        set => this.RaiseAndSetIfChanged(ref _lineColor, value);
     }
 
     public Color FillColor
     {
         get => _fillColor;
-        set => SetProperty(ref _fillColor, value);
+        set => this.RaiseAndSetIfChanged(ref _fillColor, value);
     }
 
     public double Thickness
     {
         get => _thickness;
-        set => SetProperty(ref _thickness, value);
+        set => this.RaiseAndSetIfChanged(ref _thickness, value);
     }
     
     public ObservableCollection<PointViewModel> Vertices { get; protected set;  }
@@ -79,14 +82,4 @@ public abstract class FigureViewModel: ViewModelBase, IGraphicFigure
         );
         return clone;
     }
-    
-    
-
-
-
-
-
-
-
-
 }

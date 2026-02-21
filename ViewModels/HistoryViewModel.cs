@@ -1,6 +1,9 @@
 ﻿// ViewModels/HistoryViewModel.cs
+
 using System;
 using System.Collections.ObjectModel;
+
+using ReactiveUI;
 
 namespace graphic_editor.ViewModels;
 
@@ -15,14 +18,14 @@ public class HistoryViewModel : ViewModelBase
 
     public void AddAction(IHistoryAction action)
     {
-        // Удаляем все действия после текущего (если были отмены)
+        // Удаляем все действия после текущего
         while (_actions.Count > _currentIndex + 1)
             _actions.RemoveAt(_actions.Count - 1);
 
         _actions.Add(action);
         _currentIndex++;
-        OnPropertyChanged(nameof(CanUndo));
-        OnPropertyChanged(nameof(CanRedo));
+        this.RaisePropertyChanged(nameof(CanUndo));
+        this.RaisePropertyChanged(nameof(CanRedo));
     }
 
     public void Undo()
@@ -31,8 +34,8 @@ public class HistoryViewModel : ViewModelBase
         {
             _actions[_currentIndex].Undo();
             _currentIndex--;
-            OnPropertyChanged(nameof(CanUndo));
-            OnPropertyChanged(nameof(CanRedo));
+            this.RaisePropertyChanged(nameof(CanUndo));
+            this.RaisePropertyChanged(nameof(CanRedo));
         }
     }
 
@@ -42,8 +45,8 @@ public class HistoryViewModel : ViewModelBase
         {
             _currentIndex++;
             _actions[_currentIndex].Redo();
-            OnPropertyChanged(nameof(CanUndo));
-            OnPropertyChanged(nameof(CanRedo));
+            this.RaisePropertyChanged(nameof(CanUndo));
+            this.RaisePropertyChanged(nameof(CanRedo));
         }
     }
 
@@ -51,8 +54,8 @@ public class HistoryViewModel : ViewModelBase
     {
         _actions.Clear();
         _currentIndex = -1;
-        OnPropertyChanged(nameof(CanUndo));
-        OnPropertyChanged(nameof(CanRedo));
+        this.RaisePropertyChanged(nameof(CanUndo));
+        this.RaisePropertyChanged(nameof(CanRedo));
     }
 }
 

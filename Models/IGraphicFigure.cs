@@ -5,12 +5,9 @@ namespace graphic_editor.Models;
 public record Point_1(double X, double Y)
 {
     public static Point_1 Zero => new(0, 0);
-    
     public Point_1 Offset(double dx, double dy) => new(X + dx, Y + dy);
-    
     public double DistanceTo(Point_1 other) => 
         Math.Sqrt(Math.Pow(X - other.X, 2) + Math.Pow(Y - other.Y, 2));
-    
     public override string ToString() => $"({X:F2}, {Y:F2})";
 }
 

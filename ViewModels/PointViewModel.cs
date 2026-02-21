@@ -1,4 +1,7 @@
 ﻿// ViewModels/PointViewModel.cs
+
+using ReactiveUI;
+
 using graphic_editor.Models;
 namespace graphic_editor.ViewModels;
 
@@ -18,13 +21,13 @@ public class PointViewModel : ViewModelBase
     public double X
     {
         get => _x;
-        set => SetProperty(ref _x, value);
+        set => this.RaiseAndSetIfChanged(ref _x, value);
     }
 
     public double Y
     {
         get => _y;
-        set => SetProperty(ref _y, value);
+        set => this.RaiseAndSetIfChanged(ref _y, value);
     }
 
     public Point_1 ToPoint() => new Point_1(X, Y);

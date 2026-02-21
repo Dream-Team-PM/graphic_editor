@@ -1,18 +1,23 @@
-﻿// ViewModels/Figure/EllipseViewModel.cs
+﻿// ViewModels/Geometry/Figures/CurveViewModel.cs
+
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+
+using ReactiveUI;
+
 using graphic_editor.Models;
+using graphic_editor.ViewModels;
 
-namespace graphic_editor.ViewModels;
+namespace graphic_editor.Geometry;
 
-public class EllipseViewModel: FigureViewModel
+public class CurveViewModel: FigureViewModel
 {
-    public EllipseViewModel(): this(0, 0, 100, 100) {}
+    public CurveViewModel(): this(0, 0, 100, 100) {}
 
-    public EllipseViewModel(double x, double y, double width, double height)
+    public CurveViewModel(double x, double y, double width, double height)
     {
-        Name = "Эллипс";
+        Name = "Кривая";
         Vertices.Add(new PointViewModel(x, y));
         Vertices.Add(new PointViewModel(x + width, y));
         Vertices.Add(new PointViewModel(x + width, y + height));
@@ -43,8 +48,8 @@ public class EllipseViewModel: FigureViewModel
             vertex.Y = center.Y + dx * sin + dy * cos;
         }
 
-        OnPropertyChanged(nameof(X));
-        OnPropertyChanged(nameof(Y));
+        this.RaisePropertyChanged(nameof(X));
+        this.RaisePropertyChanged(nameof(Y));
     }
 
     public override void Scale(double sx, double sy)
@@ -55,8 +60,8 @@ public class EllipseViewModel: FigureViewModel
             vertex.X = center.X + (vertex.X - center.X) * sx;
             vertex.Y = center.Y + (vertex.Y - center.Y) * sy;
         }
-        OnPropertyChanged(nameof(Width));
-        OnPropertyChanged(nameof(Height));
+        this.RaisePropertyChanged(nameof(Width));
+        this.RaisePropertyChanged(nameof(Height));
     }
 
     public override void Move(double dx, double dy)

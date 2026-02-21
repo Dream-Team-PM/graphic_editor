@@ -4,17 +4,16 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-		<ImplicitUsings>enable</ImplicitUsings>
+    <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-      <LangVersion>preview</LangVersion>
-      <OutputType>Exe</OutputType>
+    <LangVersion>preview</LangVersion>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
-<!--      <AvaloniaXaml Include="Controls\VectorCanvasControl.axaml" />-->
   </ItemGroup>
 
   <ItemGroup>
@@ -27,12 +26,14 @@
       <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
-    <PackageReference Include="Microsoft.Playwright.MSTest" Version="1.58.0" />
-    <PackageReference Include="Microsoft.Playwright.NUnit" Version="1.58.0" />
-    <PackageReference Include="Microsoft.Playwright.Xunit.v3" Version="1.58.0" />
+<!--    <PackageReference Include="Microsoft.Playwright.MSTest" Version="1.58.0" />-->
+<!--    <PackageReference Include="Microsoft.Playwright.NUnit" Version="1.58.0" />-->
+<!--    <PackageReference Include="Microsoft.Playwright.Xunit.v3" Version="1.58.0" />-->
     <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="ReactiveUI" Version="22.3.1" />
     <PackageReference Include="ReactiveUI.Avalonia" Version="11.3.8" />
+    <PackageReference Include="ReactiveUI.Fody" Version="19.5.41" />
   </ItemGroup>
 
 	<ItemGroup>

@@ -1,6 +1,8 @@
 ﻿// Converters/InvertedBoolConverter.cs
+
 using System;
 using System.Globalization;
+
 using Avalonia.Data.Converters;
 
 namespace graphic_editor.Converters;

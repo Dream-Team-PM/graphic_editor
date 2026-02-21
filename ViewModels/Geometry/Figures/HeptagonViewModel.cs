@@ -1,18 +1,23 @@
-﻿// ViewModels/Figure/RectangleViewModel.cs
+﻿// ViewModels/Geometry/Figures/HeptagonViewModel.cs
+
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+
+using ReactiveUI;
+
 using graphic_editor.Models;
+using graphic_editor.ViewModels;
 
-namespace graphic_editor.ViewModels;
+namespace graphic_editor.Geometry;
 
-public class RectangleViewModel: FigureViewModel
+public class HeptagonViewModel: FigureViewModel
 {
-    public RectangleViewModel(): this(0, 0, 100, 100) {}
+    public HeptagonViewModel(): this(0, 0, 100, 100) {}
 
-    public RectangleViewModel(double x, double y, double width, double height)
+    public HeptagonViewModel(double x, double y, double width, double height)
     {
-        Name = "Прямоугольник";
+        Name = "Семиугольник";
         Vertices.Add(new PointViewModel(x, y));
         Vertices.Add(new PointViewModel(x + width, y));
         Vertices.Add(new PointViewModel(x + width, y + height));
@@ -23,6 +28,8 @@ public class RectangleViewModel: FigureViewModel
     public double Y => Vertices[0].Y;
     public double Width => Math.Abs(Vertices[2].X - Vertices[0].X);
     public double Height => Math.Abs(Vertices[2].Y - Vertices[0].Y);
+    public double RadiusX => Width / 2;
+    public double RadiusY => Height / 2;
 
     public override Point_1 Center => new Point_1(X + Width / 2, Y + Height  / 2);
 
@@ -41,8 +48,8 @@ public class RectangleViewModel: FigureViewModel
             vertex.Y = center.Y + dx * sin + dy * cos;
         }
 
-        OnPropertyChanged(nameof(X));
-        OnPropertyChanged(nameof(Y));
+        this.RaisePropertyChanged(nameof(X));
+        this.RaisePropertyChanged(nameof(Y));
     }
 
     public override void Scale(double sx, double sy)
@@ -53,8 +60,8 @@ public class RectangleViewModel: FigureViewModel
             vertex.X = center.X + (vertex.X - center.X) * sx;
             vertex.Y = center.Y + (vertex.Y - center.Y) * sy;
         }
-        OnPropertyChanged(nameof(Width));
-        OnPropertyChanged(nameof(Height));
+        this.RaisePropertyChanged(nameof(Width));
+        this.RaisePropertyChanged(nameof(Height));
     }
 
     public override void Move(double dx, double dy)
@@ -68,11 +75,10 @@ public class RectangleViewModel: FigureViewModel
 
     public override bool IsIn(Point_1 point, double eps = 0.001)
     {
-        var minX = Math.Min(Math.Min(Vertices[0].X, Vertices[1].X), Math.Min(Vertices[2].X, Vertices[3].X)) - eps;
-        var maxX = Math.Max(Math.Max(Vertices[0].X, Vertices[1].X), Math.Max(Vertices[2].X, Vertices[3].X)) + eps;
-        var minY = Math.Min(Math.Min(Vertices[0].Y, Vertices[1].Y), Math.Min(Vertices[2].Y, Vertices[3].Y)) - eps;
-        var maxY = Math.Max(Math.Max(Vertices[0].Y, Vertices[1].Y), Math.Max(Vertices[2].Y, Vertices[3].Y)) + eps;
-        return point.X >= minX && point.X <= maxX && point.Y >= minY && point.Y <= maxY;
+        var center = Center;
+        var dx = (point.X - center.X) / RadiusX;
+        var dy = (point.Y - center.Y) / RadiusY;
+        return (dx * dx + dy * dy) <= 1 + eps;
     }
 
     public override IEnumerable<Point_1> GetVertexPoint()
