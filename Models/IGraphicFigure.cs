@@ -1,7 +1,6 @@
 ﻿using System.Drawing;
 namespace graphic_editor;
 
-public record Point(double X, double Y);
 public interface IGraphicFigure
 {
     Color Linecolor { get; }
