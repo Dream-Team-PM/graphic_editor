@@ -8,16 +8,16 @@ public class LineSegment : IFigure, IGraphicFigure
     private Point _p1;
     private Point _p2;
 
-    public Color Linecolor { get; }
-    public Color Fillcolor { get; }
+    public Color LineColor { get; }
+    public Color FillColor { get; }
     public double Thickness { get; }
 
     public LineSegment(Point p1, Point p2, Color lineColor, double thickness = 1)
     {
         _p1 = p1;
         _p2 = p2;
-        Linecolor = lineColor;
-        Fillcolor = Color.Transparent;
+        LineColor = lineColor;
+        FillColor = Color.Transparent;
         Thickness = thickness;
     }
 
@@ -49,7 +49,7 @@ public class LineSegment : IFigure, IGraphicFigure
         _p2 = ScalePoint(_p2, center, sx, sy);
     }
 
-    public void RadialScale(double s)
+    public void Scale(double s)
     {
         Scale(s, s);
     }
@@ -64,10 +64,10 @@ public class LineSegment : IFigure, IGraphicFigure
     // Geometry
     // ===============================
 
-    public bool IsIn(Point point, double eps)
+    public bool IsIn(Point point)
     {
         // Distance from point to segment
-        return DistancePointToSegment(point, _p1, _p2) <= eps;
+        return DistancePointToSegment(point, _p1, _p2) <= 1e-6;
     }
 
     public bool HasIntersection(Point lefttop, Point rightbottom)
@@ -151,5 +151,10 @@ public class LineSegment : IFigure, IGraphicFigure
         double projX = a.X + t * d.X, projY = a.Y + t * d.Y;
 
         return Math.Sqrt((p.X - projX) * (p.X - projX) + (p.Y - projY) * (p.Y - projY));
+    }
+
+    public Avalonia.Media.Geometry ToGeometry()
+    {
+        throw new NotImplementedException();
     }
 }
