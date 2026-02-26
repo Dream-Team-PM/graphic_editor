@@ -14,6 +14,9 @@ using graphic_editor.Helpers;
 
 namespace graphic_editor;
 
+/// <summary>
+/// Основное (главное) окно графического редактора.
+/// </summary> 
 public partial class MainWindow : Window
 {
     // Параметры выделенного объекта (для демонстрации)

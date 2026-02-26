@@ -13,16 +13,21 @@ using graphic_editor.Models;
 using graphic_editor.Helpers;
     
 namespace graphic_editor.ViewModels;
+
+/// <summary>
+/// Модель слоя холста/канваса, основывается на ViewModelBase.
+/// </summary>
 public class CanvasViewModel: ViewModelBase
 {
-    private FigureViewModel? _selectedFigure;
-    private LayerViewModel? _activeLayer;
-	private FigureViewModel? _previewFigure;
-    private double _zoom = 1.0;
-    private double _offsetX;
-    private double _offsetY;
-    private bool _isCanvasActive;
+    private FigureViewModel? _selectedFigure; /// <summary>Приватное свойство - выбранная фигура.</summary>
+    private LayerViewModel? _activeLayer; /// <summary>Приватное свойство - активный слой.</summary>
+	private FigureViewModel? _previewFigure; /// <summary>Приватное свойство - превью фигуры.</summary>
+    private double _zoom = 1.0; /// <summary>Приватное свойство - коэффициент приближения.</summary>
+    private double _offsetX; /// <summary>Приватное свойство - оффсет по оси X.</summary>
+    private double _offsetY; /// <summary>Приватное свойство - оффсет по оси Y.</summary>
+    private bool _isCanvasActive; /// <summary>Приватное свойство - флаг для проверки активности канваса.</summary>
 
+	/// <summary>Конструктор CanvasViewModel.</summary>
     public CanvasViewModel()
     {
         DebugLog.Write("[DEBUG] CanvasViewModel constructor");
@@ -31,14 +36,16 @@ public class CanvasViewModel: ViewModelBase
         Layers = new ObservableCollection<LayerViewModel>();
         DebugLog.Write($"[DEBUG] CanvasViewModel created: GetHashCode={this.GetHashCode()}");
     }
-    public ObservableCollection<LayerViewModel> Layers { get; }
+    public ObservableCollection<LayerViewModel> Layers { get; } /// <summary>Публичная коллекция - рабочие слои.</summary>
 
+	/// <summary>Публичное свойство для отображения фигуры.</summary>
     public FigureViewModel? PreviewFigure
     {
         get => _previewFigure;
         set => this.RaiseAndSetIfChanged(ref _previewFigure, value);
     }
 
+	/// <summary>Публичное свойство - активный слой.</summary>
     public LayerViewModel? ActiveLayer
     {
         get => _activeLayer;
@@ -50,16 +57,20 @@ public class CanvasViewModel: ViewModelBase
         }
     }
     
-    private static readonly ObservableCollection<FigureViewModel> _emptyFigures = new();
+    private static readonly ObservableCollection<FigureViewModel> _emptyFigures = new(); /// <summary>Инициализация приватной статичной коллекции пустых фигур.</summary>
 
+	/// <summary>Публичная коллекция активных фигур на слое.</summary>
     public ObservableCollection<FigureViewModel> ActiveLayerFigures => 
         ActiveLayer?.Figures ?? _emptyFigures;
     
+	/// <summary>Публичное свойство - проверка активности канваса.</summary>
     public bool IsCanvasActive
     {
         get => _isCanvasActive;
         set => this.RaiseAndSetIfChanged(ref _isCanvasActive, value);
     }
+
+	/// <summary>Публичное свойство - выбор фигуры на холсте.</summary>
     public FigureViewModel? SelectedFigure
     {
         get => _selectedFigure;
@@ -77,26 +88,31 @@ public class CanvasViewModel: ViewModelBase
         }
     }
 
-    public bool HasSelection => _selectedFigure != null;
-    public object? SelectedFigureProperties => SelectedFigure;
-    public double Zoom 
+    public bool HasSelection => _selectedFigure != null; /// <summary>Публичный флаг - проверка выбора фигуры.</summary>
+    public object? SelectedFigureProperties => SelectedFigure; /// <summary>Публичный флаг - проверка выбранных свойств фигуры.</summary>
+    
+	/// <summary>Публичное свойство - Zoom.</summary>
+	public double Zoom 
     {
         get => _zoom;
         set => this.RaiseAndSetIfChanged(ref _zoom, Math.Max(0.1, Math.Min(10.0, value)));
     }
 
+	/// <summary>Публичное свойство - OffsetX.</summary>
     public double OffsetX
     {
         get => _offsetX;
         set => this.RaiseAndSetIfChanged(ref _offsetX, value);
     }
     
+	/// <summary>Публичное свойство - OffsetY.</summary>
     public double OffsetY
     {
         get => _offsetY;
         set => this.RaiseAndSetIfChanged(ref _offsetY, value);
     }
 
+	/// <summary>Публичная функция - проверка активности канваса.</summary>
     public void ActivateCanvas()
     {
         DebugLog.Write($"[DEBUG] ActivateCanvas: ActiveLayer={ActiveLayer?.Name ?? "null"}, IsCanvasActive={IsCanvasActive}");
@@ -114,6 +130,7 @@ public class CanvasViewModel: ViewModelBase
         DebugLog.Write($"[DEBUG] After ActivateCanvas: IsCanvasActive={IsCanvasActive}");
     }
 
+	/// <summary>Публичная функция - добавление фигуры на слой.</summary>
     public void AddFigure(FigureViewModel figure)
     {
         DebugLog.Write($"[DEBUG] AddFigure: ActiveLayer={ActiveLayer?.Name ?? "null"}, Figure={figure?.Name}");
@@ -132,6 +149,7 @@ public class CanvasViewModel: ViewModelBase
         DebugLog.Write($"[DEBUG] AddFigure: ActiveLayer.Figures.Count={ActiveLayer?.Figures.Count}");
     }
 
+	/// <summary>Публичная функция - удаление выбранной фигуры.</summary>
     public void RemoveSelectedFigure()
     {
         if (SelectedFigure != null && ActiveLayer != null)
@@ -142,6 +160,7 @@ public class CanvasViewModel: ViewModelBase
         }
     }
 
+	/// <summary>Публичная функция - дублирование выбранной фигуры.</summary>
     public void DuplicateSelectedFigure()
     {
         if (SelectedFigure != null)
@@ -152,7 +171,7 @@ public class CanvasViewModel: ViewModelBase
         }
     }
 
-	// Метод для установки предварительной фигуры
+	/// <summary>Публичный метод для установки предварительной фигуры.</summary>
     public void SetPreviewFigure(FigureViewModel? figure)
     {
         PreviewFigure = figure;
@@ -160,6 +179,7 @@ public class CanvasViewModel: ViewModelBase
         this.RaisePropertyChanged(nameof(PreviewFigure));
     }
 
+	/// <summary>Публичный метод для выбора фигуры в точке.</summary>
     public void SelectFigureAt(Point_1 point)
     {
         if (ActiveLayer == null) return;
@@ -169,11 +189,13 @@ public class CanvasViewModel: ViewModelBase
         SelectedFigure = figure;
     }
 
+	/// <summary>Публичный метод очистки выбранной фигуры.</summary>
     public void ClearFigure()
     {
         SelectedFigure = null;
     }
 
+	/// <summary>Публичный метод переноса выбранной фигуры.</summary>
     public void MoveSelectedFigure(double dx, double dy)
     {
         if (SelectedFigure != null)
@@ -183,6 +205,7 @@ public class CanvasViewModel: ViewModelBase
         }
     }
 
+	/// <summary>Публичный метод поворота выбранной фигуры.</summary>
     public void RotateSelectedFigure(double angle)
     {
         if (SelectedFigure != null)
@@ -192,6 +215,7 @@ public class CanvasViewModel: ViewModelBase
         }
     }
     
+	/// <summary>Публичный метод масштабирования выбранной фигуры.</summary>
     public void ScaleSelectedFigure(double sx, double sy)
     {
         if (SelectedFigure != null)
@@ -201,6 +225,7 @@ public class CanvasViewModel: ViewModelBase
         }
     }
 
+	/// <summary>Публичный метод - перенос фигуры на передний фон.</summary>
     public void BringToFront()
     {
         if (SelectedFigure != null)
@@ -210,6 +235,7 @@ public class CanvasViewModel: ViewModelBase
         }
     }
     
+	/// <summary>Публичный метод - перенос фигуры на задний фон.</summary>
     public void SendToBack()
     {
         if (SelectedFigure != null)

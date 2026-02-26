@@ -7,20 +7,26 @@ using ReactiveUI;
 
 namespace graphic_editor.ViewModels;
 
+/// <summary>
+/// Класс для работы с цветами (палитра и так далее), основывается на ViewModelBase (Находится в разработке).
+/// </summary>
 public class ColorViewModel: ViewModelBase
 {
-    private Color _color;
+    private Color _color; /// <summary>Приватное свойство цвета.</summary>
     
-    public ColorViewModel() : this(Color.Black) {}
+    public ColorViewModel() : this(Color.Black) {} /// <summary>Конструктор ColorViewModel.</summary>
     
+	/// <summary>Конструктор ColorViewModel по цвету.</summary>
     public ColorViewModel(Color color) => _color = color;
 
+	/// <summary>Публичное свойство - цвет.</summary>
     public Color Color
     {
         get => _color;
         set => this.RaiseAndSetIfChanged(ref _color, value);
     }
 
+	/// <summary>Публичная строка - цвет в 16-й системе счисления.</summary>
     public string HexColor
     {
         get => $"#{_color.R:X2}{_color.G:X2}{_color.B:X2}";
@@ -48,29 +54,34 @@ public class ColorViewModel: ViewModelBase
         }
     }
 
+	/// <summary>Публичное свойство - байт R.</summary>
     public byte R
     {
         get => _color.R;
         set => Color = Color.FromArgb(_color.A, value, _color.G, _color.B);
     }
     
+	/// <summary>Публичное свойство - байт G.</summary>
     public byte G
     {
         get => _color.G;
         set => Color = Color.FromArgb(_color.A, _color.R, value, _color.B);
     }
     
+	/// <summary>Публичное свойство - байт B.</summary>
     public byte B
     {
         get => _color.B;
         set => Color = Color.FromArgb(_color.A, _color.R, _color.G, value);
     }
     
+	/// <summary>Публичное свойство - байт A.</summary>
     public byte A
     {
         get => _color.A;
         set => Color = Color.FromArgb(value, _color.R, _color.G, _color.B);
     }
     
+	/// <summary>Публичное свойство - конвертация из цвета в ColorViewModel.</summary>
     public static ColorViewModel FromColor(Color color) => new ColorViewModel(color);
 }

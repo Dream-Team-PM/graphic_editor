@@ -7,15 +7,19 @@ using ReactiveUI;
 
 namespace graphic_editor.ViewModels;
 
+/// <summary>
+/// Класс истории, основывается на ViewModelBase (Находится в разработке).
+/// </summary>
 public class HistoryViewModel : ViewModelBase
 {
-    private int _currentIndex = -1;
-    private readonly ObservableCollection<IHistoryAction> _actions = new();
+    private int _currentIndex = -1; /// <summary>Приватное свойство для индекса действия.</summary>
+    private readonly ObservableCollection<IHistoryAction> _actions = new(); /// <summary>Инимциализация коллекции действий.</summary>
 
-    public ObservableCollection<IHistoryAction> Actions => _actions;
-    public bool CanUndo => _currentIndex >= 0;
-    public bool CanRedo => _currentIndex < _actions.Count - 1;
+    public ObservableCollection<IHistoryAction> Actions => _actions; /// <summary>Публичная коллекция действий.</summary>
+    public bool CanUndo => _currentIndex >= 0; /// <summary>Флаг проверки возможности отмены.</summary>
+    public bool CanRedo => _currentIndex < _actions.Count - 1; /// <summary>Флаг проверки возможности повторения.</summary>
 
+	/// <summary>Публичная функция добавления действия.</summary>
     public void AddAction(IHistoryAction action)
     {
         // Удаляем все действия после текущего
@@ -28,6 +32,7 @@ public class HistoryViewModel : ViewModelBase
         this.RaisePropertyChanged(nameof(CanRedo));
     }
 
+	/// <summary>Публичная функция отмены.</summary>
     public void Undo()
     {
         if (CanUndo)
@@ -39,6 +44,7 @@ public class HistoryViewModel : ViewModelBase
         }
     }
 
+	/// <summary>Публичная функция повторения.</summary>
     public void Redo()
     {
         if (CanRedo)
@@ -50,6 +56,7 @@ public class HistoryViewModel : ViewModelBase
         }
     }
 
+	/// <summary>Публичная функция очистки слоя.</summary>
     public void Clear()
     {
         _actions.Clear();
@@ -59,9 +66,12 @@ public class HistoryViewModel : ViewModelBase
     }
 }
 
+/// <summary>
+/// Публичный интерфейс для работы с операциями (Находится в разработке).
+/// </summary>
 public interface IHistoryAction
 {
-    string Description { get; }
-    void Undo();
-    void Redo();
+    string Description { get; } /// <summary>Описание операции.</summary>
+    void Undo(); /// <summary>Отменить.</summary>
+    void Redo(); /// <summary>Повторить.</summary>
 }
