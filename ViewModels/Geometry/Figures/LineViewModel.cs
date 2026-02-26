@@ -34,23 +34,21 @@ public class LineViewModel: FigureViewModel
     public override void Rotate(double angle)
     {
         var center = Center;
-        var rad = angle * Math.PI / 180;
-        var cos = Math.Cos(rad);
-        var sin = Math.Sin(rad);
 
         foreach (var vertex in Vertices)
         {
-            var dx = vertex.X - center.X;
-            var dy = vertex.Y - center.Y;
-            vertex.X = center.X + dx * cos - dy * sin;
-            vertex.Y = center.Y + dx * sin + dy * cos;
+            var rotated = TransformHelpers.RotatePoint(vertex.ToPoint(), center, angle);
+        	vertex.X = rotated.X;
+        	vertex.Y = rotated.Y;
         }
-        this.RaisePropertyChanged(nameof(X1));
-        this.RaisePropertyChanged(nameof(Y1));
-        this.RaisePropertyChanged(nameof(X2));
-        this.RaisePropertyChanged(nameof(Y2));
-        this.RaisePropertyChanged(nameof(Angle));
+        NotifyPropertyChanged();
     }
+
+	public virtual void RadialScale(double scale)
+	{
+		Scale(scale, scale);
+	}
+
 
     public override void Scale(double sx, double sy)
     {
@@ -78,32 +76,10 @@ public class LineViewModel: FigureViewModel
 
     public override bool IsIn(Point_1 point, double eps = 0.05)
     {
-        var px = point.X;
-        var py = point.Y;
-        var x1 = X1;
-        var y1 = Y1;
-        var x2 = X2;
-        var y2 = Y2;
-        var dx = x2 - x1;
-        var dy = y2 - y1;
-        var lengthSq = dx * dx + dy * dy;
-        if (lengthSq < eps * eps)
-        {
-            var distToStartSq = (px - x1) * (px - x1) + (py - y1) * (py - y1);
-            return distToStartSq <= eps * eps;
-        }
-
-        // Проекция точки на прямую отрезка
-        var t = ((px - x1) * dx + (py - y1) * dy) / lengthSq;
-        t = Math.Max(0, Math.Min(1, t));
-
-        // Ближайшая точка на отрезке
-        var closestX = x1 + t * dx;
-        var closestY = y1 + t * dy;
-
-        // Расстояние от точки до ближайшей точки на отрезке
-        var distToSegmentSq = (px - closestX) * (px - closestX) + (py - closestY) * (py - closestY);
-        return distToSegmentSq <= eps * eps;
+        //return Point_1.DistancePointToSegment(point, 
+        //   new Point_1(X1, Y1), new Point_1(X2, Y2)) <= eps;
+		return Point_1.IsPointNearSegment(point, 
+           new Point_1(X1, Y1), new Point_1(X2, Y2), eps);
     }
 
     public override IEnumerable<Point_1> GetVertexPoint()
@@ -123,4 +99,63 @@ public class LineViewModel: FigureViewModel
         };
         return clone;
     }
+
+	public virtual void Reflection(Point_1 a, Point_1 b)
+	{
+    	var center = Center;
+    	foreach (var vertex in Vertices)
+    	{
+        	var reflected = ReflectPoint(vertex.ToPoint(), a, b);
+        	vertex.X = reflected.X;
+        	vertex.Y = reflected.Y;
+    	}
+    	NotifyPropertyChanged();
+	}
+
+	private Point_1 ReflectPoint(Point_1 p, Point_1 a, Point_1 b)
+	{
+    	var d = b - a;
+    	double A = d.Y;
+    	double B = -d.X;
+    	double C = d.X * a.Y - d.Y * a.X;
+    	double D = (A * p.X + B * p.Y + C) / (A * A + B * B);
+    
+    	return new Point_1(
+        	p.X - 2 * A * D,
+        	p.Y - 2 * B * D
+    	);
+	}
+
+	public virtual bool HasIntersection(Point_1 leftTop, Point_1 rightBottom)
+	{
+    	double minX = Math.Min(leftTop.X, rightBottom.X);
+   	 	double maxX = Math.Max(leftTop.X, rightBottom.X);
+    	double minY = Math.Min(leftTop.Y, rightBottom.Y);
+    	double maxY = Math.Max(leftTop.Y, rightBottom.Y);
+    
+    	var bounds = GetBoundingBox();
+    	return !(bounds.MaxX < minX || bounds.MinX > maxX || 
+             bounds.MaxY < minY || bounds.MinY > maxY);
+	}
+
+	protected virtual (double MinX, double MaxX, double MinY, double MaxY) GetBoundingBox()
+	{
+    	var vertices = Vertices.Select(v => v.ToPoint()).ToList();
+    	return (
+        	vertices.Min(p => p.X),
+        	vertices.Max(p => p.X),
+        	vertices.Min(p => p.Y),
+        	vertices.Max(p => p.Y)
+    	);
+	}
+
+	private void NotifyPropertyChanged()
+	{
+    	this.RaisePropertyChanged(nameof(X1));
+    	this.RaisePropertyChanged(nameof(Y1));
+    	this.RaisePropertyChanged(nameof(X2));
+    	this.RaisePropertyChanged(nameof(Y2));
+    	this.RaisePropertyChanged(nameof(Angle));
+    	this.RaisePropertyChanged(nameof(Length));
+	}
 }
