@@ -281,8 +281,10 @@
                                     CanvasViewModel="{Binding Canvas}"
                                     Zoom="{Binding Canvas.Zoom}"
                                     OffsetX="{Binding Canvas.OffsetX}"
-                                    PointerMoved="OnCanvasPointerMoved"
-                                    PointerPressed="OnCanvasPointerPressed"
+									OffsetY="{Binding Canvas.OffsetY}"
+									PointerMoved="OnCanvasPointerMoved"
+    								PointerPressed="OnCanvasPointerPressed"
+    								PointerReleased="OnCanvasPointerReleased"
                                 />
 
                                 <!-- Текст-подсказка (исчезает при активации) -->

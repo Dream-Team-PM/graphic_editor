@@ -17,6 +17,7 @@ public class CanvasViewModel: ViewModelBase
 {
     private FigureViewModel? _selectedFigure;
     private LayerViewModel? _activeLayer;
+	private FigureViewModel? _previewFigure;
     private double _zoom = 1.0;
     private double _offsetX;
     private double _offsetY;
@@ -31,7 +32,13 @@ public class CanvasViewModel: ViewModelBase
         DebugLog.Write($"[DEBUG] CanvasViewModel created: GetHashCode={this.GetHashCode()}");
     }
     public ObservableCollection<LayerViewModel> Layers { get; }
-    
+
+    public FigureViewModel? PreviewFigure
+    {
+        get => _previewFigure;
+        set => this.RaiseAndSetIfChanged(ref _previewFigure, value);
+    }
+
     public LayerViewModel? ActiveLayer
     {
         get => _activeLayer;
@@ -143,6 +150,14 @@ public class CanvasViewModel: ViewModelBase
             clone.Move(10, 10);
             AddFigure(clone);
         }
+    }
+
+	// Метод для установки предварительной фигуры
+    public void SetPreviewFigure(FigureViewModel? figure)
+    {
+        PreviewFigure = figure;
+        // Уведомляем контрол об изменении
+        this.RaisePropertyChanged(nameof(PreviewFigure));
     }
 
     public void SelectFigureAt(Point_1 point)

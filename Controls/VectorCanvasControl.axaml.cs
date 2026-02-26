@@ -11,6 +11,7 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
+using System.Windows.Input;
 
 using graphic_editor.ViewModels;
 using graphic_editor.Models;
@@ -25,6 +26,15 @@ public partial class VectorCanvasControl : UserControl
     private LayerViewModel? _currentLayer;
     public static readonly StyledProperty<CanvasViewModel?> CanvasViewModelProperty =
         AvaloniaProperty.Register<VectorCanvasControl, CanvasViewModel?>(nameof(CanvasViewModel));
+
+	public static readonly StyledProperty<ICommand?> PointerPressedCommandProperty =
+        AvaloniaProperty.Register<VectorCanvasControl, ICommand?>(nameof(PointerPressedCommand));
+
+    public static readonly StyledProperty<ICommand?> PointerMovedCommandProperty =
+        AvaloniaProperty.Register<VectorCanvasControl, ICommand?>(nameof(PointerMovedCommand));
+
+    public static readonly StyledProperty<ICommand?> PointerReleasedCommandProperty =
+        AvaloniaProperty.Register<VectorCanvasControl, ICommand?>(nameof(PointerReleasedCommand));
     
     // public static readonly StyledProperty<ObservableCollection<FigureViewModel>?> ActiveFiguresProperty = 
     //     AvaloniaProperty.Register<VectorCanvasControl, ObservableCollection<FigureViewModel>?>(nameof(ActiveFigures));
@@ -41,6 +51,27 @@ public partial class VectorCanvasControl : UserControl
     public VectorCanvasControl()
     {
         InitializeComponent();
+		//this.AddHandler(PointerPressedEvent, OnPointerPressed, handledEventsToo: true);
+        //this.AddHandler(PointerMovedEvent, OnPointerMoved, handledEventsToo: true);
+        //this.AddHandler(PointerReleasedEvent, OnPointerReleased, handledEventsToo: true);
+    }
+
+	public ICommand? PointerPressedCommand
+    {
+        get => GetValue(PointerPressedCommandProperty);
+        set => SetValue(PointerPressedCommandProperty, value);
+    }
+
+    public ICommand? PointerMovedCommand
+    {
+        get => GetValue(PointerMovedCommandProperty);
+        set => SetValue(PointerMovedCommandProperty, value);
+    }
+
+    public ICommand? PointerReleasedCommand
+    {
+        get => GetValue(PointerReleasedCommandProperty);
+        set => SetValue(PointerReleasedCommandProperty, value);
     }
 
     // public ObservableCollection<FigureViewModel> ActiveFigures
@@ -71,6 +102,33 @@ public partial class VectorCanvasControl : UserControl
     {
         get => GetValue(OffsetYProperty);
         set => SetValue(OffsetYProperty, value);
+    }
+
+	public void ShowPreviewFigure(FigureViewModel? figure)
+    {
+        // Удаляем старую предварительную фигуру
+        var existingPreview = _renderedFigures.Values.FirstOrDefault(c => c.Tag is FigureViewModel f && f.Name == "Preview");
+        if (existingPreview != null)
+        {
+            DrawingCanvas.Children.Remove(existingPreview);
+            _renderedFigures.Remove(_renderedFigures.First(kvp => kvp.Value == existingPreview).Key);
+        }
+        
+        // Добавляем новую предварительную фигуру
+        if (figure != null)
+        {
+            figure.Name = "Preview"; // Помечаем как предварительную
+            var control = CreateControlForFigure(figure);
+            if (control != null)
+            {
+                BindFigureProperties(figure, control);
+                control.Opacity = 0.5; // Полупрозрачная для предварительного просмотра
+                control.IsHitTestVisible = false; // Не перехватываем события
+                DrawingCanvas.Children.Add(control);
+                _renderedFigures[figure.Id] = control;
+                control.Tag = figure;
+            }
+        }
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -166,6 +224,13 @@ public partial class VectorCanvasControl : UserControl
             DebugLog.Write($"[DEBUG] ActiveLayer changed, new value: {CanvasViewModel?.ActiveLayer?.Name ?? "null"}");
             SubscribeToCurrentLayer();
         }
+		else if (e.PropertyName == nameof(CanvasViewModel.PreviewFigure))
+    	{
+        	// Обновляем предварительный просмотр
+        	Dispatcher.UIThread.Post(() => 
+            	ShowPreviewFigure(CanvasViewModel?.PreviewFigure)
+        	);
+    	} 
         else if (e.PropertyName == nameof(CanvasViewModel.SelectedFigure))
         {
             UpdateSelectionVisuals();

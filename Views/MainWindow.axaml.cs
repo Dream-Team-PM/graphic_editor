@@ -49,38 +49,42 @@ public partial class MainWindow : Window
         DebugLog.Write($"[DEBUG] ActivateCanvas: ActiveLayer=, IsCanvasActive=");
     }
 
-	private void OnCanvasPointerMoved(object? sender, PointerEventArgs e) 
-	{
-		if (_viewModel == null) return;
-        var screenPos = e.GetPosition(VectorCanvas);
-        var canvasPoint = VectorCanvas.ScreenToCanvas(screenPos);
-        DebugLog.Write($"[DEBUG] Canvas point: {canvasPoint}");
-        _viewModel.UpdateCoordinatesCommand.Execute((canvasPoint.X, canvasPoint.Y));
-        DebugLog.Write($"[DEBUG] Direct call completed");
-	}
+	// Views/MainWindow.axaml.cs
 
-    private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e) 
-    {
-        DebugLog.Write($"[DEBUG] OnCanvasPointerPressed fired");
+private void OnCanvasPointerMoved(object? sender, PointerEventArgs e) 
+{
+    if (_viewModel == null) return;
     
-        if (_viewModel == null) 
-        {
-            DebugLog.Write($"[DEBUG] _viewModel is null");
-            return;
-        }
+    // Обновляем координаты
+    var screenPos = e.GetPosition(VectorCanvas);
+    var canvasPoint = VectorCanvas.ScreenToCanvas(screenPos);
+    _viewModel.UpdateCoordinatesCommand.Execute((canvasPoint.X, canvasPoint.Y));
     
-        if (VectorCanvas == null)
-        {
-            DebugLog.Write($"[DEBUG] VectorCanvas is null");
-            return;
-        }
+    // Вызываем обработчик рисования
+    _viewModel.HandlePointerMoved(e);
+}
+
+private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e) 
+{
+    if (_viewModel == null) return;
     
-        var screenPos = e.GetPosition(VectorCanvas);
-        var point = VectorCanvas.ScreenToCanvas(screenPos);
-        DebugLog.Write($"[DEBUG] Canvas point: {point}");
-        _viewModel.CanvasClicked(point);
-        DebugLog.Write($"[DEBUG] Command executed");
-    }
+    var screenPos = e.GetPosition(VectorCanvas);
+    var point = VectorCanvas.ScreenToCanvas(screenPos);
+    
+    // Вызываем обработчик рисования
+    _viewModel.HandlePointerPressed(e);
+}
+
+private void OnCanvasPointerReleased(object? sender, PointerReleasedEventArgs e) 
+{
+    if (_viewModel == null) return;
+    
+    var screenPos = e.GetPosition(VectorCanvas);
+    var point = VectorCanvas.ScreenToCanvas(screenPos);
+    
+    // Вызываем обработчик рисования
+    _viewModel.HandlePointerReleased(e);
+}
 
     private void ToolButton_Checked(object? sender, RoutedEventArgs e)
     {

@@ -24,6 +24,14 @@ public record Point_1(double X, double Y)
     public double DistanceTo(Point_1 other) => 
         Math.Sqrt(Math.Pow(X - other.X, 2) + Math.Pow(Y - other.Y, 2));
     
+    public static Point_1 ScalePoint(Point_1 p, Point_1 center, double sx, double sy)
+    {
+        return new Point_1(
+            center.X + (p.X - center.X) * sx,
+            center.Y + (p.Y - center.Y) * sy
+        );
+    }
+    
     public static double DistancePointToSegment(Point_1 p, Point_1 a, Point_1 b)
     {
         var d = b - a;

@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-
 using ReactiveUI;
 
 using graphic_editor.Models;
@@ -14,13 +13,16 @@ namespace graphic_editor.Geometry;
 
 public class LineViewModel: FigureViewModel
 {
-    public LineViewModel(): this(0, 0, 100, 100) {}
+    public LineViewModel(): this(0, 0, 100, 100, Color.Black, 1) {}
 
-    public LineViewModel(double x1, double y1, double x2, double y2)
+    public LineViewModel(double x1, double y1, double x2, double y2, Color lineColor, double thickness, Color fillColor = default)
     {
         Name = "Линия";
         Vertices.Add(new PointViewModel(x1, y1));
         Vertices.Add(new PointViewModel(x2, y2));
+		LineColor = lineColor;
+		Thickness = thickness;
+		FillColor = fillColor == default ? Color.Transparent : fillColor;
     }
 
     public double X1 => Vertices[0].X;
@@ -49,20 +51,18 @@ public class LineViewModel: FigureViewModel
 		Scale(scale, scale);
 	}
 
-
     public override void Scale(double sx, double sy)
     {
         var center = Center;
         foreach (var vertex in Vertices)
         {
-            vertex.X = center.X + (vertex.X - center.X) * sx;
-            vertex.Y = center.Y + (vertex.Y - center.Y) * sy;
+            //vertex.X = center.X + (vertex.X - center.X) * sx;
+            //vertex.Y = center.Y + (vertex.Y - center.Y) * sy;
+			var scaled = Point_1.ScalePoint(vertex.ToPoint(), center, sx, sy);
+			vertex.X = scaled.X;
+			vertex.Y = scaled.Y;
         }
-        this.RaisePropertyChanged(nameof(X1));
-        this.RaisePropertyChanged(nameof(Y1));
-        this.RaisePropertyChanged(nameof(X2));
-        this.RaisePropertyChanged(nameof(Y2));
-        this.RaisePropertyChanged(nameof(Angle));
+        NotifyPropertyChanged();
     }
 
     public override void Move(double dx, double dy)
@@ -90,11 +90,8 @@ public class LineViewModel: FigureViewModel
     
     public override FigureViewModel Clone()
     {
-        var clone = new LineViewModel(X1, Y1, X2, Y2)
+        var clone = new LineViewModel(X1, Y1, X2, Y2, LineColor, Thickness, FillColor)
         {
-            LineColor = LineColor,
-            FillColor = FillColor,
-            Thickness = Thickness,
             IsSelected = IsSelected
         };
         return clone;
