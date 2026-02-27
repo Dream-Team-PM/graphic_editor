@@ -11,6 +11,9 @@ using graphic_editor.ViewModels;
 
 namespace graphic_editor.Geometry;
 
+/// <summary>
+/// Класс Н-угольника (в процессе реализации).
+/// </summary>
 public class N_Angle_Figure_ViewModel: FigureViewModel
 {
     public N_Angle_Figure_ViewModel(): this(0, 0, 100, 100) {}

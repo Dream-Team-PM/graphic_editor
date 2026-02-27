@@ -20,6 +20,9 @@ using graphic_editor.Helpers;
 
 namespace graphic_editor.Controls;
 
+/// <summary>
+/// Основной контрол для корректной работы канваса.
+/// </summary>
 public partial class VectorCanvasControl : UserControl
 {
     private readonly Dictionary<Guid, Control> _renderedFigures = new();
@@ -54,6 +57,30 @@ public partial class VectorCanvasControl : UserControl
 		//this.AddHandler(PointerPressedEvent, OnPointerPressed, handledEventsToo: true);
         //this.AddHandler(PointerMovedEvent, OnPointerMoved, handledEventsToo: true);
         //this.AddHandler(PointerReleasedEvent, OnPointerReleased, handledEventsToo: true);
+    }
+    
+    /// <summary>Единый метод применения стиля к Shape</summary>
+    private void ApplyStyle(Shape shape, FigureViewModel figure)
+    {
+        // Конвертируем цвет один раз
+        var strokeColor = ToAvaloniaColor(figure.LineColor);
+    
+        // Stroke — для всех фигур
+        shape.Stroke = new SolidColorBrush(strokeColor);
+    
+        // StrokeThickness — линии используют Thickness, фигуры — контур 1px
+        if (shape is Avalonia.Controls.Shapes.Line)
+        {
+            shape.StrokeThickness = Math.Max(1, figure.Thickness);
+        }
+        else
+        {
+            shape.StrokeThickness = 1;
+            // Fill — только для фигур (не для Line)
+            shape.Fill = figure.FillColor.A > 0 
+                ? new SolidColorBrush(ToAvaloniaColor(figure.FillColor)) 
+                : Brushes.Transparent;
+        }
     }
 
 	public ICommand? PointerPressedCommand
@@ -130,6 +157,7 @@ public partial class VectorCanvasControl : UserControl
             }
         }
     }
+    
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
@@ -363,6 +391,13 @@ public partial class VectorCanvasControl : UserControl
         };
     }
     
+    private Avalonia.Controls.Shapes.Line CreateLine(LineViewModel line) => new()
+    {
+        StartPoint = new Avalonia.Point(line.X1, line.Y1),
+        EndPoint = new Avalonia.Point(line.X2, line.Y2),
+        Tag = line
+    };
+    
     private Avalonia.Controls.Shapes.Rectangle CreateRectangle(RectangleViewModel r) => new()
     {
         Width = Math.Abs(r.Width),
@@ -381,109 +416,135 @@ public partial class VectorCanvasControl : UserControl
         Tag = e
     };
 
-    private Avalonia.Controls.Shapes.Ellipse CreatePenPoint(PenPointViewModel pen) => new()
+    private Avalonia.Controls.Shapes.Ellipse CreatePenPoint(PenPointViewModel pen)
     {
-        // Точка рисуется как маленький круг радиусом Thickness/2 + 2px для видимости
-        // var radius = Math.Max(2, pen.Thickness / 2 + 2);
-        Width = Math.Max(2, pen.Thickness / 2 + 2) * 2,
-        Height = Math.Max(2, pen.Thickness / 2 + 2) * 2,
-        [Canvas.LeftProperty] = pen.X - Math.Max(2, pen.Thickness / 2 + 2), // Центрируем относительно координаты
-        [Canvas.TopProperty] = pen.Y - Math.Max(2, pen.Thickness / 2 + 2),
-        Tag = pen
-    };
-    
-    private Avalonia.Controls.Shapes.Line CreateLine(LineViewModel line) => new()
-    {
-        StartPoint = new Avalonia.Point(line.X1, line.Y1),
-        EndPoint = new Avalonia.Point(line.X2, line.Y2),
-    
-        StrokeThickness = line.Thickness > 0 ? line.Thickness : 1,
-        Stroke = new SolidColorBrush(ToAvaloniaColor(line.LineColor)),
-        Tag = line
-    };
+        var radius = Math.Max(2, pen.Thickness / 2 + 2);
+        return new Avalonia.Controls.Shapes.Ellipse
+        {
+            Width = radius * 2,
+            Height = radius * 2,
+            [Canvas.LeftProperty] = pen.X - radius,
+            [Canvas.TopProperty] = pen.Y - radius,
+            Tag = pen
+        };
+    }
 
     private void BindFigureProperties(FigureViewModel figure, Control control)
     {
         // Конвертация цвета
         if (control is not Shape shape) return;
-        // var strokeBrush = new SolidColorBrush(ToAvaloniaColor(figure.LineColor));
-        //
-        // if (control is Shape shape)
-        // {
-        //     shape.Stroke = strokeBrush;
-        //     shape.StrokeThickness = figure.Thickness;
-        //
-        //     if (figure.FillColor.A > 0)
-        //     {
-        //         shape.Fill = new SolidColorBrush(ToAvaloniaColor(figure.FillColor));
-        //     }
-        // }
-        var strokeColor = ToAvaloniaColor(figure.LineColor);
-        var fillColor = figure.FillColor.A > 0 ? ToAvaloniaColor(figure.FillColor) : strokeColor;
-    
-        shape.Stroke = new SolidColorBrush(strokeColor);
-        if (control is Avalonia.Controls.Shapes.Line)
-        {
-            shape.StrokeThickness = figure.Thickness > 0 ? figure.Thickness : 1;
-        }
-        else
-        {
-            shape.StrokeThickness = 1;
-            shape.Fill = new SolidColorBrush(fillColor);
-        }
+        ApplyStyle(shape, figure);
 
         // Подписка на изменения
         figure.PropertyChanged += (s, e) =>
         {
             if (control is not Shape shapeCtrl) return;
-        
-            if (e.PropertyName == nameof(FigureViewModel.LineColor))
+
+            switch (e.PropertyName)
             {
-                shapeCtrl.Stroke = new SolidColorBrush(ToAvaloniaColor(figure.LineColor));
-                if (figure.FillColor.A == 0)
-                    shapeCtrl.Fill = new SolidColorBrush(ToAvaloniaColor(figure.LineColor));
-            }
-            else if (e.PropertyName == nameof(FigureViewModel.FillColor))
-            {
-                shapeCtrl.Fill = figure.FillColor.A > 0 
-                    ? new SolidColorBrush(ToAvaloniaColor(figure.FillColor)) 
-                    : new SolidColorBrush(ToAvaloniaColor(figure.LineColor));
-            }
-            else if (e.PropertyName == nameof(FigureViewModel.Thickness) && control is Avalonia.Controls.Shapes.Line lineCtrl)
-            {
-                lineCtrl.StrokeThickness = figure.Thickness > 0 ? figure.Thickness : 1;
-            }
-            else if (e.PropertyName == nameof(FigureViewModel.IsSelected))
-            {
-                UpdateSelectionVisual(figure, control);
-            }
-            else if (control is Avalonia.Controls.Shapes.Line line && figure is LineViewModel lineVm)
-            {
-                if (e.PropertyName is nameof(LineViewModel.X1) or nameof(LineViewModel.Y1) or 
-                    nameof(LineViewModel.X2) or nameof(LineViewModel.Y2))
-                {
-                    line.StartPoint = new Avalonia.Point(lineVm.X1, lineVm.Y1);
-                    line.EndPoint = new Avalonia.Point(lineVm.X2, lineVm.Y2);
-                }
+                case nameof(FigureViewModel.LineColor):
+                    shapeCtrl.Stroke = new SolidColorBrush(
+                        ToAvaloniaColor(figure.LineColor));
+                    break;
+                case nameof(FigureViewModel.FillColor):
+                    if (shapeCtrl is not Avalonia.Controls.Shapes.Line)
+                    {
+                        shapeCtrl.Fill = figure.FillColor.A > 0 
+                            ? new SolidColorBrush(ToAvaloniaColor(figure.FillColor)) 
+                            : Brushes.Transparent;
+                    }
+                    break;
+                case nameof(FigureViewModel.Thickness):
+                    if (shapeCtrl is Avalonia.Controls.Shapes.Line)
+                    {
+                        shapeCtrl.StrokeThickness = Math.Max(1, figure.Thickness);
+                    }
+                    break;
+                case nameof(FigureViewModel.IsSelected):
+                    UpdateSelectionVisual(figure, control);
+                    break;
+                // Геометрия Line
+                case nameof(LineViewModel.X1):
+                case nameof(LineViewModel.Y1):
+                case nameof(LineViewModel.X2):
+                case nameof(LineViewModel.Y2):
+                    if (shapeCtrl is Avalonia.Controls.Shapes.Line line && 
+                        figure is LineViewModel lineVm)
+                    {
+                        line.StartPoint = new Avalonia.Point(lineVm.X1, lineVm.Y1);
+                        line.EndPoint = new Avalonia.Point(lineVm.X2, lineVm.Y2);
+                    }
+                    break;
+                
+                // Геометрия Rectangle/Ellipse — аналогично
+                case nameof(RectangleViewModel.X):
+                case nameof(RectangleViewModel.Y):
+                case nameof(RectangleViewModel.Width):
+                case nameof(RectangleViewModel.Height):
+                    UpdateShapeGeometry(shapeCtrl, figure);
+                    break;
             }
         };
+    }
+    
+    private void UpdateShapeGeometry(Shape shape, FigureViewModel figure)
+    {
+        switch (figure)
+        {
+            case RectangleViewModel rect:
+                if (shape is Avalonia.Controls.Shapes.Rectangle r)
+                {
+                    r.Width = Math.Abs(rect.Width);
+                    r.Height = Math.Abs(rect.Height);
+                    Canvas.SetLeft(r, Math.Min(rect.X, rect.X + rect.Width));
+                    Canvas.SetTop(r, Math.Min(rect.Y, rect.Y + rect.Height));
+                }
+                break;
+            
+            case EllipseViewModel ellipse:
+                if (shape is Avalonia.Controls.Shapes.Ellipse e)
+                {
+                    e.Width = Math.Abs(ellipse.Width);
+                    e.Height = Math.Abs(ellipse.Height);
+                    Canvas.SetLeft(e, Math.Min(ellipse.X, ellipse.X + ellipse.Width));
+                    Canvas.SetTop(e, Math.Min(ellipse.Y, ellipse.Y + ellipse.Height));
+                }
+                break;
+        }
     }
 
     private void UpdateSelectionVisual(FigureViewModel figure, Control control)
     {
+        // Убираем старую рамку, если есть
+        var adorner = control.Parent is Panel p 
+            ? p.Children.OfType<Border>().FirstOrDefault(b => b.Tag as string == "SelectionAdorner") 
+            : null;
+    
         if (figure.IsSelected)
         {
-            if (control is Shape shape && shape.Tag is FigureViewModel)
+            if (adorner == null && control is Shape shape)
             {
-                shape.Opacity = 1.0;
+                // Создаём рамку выделения
+                var border = new Border
+                {
+                    BorderBrush = Brushes.Blue,
+                    BorderThickness = new Thickness(1),
+                    IsHitTestVisible = false,
+                    Tag = "SelectionAdorner"
+                };
+            
+                // Привязываем размер/позицию к фигуре
+            
+                if (shape.Parent is Panel parent)
+                    parent.Children.Add(border);
             }
+            control.Opacity = 1.0;
         }
         else
         {
-            if (control is Shape shape)
-            {
-                shape.Opacity = 1.0;
-            }
+            if (adorner?.Parent is Panel parent)
+                parent.Children.Remove(adorner);
+            control.Opacity = 1.0;
         }
     }
 

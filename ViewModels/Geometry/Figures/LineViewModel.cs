@@ -11,6 +11,9 @@ using graphic_editor.ViewModels;
 
 namespace graphic_editor.Geometry;
 
+/// <summary>
+/// Модель точки, основывается на FigureViewModel.
+/// </summary>
 public class LineViewModel: FigureViewModel
 {
     public LineViewModel(): this(0, 0, 100, 100, Color.Black, 1) {}
@@ -24,6 +27,7 @@ public class LineViewModel: FigureViewModel
 		Thickness = thickness;
 		FillColor = fillColor == default ? Color.Transparent : fillColor;
     }
+
 
     public double X1 => Vertices[0].X;
     public double Y1 => Vertices[0].Y;
@@ -51,8 +55,6 @@ public class LineViewModel: FigureViewModel
         var center = Center;
         foreach (var vertex in Vertices)
         {
-            //vertex.X = center.X + (vertex.X - center.X) * sx;
-            //vertex.Y = center.Y + (vertex.Y - center.Y) * sy;
 			var scaled = Point_1.ScalePoint(vertex.ToPoint(), center, sx, sy);
 			vertex.X = scaled.X;
 			vertex.Y = scaled.Y;

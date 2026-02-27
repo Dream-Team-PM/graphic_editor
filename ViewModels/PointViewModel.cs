@@ -48,5 +48,11 @@ public class PointViewModel : ViewModelBase
     /// <summary>
     /// Приведение точки в строчный вид.
     /// </summary>
-    public override string ToString() => $"({X:F1}, {Y:F1})";
+    public override string ToString() => $"({X:F15}, {Y:F15})";
+    
+    private void NotifyPropertyChanged()
+    {
+        this.RaisePropertyChanged(nameof(X));
+        this.RaisePropertyChanged(nameof(Y));
+    }
 }

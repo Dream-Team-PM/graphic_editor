@@ -9,6 +9,7 @@ using Avalonia.Platform;
 using graphic_editor.ViewModels;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using graphic_editor.Helpers;
 
 namespace graphic_editor;
 
@@ -24,6 +25,18 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        DebugLog.Write("\n=== ЗАГРУЖЕННЫЕ СБОРКИ ===");
+        // В App.axaml.cs:
+        foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            var name = asm.GetName().Name;
+            if (name?.Contains("ColorPicker") == true || 
+                name?.Contains("Avalonia.Controls") == true)
+            {
+                DebugLog.Write($"📦 {name} v{asm.GetName().Version}");
+            }
+        }
+        DebugLog.Write("=========================\n");
     }
 
     /// <summary>

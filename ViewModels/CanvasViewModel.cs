@@ -19,6 +19,8 @@ namespace graphic_editor.ViewModels;
 /// </summary>
 public class CanvasViewModel: ViewModelBase
 {
+	public ObservableCollection<LayerViewModel> Layers { get; } /// <summary>Публичная коллекция - рабочие слои.</summary>
+	private static readonly ObservableCollection<FigureViewModel> _emptyFigures = new(); /// <summary>Инициализация приватной статичной коллекции пустых фигур.</summary>
     private FigureViewModel? _selectedFigure; /// <summary>Приватное свойство - выбранная фигура.</summary>
     private LayerViewModel? _activeLayer; /// <summary>Приватное свойство - активный слой.</summary>
 	private FigureViewModel? _previewFigure; /// <summary>Приватное свойство - превью фигуры.</summary>
@@ -26,18 +28,17 @@ public class CanvasViewModel: ViewModelBase
     private double _offsetX; /// <summary>Приватное свойство - оффсет по оси X.</summary>
     private double _offsetY; /// <summary>Приватное свойство - оффсет по оси Y.</summary>
     private bool _isCanvasActive; /// <summary>Приватное свойство - флаг для проверки активности канваса.</summary>
+	public bool HasSelection => _selectedFigure != null; /// <summary>Публичный флаг - проверка выбора фигуры.</summary>
 
 	/// <summary>Конструктор CanvasViewModel.</summary>
     public CanvasViewModel()
     {
         DebugLog.Write("[DEBUG] CanvasViewModel constructor");
         DebugLog.Write($"[DEBUG] StackTrace: {Environment.StackTrace}");
-        Console.Out.Flush();
         Layers = new ObservableCollection<LayerViewModel>();
         DebugLog.Write($"[DEBUG] CanvasViewModel created: GetHashCode={this.GetHashCode()}");
     }
-    public ObservableCollection<LayerViewModel> Layers { get; } /// <summary>Публичная коллекция - рабочие слои.</summary>
-
+   
 	/// <summary>Публичное свойство для отображения фигуры.</summary>
     public FigureViewModel? PreviewFigure
     {
@@ -56,8 +57,6 @@ public class CanvasViewModel: ViewModelBase
             this.RaisePropertyChanged(nameof(IsCanvasActive));
         }
     }
-    
-    private static readonly ObservableCollection<FigureViewModel> _emptyFigures = new(); /// <summary>Инициализация приватной статичной коллекции пустых фигур.</summary>
 
 	/// <summary>Публичная коллекция активных фигур на слое.</summary>
     public ObservableCollection<FigureViewModel> ActiveLayerFigures => 
@@ -76,26 +75,27 @@ public class CanvasViewModel: ViewModelBase
         get => _selectedFigure;
         set
         {
-            if (_selectedFigure != null)
-                _selectedFigure.Deselect();
+            // Снимаем выделение с предыдущей фигуры
+        	if (_selectedFigure != null)
+           		 _selectedFigure.IsSelected = false;
 
-            this.RaiseAndSetIfChanged(ref _selectedFigure, value, nameof(SelectedFigure));
+        	// Меняем выбранную фигуру
+        	this.RaiseAndSetIfChanged(ref _selectedFigure, value);
+            // Выделяем новую фигуру (если есть)
             if (_selectedFigure != null)
-                _selectedFigure.Select();
-
+               	_selectedFigure.IsSelected = true;
+            
+            // Уведомляем о изменении HasSelection
             this.RaisePropertyChanged(nameof(HasSelection));
-            this.RaisePropertyChanged(nameof(SelectedFigureProperties));
+        	
         }
     }
-
-    public bool HasSelection => _selectedFigure != null; /// <summary>Публичный флаг - проверка выбора фигуры.</summary>
-    public object? SelectedFigureProperties => SelectedFigure; /// <summary>Публичный флаг - проверка выбранных свойств фигуры.</summary>
     
 	/// <summary>Публичное свойство - Zoom.</summary>
 	public double Zoom 
     {
-        get => field;
-        set => this.RaiseAndSetIfChanged(ref field, Math.Max(0.1, Math.Min(10.0, value)));
+        get => _zoom;
+        set => this.RaiseAndSetIfChanged(ref _zoom, Math.Max(0.1, Math.Min(10.0, value)));
     }
 
 	/// <summary>Публичное свойство - OffsetX.</summary>
@@ -184,8 +184,7 @@ public class CanvasViewModel: ViewModelBase
     {
         if (ActiveLayer == null) return;
         var figure = ActiveLayer.Figures
-            .Reverse()
-            .FirstOrDefault(f => f.IsIn(point));
+            .LastOrDefault(f => f.IsIn(point));
         SelectedFigure = figure;
     }
 
@@ -201,7 +200,7 @@ public class CanvasViewModel: ViewModelBase
         if (SelectedFigure != null)
         {
             SelectedFigure.Move(dx, dy);
-            this.RaisePropertyChanged(nameof(SelectedFigureProperties));
+            this.RaisePropertyChanged(nameof(SelectedFigure));
         }
     }
 
@@ -211,7 +210,7 @@ public class CanvasViewModel: ViewModelBase
         if (SelectedFigure != null)
         {
             SelectedFigure.Rotate(angle);
-            this.RaisePropertyChanged(nameof(SelectedFigureProperties));
+            this.RaisePropertyChanged(nameof(SelectedFigure));
         }
     }
     
@@ -221,7 +220,7 @@ public class CanvasViewModel: ViewModelBase
         if (SelectedFigure != null)
         {
             SelectedFigure.Scale(sx, sy);
-            this.RaisePropertyChanged(nameof(SelectedFigureProperties));
+            this.RaisePropertyChanged(nameof(SelectedFigure));
         }
     }
 

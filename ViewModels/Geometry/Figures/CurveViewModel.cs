@@ -11,6 +11,9 @@ using graphic_editor.ViewModels;
 
 namespace graphic_editor.Geometry;
 
+/// <summary>
+/// Класс кривой (в процессе реализации).
+/// </summary>
 public class CurveViewModel: FigureViewModel
 {
     public CurveViewModel(): this(0, 0, 100, 100) {}

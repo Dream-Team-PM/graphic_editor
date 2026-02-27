@@ -11,6 +11,9 @@ using graphic_editor.ViewModels;
 
 namespace graphic_editor.Geometry;
 
+/// <summary>
+/// Класс восьмиугольника (в процессе реализации).
+/// </summary>
 public class OctagonViewModel: FigureViewModel
 {
     public OctagonViewModel(): this(0, 0, 100, 100) {}

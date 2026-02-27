@@ -11,6 +11,9 @@ using graphic_editor.ViewModels;
 
 namespace graphic_editor.Geometry;
 
+/// <summary>
+/// Класс равнобедренного треугольника (в процессе реализации).
+/// </summary>
 public class TriangleViewModel: FigureViewModel
 {
     public TriangleViewModel(): this(0, 0, 100, 100) {}

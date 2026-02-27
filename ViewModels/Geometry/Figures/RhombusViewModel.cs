@@ -11,6 +11,9 @@ using graphic_editor.ViewModels;
 
 namespace graphic_editor.Geometry;
 
+/// <summary>
+/// Класс ромба (в процессе реализации).
+/// </summary>
 public class RhombusViewModel: FigureViewModel
 {
     public RhombusViewModel(): this(0, 0, 100, 100) {}

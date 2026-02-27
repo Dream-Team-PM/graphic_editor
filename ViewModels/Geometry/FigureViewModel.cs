@@ -137,18 +137,4 @@ public abstract class FigureViewModel: ViewModelBase, IGraphicFigure, IFigure
             p.Y - 2 * B * D
         );
     }
-
-    public virtual bool Select() => IsSelected = true; /// <summary>Публичное виртуальное свойство выбора фигуры.</summary>
-    public virtual bool Deselect() => IsSelected = false; /// <summary>Публичное виртуальное свойство отмены выбора фигуры.</summary>
-
-	/// <summary>Публичный виртуальный метод копирования (клонирования) фигуры.</summary>
-    //public virtual FigureViewModel Clone()
-    //{
-      //  var clone = (FigureViewModel)MemberwiseClone();
-      //  clone._id = Guid.NewGuid();
-      //  clone.Vertices = new ObservableCollection<PointViewModel>(
-      //      Vertices.Select(v => new PointViewModel(v.X, v.Y))
-     //   );
-    //    return clone;
-    //}
 }

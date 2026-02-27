@@ -49,45 +49,40 @@ public partial class MainWindow : Window
         {
             ThemeSlider.Value = _viewModel.CurrentTheme == ThemeVariant.Light ? 1 : 0;
         }
-        DebugLog.Write($"[DEBUG] ActivateCanvas: ActiveLayer=, IsCanvasActive=");
     }
 
-	// Views/MainWindow.axaml.cs
+	private void OnCanvasPointerMoved(object? sender, PointerEventArgs e) 
+	{
+    	if (_viewModel == null) return;
+    
+    	// Обновляем координаты
+    	var screenPos = e.GetPosition(VectorCanvas);
+    	var canvasPoint = VectorCanvas.ScreenToCanvas(screenPos);
+    	_viewModel.Commands.UpdateCoordinates.Execute((canvasPoint.X, canvasPoint.Y));
+    
+    	// Вызываем обработчик рисования
+    	_viewModel.HandlePointerMoved(e);
+	}
 
-private void OnCanvasPointerMoved(object? sender, PointerEventArgs e) 
-{
-    if (_viewModel == null) return;
-    
-    // Обновляем координаты
-    var screenPos = e.GetPosition(VectorCanvas);
-    var canvasPoint = VectorCanvas.ScreenToCanvas(screenPos);
-    _viewModel.UpdateCoordinatesCommand.Execute((canvasPoint.X, canvasPoint.Y));
-    
-    // Вызываем обработчик рисования
-    _viewModel.HandlePointerMoved(e);
-}
+	private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e) 
+	{
+    	if (_viewModel == null) return;
+    	var screenPos = e.GetPosition(VectorCanvas);
+    	var point = VectorCanvas.ScreenToCanvas(screenPos);
+    	// Вызываем обработчик рисования
+    	_viewModel.HandlePointerPressed(e);
+	}
 
-private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e) 
-{
-    if (_viewModel == null) return;
+	private void OnCanvasPointerReleased(object? sender, PointerReleasedEventArgs e) 
+	{
+    	if (_viewModel == null) return;
     
-    var screenPos = e.GetPosition(VectorCanvas);
-    var point = VectorCanvas.ScreenToCanvas(screenPos);
-    
-    // Вызываем обработчик рисования
-    _viewModel.HandlePointerPressed(e);
-}
-
-private void OnCanvasPointerReleased(object? sender, PointerReleasedEventArgs e) 
-{
-    if (_viewModel == null) return;
-    
-    var screenPos = e.GetPosition(VectorCanvas);
-    var point = VectorCanvas.ScreenToCanvas(screenPos);
-    
-    // Вызываем обработчик рисования
-    _viewModel.HandlePointerReleased(e);
-}
+    	var screenPos = e.GetPosition(VectorCanvas);
+    	var point = VectorCanvas.ScreenToCanvas(screenPos);
+    	
+    	// Вызываем обработчик рисования
+    	_viewModel.HandlePointerReleased(e);
+	}
 
     private void ToolButton_Checked(object? sender, RoutedEventArgs e)
     {
@@ -105,9 +100,7 @@ private void OnCanvasPointerReleased(object? sender, PointerReleasedEventArgs e)
 
     private void StrokeSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
-		if (_viewModel != null)
-            _viewModel.StrokeWidth = (int)e.NewValue;
-        StrokePercentText.Text = $"{(int)e.NewValue}%";
+		StrokePercentText.Text = $"{(int)e.NewValue}%";
     }
 
     private void OpacitySlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
@@ -265,12 +258,7 @@ private void OnCanvasPointerReleased(object? sender, PointerReleasedEventArgs e)
     // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
     private void ShowStatus(string message)
     {
-        // Находим TextBlock в статус-баре и обновляем текст
-        var statusText = this.FindControl<TextBlock>("StatusText");
-        if (statusText != null)
-        {
-            statusText.Text = message;
-        }
+        StatusText.Text = message;
     }
 
 	private void ThemeSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)

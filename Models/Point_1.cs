@@ -7,18 +7,18 @@ public record Point_1(double X, double Y)
 {
     public static Point_1 Zero => new(0, 0); /// <summary>Инициализация нулевой точки.</summary>
     
+	/// <summary>Оператор + для точки.</summary>
     public static Point_1 operator +(Point_1 left, Point_1 right) => 
         new(left.X + right.X, left.Y + right.Y);
-
+	/// <summary>Оператор - для точки.</summary>
     public static Point_1 operator -(Point_1 left, Point_1 right) => 
         new(left.X - right.X, left.Y - right.Y);
-    
+    /// <summary>Оператор * для точки.</summary>
     public static Point_1 operator *(Point_1 p, double scale) => 
         new(p.X * scale, p.Y * scale);
-    
     public static Point_1 operator *(double scale, Point_1 p) => 
         new(p.X * scale, p.Y * scale);
-    
+    /// <summary>Оператор / для точки.</summary>
     public static Point_1 operator /(Point_1 p, double scale) => 
         new(p.X / scale, p.Y / scale);
     
@@ -81,5 +81,5 @@ public record Point_1(double X, double Y)
         return DistanceToSegmentSq(p, a, b) <= eps * eps;
     }
     /// <summary>Публичный метод пприведения точки к строке.</summary>
-    public override string ToString() => $"({X:F2}, {Y:F2})";
+    public override string ToString() => $"({X:F15}, {Y:F15})";
 }

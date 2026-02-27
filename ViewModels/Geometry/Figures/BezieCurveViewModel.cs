@@ -11,6 +11,9 @@ using graphic_editor.ViewModels;
 
 namespace graphic_editor.Geometry;
 
+/// <summary>
+/// Класс кривой Безье (в процессе реализации).
+/// </summary>
 public class BezieCurveViewModel: FigureViewModel
 {
     public BezieCurveViewModel(): this(0, 0, 100, 100) {}

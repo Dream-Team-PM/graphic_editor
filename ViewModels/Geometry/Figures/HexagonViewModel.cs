@@ -11,6 +11,9 @@ using graphic_editor.ViewModels;
 
 namespace graphic_editor.Geometry;
 
+/// <summary>
+/// Класс шестиугольника (в процессе реализации).
+/// </summary>
 public class HexagonViewModel: FigureViewModel
 {
     public HexagonViewModel(): this(0, 0, 100, 100) {}

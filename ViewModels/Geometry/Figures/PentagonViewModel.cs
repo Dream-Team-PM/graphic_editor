@@ -11,6 +11,9 @@ using graphic_editor.ViewModels;
 
 namespace graphic_editor.Geometry;
 
+/// <summary>
+/// Класс пятиугольника (в процессе реализации).
+/// </summary>
 public class PentagonViewModel: FigureViewModel
 {
     public PentagonViewModel(): this(0, 0, 100, 100) {}

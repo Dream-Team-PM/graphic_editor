@@ -11,6 +11,9 @@ using graphic_editor.ViewModels;
 
 namespace graphic_editor.Geometry;
 
+/// <summary>
+/// Класс семиугольника (в процессе реализации).
+/// </summary>
 public class HeptagonViewModel: FigureViewModel
 {
     public HeptagonViewModel(): this(0, 0, 100, 100) {}

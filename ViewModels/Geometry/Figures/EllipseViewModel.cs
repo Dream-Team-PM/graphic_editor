@@ -11,6 +11,9 @@ using graphic_editor.ViewModels;
 
 namespace graphic_editor.Geometry;
 
+/// <summary>
+/// Класс эллипса.
+/// </summary>
 public class EllipseViewModel: FigureViewModel
 {
     public EllipseViewModel(): this(0, 0, 100, 100) {}
@@ -36,20 +39,14 @@ public class EllipseViewModel: FigureViewModel
     public override void Rotate(double angle)
     {
         var center = Center;
-        var rad = angle * Math.PI / 180;
-        var cos = Math.Cos(rad);
-        var sin = Math.Sin(rad);
 
         foreach (var vertex in Vertices)
         {
-            var dx = vertex.X - center.X;
-            var dy = vertex.Y - center.Y;
-            vertex.X = center.X + dx * cos - dy * sin;
-            vertex.Y = center.Y + dx * sin + dy * cos;
+            var rotated = TransformHelpers.RotatePoint(vertex.ToPoint(), center, angle);
+            vertex.X = rotated.X;
+            vertex.Y = rotated.Y;
         }
-
-        this.RaisePropertyChanged(nameof(X));
-        this.RaisePropertyChanged(nameof(Y));
+        NotifyPropertyChanged();
     }
 
     public override void Scale(double sx, double sy)
@@ -57,11 +54,11 @@ public class EllipseViewModel: FigureViewModel
         var center = Center;
         foreach (var vertex in Vertices)
         {
-            vertex.X = center.X + (vertex.X - center.X) * sx;
-            vertex.Y = center.Y + (vertex.Y - center.Y) * sy;
+            var scaled = Point_1.ScalePoint(vertex.ToPoint(), center, sx, sy);
+            vertex.X = scaled.X;
+            vertex.Y = scaled.Y;
         }
-        this.RaisePropertyChanged(nameof(Width));
-        this.RaisePropertyChanged(nameof(Height));
+        NotifyPropertyChanged();
     }
 
     public override void Move(double dx, double dy)
@@ -84,5 +81,15 @@ public class EllipseViewModel: FigureViewModel
     public override IEnumerable<Point_1> GetVertexPoint()
     {
         return Vertices.Select(v => v.ToPoint());
+    }
+    
+    private void NotifyPropertyChanged()
+    {
+        this.RaisePropertyChanged(nameof(X));
+        this.RaisePropertyChanged(nameof(Y));
+        this.RaisePropertyChanged(nameof(Width));
+        this.RaisePropertyChanged(nameof(Height));
+        this.RaisePropertyChanged(nameof(RadiusX));
+        this.RaisePropertyChanged(nameof(RadiusY));
     }
 }

@@ -8,6 +8,7 @@
         xmlns:local="using:graphic_editor.Controls"
         xmlns:converters="using:graphic_editor.Converters"
         xmlns:vm="using:graphic_editor.ViewModels"
+        xmlns:colorPicker="using:Avalonia.Controls"
         Title="INKognida — Безымянный.vec"
         Background="#1C1C1E"
         WindowState="Maximized"
@@ -26,6 +27,8 @@
         </DrawingBrush>
         <converters:InvertedBoolConverter x:Key="InvertedBool"/>
         <converters:IsZeroToVisibleConverter x:Key="IsZeroToVisible"/>
+        <converters:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
+        <converters:DrawingColorConverter x:Key="DrawingColorConverter"/>
     </Window.Resources>
 
     <Window.Styles>
@@ -130,9 +133,10 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <TextBlock Text="Заливка:" VerticalAlignment="Center"/>
-                    <Border Classes="ColorPreview" Width="28" Height="20" CornerRadius="2" BorderThickness="1"/>
+                    <Border x:DataType="vm:MainWindowViewModel" Classes="ColorPreview" Width="28" Height="20" CornerRadius="2" BorderThickness="1" Background="{Binding StrokeColor.Color, Converter={StaticResource ColorToBrushConverter}}"/>
+                    <Border x:DataType="vm:MainWindowViewModel" Classes="ColorPreview" Width="28" Height="20" CornerRadius="2" BorderThickness="1" Background="{Binding FillColor.Color, Converter={StaticResource ColorToBrushConverter}}"/>
                 </StackPanel>
-                <Slider x:Name="StrokeSlider" Width="120" Minimum="0" Maximum="100" Value="75" 
+                <Slider x:DataType="vm:MainWindowViewModel" x:Name="StrokeSlider" Width="120" Minimum="0" Maximum="100" Value="{Binding StrokeWidth, Mode=TwoWay}"  
                         TickFrequency="5" IsSnapToTickEnabled="True"
                         ValueChanged="StrokeSlider_ValueChanged"/>
                 <TextBlock x:Name="StrokePercentText" Text="75%" VerticalAlignment="Center" Width="40"/>
@@ -252,9 +256,10 @@
                                     <Separator/>
                                     
                                     <MenuItem Header="Цвет">
-                                        <MenuItem x:Name="MenuColorRed" Header="🔴 Красный" Click="ColorRed_Click"/>
+                                        <!-- Тут пока нелогично - для теста заливки и цвета линии: -->
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🔴 Красный" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Red}"/>
                                         <MenuItem x:Name="MenuColorGreen" Header="🟢 Зелёный" Click="ColorGreen_Click"/>
-                                        <MenuItem x:Name="MenuColorBlue" Header="🔵 Синий" Click="ColorBlue_Click"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🔵 Синий" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Blue}"/>
                                         <MenuItem x:Name="MenuColorYellow" Header="🟡 Жёлтый" Click="ColorYellow_Click"/>
                                         <MenuItem x:Name="MenuColorWhite" Header="⚪ Белый" Click="ColorWhite_Click"/>
                                         <MenuItem x:Name="MenuColorBlack" Header="⚫ Чёрный" Click="ColorBlack_Click"/>
@@ -262,13 +267,167 @@
                                     </MenuItem>
                                     
                                     <Separator/>
-                                    
+                                     <MenuItem Header="Цвет обводки">
+                                        <!-- Быстрые пресеты -->
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🔴 Красный" 
+                                                  Command="{Binding Commands.SetStrokeColorCommand}"
+                                                  CommandParameter="{x:Static Colors.Red}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🟢 Зелёный" 
+                                                  Command="{Binding Commands.SetStrokeColorCommand}"
+                                                  CommandParameter="{x:Static Colors.Green}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🔵 Синий" 
+                                                  Command="{Binding Commands.SetStrokeColorCommand}"
+                                                  CommandParameter="{x:Static Colors.Blue}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🟡 Жёлтый" 
+                                                  Command="{Binding Commands.SetStrokeColorCommand}"
+                                                  CommandParameter="{x:Static Colors.Yellow}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="⚪ Белый" 
+                                                  Command="{Binding Commands.SetStrokeColorCommand}"
+                                                  CommandParameter="{x:Static Colors.White}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="⚫ Чёрный" 
+                                                  Command="{Binding Commands.SetStrokeColorCommand}"
+                                                  CommandParameter="{x:Static Colors.Black}"/>
+                                        
+                                        <Separator/>
+                                        
+                                        <!-- Полноценный выбор цвета -->
+                                        <MenuItem Header="🎨 Выбрать цвет…">
+                                            <MenuItem.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock x:DataType="vm:MainWindowViewModel" Text="{Binding}"/>
+                                                </DataTemplate>
+                                            </MenuItem.HeaderTemplate>
+                                            <MenuItem.Icon>
+                                                <Border x:DataType="vm:MainWindowViewModel" Width="20" Height="20" CornerRadius="2" 
+                                                        Background="{Binding StrokeColor.Color, 
+                                                                   Converter={StaticResource ColorToBrushConverter}}"/>
+                                            </MenuItem.Icon>
+                                            <colorPicker:ColorPicker x:DataType="vm:MainWindowViewModel"
+                                                Color="{Binding StrokeColor.Color, 
+                                                             Converter={StaticResource DrawingColorConverter},
+                                                             Mode=TwoWay}"
+                                                Width="200" 
+                                                Margin="8"/>
+                                        </MenuItem>
+                                    </MenuItem>
+                                    <Separator/>
+                                     <MenuItem Header="Цвет заливки">
+                                        <!-- Быстрые пресеты -->
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🔴 Красный" 
+                                                  Command="{Binding Commands.SetFillColorCommand}"
+                                                  CommandParameter="{x:Static Colors.Red}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🟢 Зелёный" 
+                                                  Command="{Binding Commands.SetFillColorCommand}"
+                                                  CommandParameter="{x:Static Colors.Green}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🔵 Синий" 
+                                                  Command="{Binding Commands.SetFillColorCommand}"
+                                                  CommandParameter="{x:Static Colors.Blue}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🟡 Жёлтый" 
+                                                  Command="{Binding Commands.SetFillColorCommand}"
+                                                  CommandParameter="{x:Static Colors.Yellow}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="⚪ Белый" 
+                                                  Command="{Binding Commands.SetFillColorCommand}"
+                                                  CommandParameter="{x:Static Colors.White}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="⚫ Чёрный" 
+                                                  Command="{Binding Commands.SetFillColorCommand}"
+                                                  CommandParameter="{x:Static Colors.Black}"/>
+                                        
+                                        <Separator/>
+                                        <!-- Кнопка "Выбрать цвет..." -->
+                                            <MenuItem x:DataType="vm:MainWindowViewModel" Header="🎨 Выбрать цвет…" 
+                                                      Command="{Binding Commands.OpenFillColorPickerCommand}">
+                                                <MenuItem.Icon>
+                                                    <Border x:DataType="vm:MainWindowViewModel" Width="20" Height="20" CornerRadius="2" 
+                                                            Background="{Binding FillColor.Color, 
+                                                                       Converter={StaticResource ColorToBrushConverter}}"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                     </MenuItem>
+                                    <Separator/>
                                     <MenuItem x:Name="MenuDelete" Header="🗑️ Удалить объект" Click="DeleteObject_Click"/>
                                     <MenuItem x:Name="MenuDuplicate" Header="📋 Дублировать" Click="DuplicateObject_Click"/>
                                 </ContextMenu>
                             </Border.ContextMenu>
-                            
+
                             <Grid>
+                                <!-- Popup для выбора цвета -->
+                                <!-- Popup для выбора цвета заливки -->
+                                <Popup x:DataType="vm:MainWindowViewModel" 
+                                       x:Name="ColorPickerPopup"
+                                       IsOpen="{Binding IsColorPickerOpen, Mode=TwoWay}"
+                                       PlacementMode="Pointer"
+                                       >
+                                    <Border Background="#2D2D30" 
+                                            Padding="12" 
+                                            CornerRadius="4" 
+                                            BorderBrush="#555" 
+                                            BorderThickness="1"
+                                            Width="274"     
+                                            Height="380">
+                                        <StackPanel>
+                                            <TextBlock Text="Выбор цвета заливки" 
+                                                      FontWeight="SemiBold" 
+                                                      Margin="0,0,0,8"
+                                                      Foreground="White"/>
+                                            
+                                            <TextBlock Text="{Binding FillColor.Color}" 
+                                                       Foreground="White" 
+                                                       Margin="0,0,0,8"
+                                                       FontSize="12"/>
+                                            <TextBlock Text="ColorPicker загружается..." 
+                                                   Foreground="Yellow" 
+                                                   Margin="0,0,0,8"/>
+                                            
+                                            <colorPicker:ColorPicker x:DataType="vm:MainWindowViewModel"
+                                                Color="{Binding FillColor.Color, 
+                                                       Converter={StaticResource DrawingColorConverter},
+                                                       Mode=TwoWay}"
+                                                Width="250"
+                                                Height="320"
+                                                Background="#1E1E1E"
+                                                BorderBrush="#555"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Margin="0,8,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Popup>
+
+                                <!-- Popup для выбора цвета обводки -->
+                                <Popup x:DataType="vm:MainWindowViewModel" 
+                                       x:Name="StrokeColorPickerPopup"
+                                       IsOpen="{Binding IsStrokeColorPickerOpen, Mode=TwoWay}"
+                                       PlacementMode="Pointer"
+                                       >
+                                    <Border Background="#2D2D30" 
+                                            Padding="12" 
+                                            CornerRadius="4" 
+                                            BorderBrush="#555" 
+                                            BorderThickness="1"
+                                            Width="274"     
+                                            Height="380">
+                                        <Grid RowDefinitions="Auto,Auto,*,Auto">
+                                            <TextBlock Grid.Row="0"
+                                                      Text="Выбор цвета обводки" 
+                                                      FontWeight="SemiBold" 
+                                                      Margin="0,0,0,8"
+                                                      Foreground="White"/>
+                                            
+                                            <TextBlock x:DataType="vm:MainWindowViewModel" Text="{Binding FillColor.Color}" 
+                                               Foreground="White" 
+                                               Grid.Row="1"/>
+                                            <colorPicker:ColorPicker x:DataType="vm:MainWindowViewModel" 
+                                                        Grid.Row="2"
+                                                        Color="{Binding StrokeColor.Color, 
+                                                               Converter={StaticResource DrawingColorConverter},
+                                                               Mode=TwoWay}"
+                                                        Width="250"
+                                                        Height="320"
+                                                        IsVisible="True"/>
+                                        </Grid>
+                                    </Border>
+                                </Popup>
+                                
                                 <Rectangle 
                                     x:DataType="vm:MainWindowViewModel"
                                     Fill="White"
@@ -348,7 +507,7 @@
                                 <Button 
                                     x:DataType="vm:MainWindowViewModel"
                                     Content="📄 ＋" 
-                                    Command="{Binding CreateNewLayerCommand}"
+                                    Command="{Binding Commands.CreateNewLayer}"
                                     ToolTip.Tip="Создать новый слой для рисования"
                                     Width="36" 
                                     Height="28"

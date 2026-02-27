@@ -11,6 +11,9 @@ using graphic_editor.ViewModels;
 
 namespace graphic_editor.Geometry;
 
+/// <summary>
+/// Класс сплайна (в процессе реализации).
+/// </summary>
 public class SplineViewModel: FigureViewModel
 {
     public SplineViewModel(): this(0, 0, 100, 100) {}
