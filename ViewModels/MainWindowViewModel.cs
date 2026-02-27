@@ -214,6 +214,7 @@ public partial class MainWindowViewModel : ViewModelBase
     
         this.WhenAnyValue(x => x.StrokeWidth)
 	        .Subscribe(thickness => ApplyStyleToSelected(f => f.Thickness = thickness));
+        
     }
 	
 	private bool _isColorPickerOpen;

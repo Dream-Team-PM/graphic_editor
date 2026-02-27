@@ -490,7 +490,18 @@
                                     <TextBlock Text="Заливка"/>
                                     <Border Classes="ColorPreview" Height="28" Background="#FF4A90" CornerRadius="3" BorderBrush="#555" BorderThickness="1"/>
                                     <TextBlock Text="Обводка"/>
-                                    <Border Classes="Styling" Height="28" Background="Transparent" CornerRadius="3" BorderThickness="2"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Border x:DataType="vm:MainWindowViewModel" Classes="ColorPreview" Height="28" Width="28"
+                                            Background="{Binding StrokeColor.Color, Converter={StaticResource ColorToBrushConverter}}"
+                                            CornerRadius="3" BorderBrush="#555" BorderThickness="1"/>
+                                    <!-- Превью толщины -->
+                                    <Border x:DataType="vm:MainWindowViewModel" Background="#555" CornerRadius="2" 
+                                            Height="28" Width="{Binding StrokeWidth}" 
+                                            MinWidth="1" MaxWidth="20"
+                                            HorizontalAlignment="Left"/>
+                                    <TextBlock x:DataType="vm:MainWindowViewModel" Text="{Binding StrokeWidth, StringFormat='{}{0}px'}" 
+                                              VerticalAlignment="Center" Foreground="#999"/>
+                                    </StackPanel>
                                 </StackPanel>
 
                                 <Slider x:Name="OpacitySlider" Minimum="0" Maximum="100" Value="100" 
