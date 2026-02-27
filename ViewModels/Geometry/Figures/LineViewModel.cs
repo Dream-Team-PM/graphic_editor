@@ -46,11 +46,6 @@ public class LineViewModel: FigureViewModel
         NotifyPropertyChanged();
     }
 
-	public virtual void RadialScale(double scale)
-	{
-		Scale(scale, scale);
-	}
-
     public override void Scale(double sx, double sy)
     {
         var center = Center;

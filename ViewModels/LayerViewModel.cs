@@ -35,15 +35,15 @@ public class LayerViewModel : ViewModelBase
 	/// <summary>Публичное свойство - видимый слой или нет.</summary>
     public bool IsVisible
     {
-        get => _isVisible;
-        set => this.RaiseAndSetIfChanged(ref _isVisible, value);
+        get => field;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
 	/// <summary>Публичное свойство - заблокирован слой или нет.</summary>
     public bool IsLocked
     {
-        get => _isLocked;
-        set => this.RaiseAndSetIfChanged(ref _isLocked, value);
+        get => field;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
 	/// <summary>Публичная коллекция фигур на одном слое.</summary>

@@ -41,17 +41,17 @@ public class CanvasViewModel: ViewModelBase
 	/// <summary>Публичное свойство для отображения фигуры.</summary>
     public FigureViewModel? PreviewFigure
     {
-        get => _previewFigure;
-        set => this.RaiseAndSetIfChanged(ref _previewFigure, value);
+        get => field;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
 	/// <summary>Публичное свойство - активный слой.</summary>
     public LayerViewModel? ActiveLayer
     {
-        get => _activeLayer;
+        get => field;
         set
         {
-            this.RaiseAndSetIfChanged(ref _activeLayer, value, nameof(ActiveLayer));
+            this.RaiseAndSetIfChanged(ref field, value, nameof(ActiveLayer));
             this.RaisePropertyChanged(nameof(ActiveLayerFigures));
             this.RaisePropertyChanged(nameof(IsCanvasActive));
         }
@@ -66,8 +66,8 @@ public class CanvasViewModel: ViewModelBase
 	/// <summary>Публичное свойство - проверка активности канваса.</summary>
     public bool IsCanvasActive
     {
-        get => _isCanvasActive;
-        set => this.RaiseAndSetIfChanged(ref _isCanvasActive, value);
+        get => field;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
 	/// <summary>Публичное свойство - выбор фигуры на холсте.</summary>
@@ -94,22 +94,22 @@ public class CanvasViewModel: ViewModelBase
 	/// <summary>Публичное свойство - Zoom.</summary>
 	public double Zoom 
     {
-        get => _zoom;
-        set => this.RaiseAndSetIfChanged(ref _zoom, Math.Max(0.1, Math.Min(10.0, value)));
+        get => field;
+        set => this.RaiseAndSetIfChanged(ref field, Math.Max(0.1, Math.Min(10.0, value)));
     }
 
 	/// <summary>Публичное свойство - OffsetX.</summary>
     public double OffsetX
     {
-        get => _offsetX;
-        set => this.RaiseAndSetIfChanged(ref _offsetX, value);
+        get => field;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
     
 	/// <summary>Публичное свойство - OffsetY.</summary>
     public double OffsetY
     {
-        get => _offsetY;
-        set => this.RaiseAndSetIfChanged(ref _offsetY, value);
+        get => field;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
 	/// <summary>Публичная функция - проверка активности канваса.</summary>

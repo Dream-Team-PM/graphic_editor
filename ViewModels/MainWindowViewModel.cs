@@ -74,15 +74,15 @@ public partial class MainWindowViewModel : ViewModelBase
     
 	/// <summary>Публичное свойство установки статуса.</summary>
 	public string StatusMessage { 
-		get => _statusMessage;
-		set => this.RaiseAndSetIfChanged(ref _statusMessage, value);
+		get => field;
+		set => this.RaiseAndSetIfChanged(ref field, value);
 	}
 	
 	/// <summary>Публичное свойство установки статуса рисования.</summary>
 	public bool IsDrawing
 	{
-		get => _isDrawing;
-		set => this.RaiseAndSetIfChanged(ref _isDrawing, value);
+		get => field;
+		set => this.RaiseAndSetIfChanged(ref field, value);
 	}
 
 	/// <summary>Публичное свойство для отображения отрисовываемой фигуры.</summary>
@@ -95,11 +95,11 @@ public partial class MainWindowViewModel : ViewModelBase
 	/// <summary>Публичное свойство выбранного инструмента.</summary>
 	public string SelectedTool
     {
-        get => _selectedTool;
+        get => field;
         set 
     	{
         // Если меняем инструмент и были в режиме рисования - сбрасываем
-        	if (_isDrawing && _currentDrawingTool != value)
+        	if (IsDrawing && _currentDrawingTool != value)
         	{
             	// Если рисовали пером, удаляем предварительную фигуру
             	if (_currentDrawingTool == "Перо" && _previewFigure != null && Canvas?.ActiveLayer != null)
@@ -108,7 +108,7 @@ public partial class MainWindowViewModel : ViewModelBase
             	}
             	ResetDrawingState();
         	}
-        	this.RaiseAndSetIfChanged(ref _selectedTool, value);
+        	this.RaiseAndSetIfChanged(ref field, value);
     	}
     }
 
@@ -116,50 +116,50 @@ public partial class MainWindowViewModel : ViewModelBase
 	
 	/// <summary>Публичное свойство толщины линии.</summary>
 	public int StrokeWidth {
-		get => _strokeWidth;
-		set => this.RaiseAndSetIfChanged(ref _strokeWidth, value);
+		get => field;
+		set => this.RaiseAndSetIfChanged(ref field, value);
 	}
 
 	/// <summary>Публичное свойство прозрачности.</summary>
 	public double Opacity
     {
-        get => _opacity;
-        set => this.RaiseAndSetIfChanged(ref _opacity, value);
+        get => field;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
 	/// <summary>Публичное свойство цвета заполнения.</summary>
     public ColorViewModel FillColor
     {
-        get => _fillColor;
-        set => this.RaiseAndSetIfChanged(ref _fillColor, value);
+        get => field;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
 	/// <summary>Публичное свойство цвета обводки.</summary>
     public ColorViewModel StrokeColor
     {
-        get => _strokeColor;
-        set => this.RaiseAndSetIfChanged(ref _strokeColor, value);
+        get => field;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
 	/// <summary>Публичное свойство выбора темы.</summary>
     public ThemeVariant CurrentTheme
     {
-        get => _currentTheme;
-        set => this.RaiseAndSetIfChanged(ref _currentTheme, value);
+        get => field;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
 	/// <summary>Публичное свойство уствновки позиции мыши по Ox.</summary>
     public double MouseX
     {
-        get => _mouseX;
-        set => this.RaiseAndSetIfChanged(ref _mouseX, value);
+        get => field;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
 	/// <summary>Публичное свойство уствновки позиции мыши по Oy.</summary>
 	public double MouseY
     {
-        get => _mouseY;
-        set => this.RaiseAndSetIfChanged(ref _mouseY, value);
+        get => field;
+        set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
     public string CoordinatesText => _coordinatesText.Value; /// <summary>Публичное свойство - значения координат.</summary>
