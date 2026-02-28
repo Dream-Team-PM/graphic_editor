@@ -16,16 +16,17 @@ namespace graphic_editor.Geometry;
 /// </summary>
 public class LineViewModel: FigureViewModel
 {
-    public LineViewModel(): this(0, 0, 100, 100, Color.Black, 1) {}
+    public LineViewModel(): this(0, 0, 100, 100, Color.Black, 1, Color.Transparent, 1.0) {}
 
-    public LineViewModel(double x1, double y1, double x2, double y2, Color lineColor, double thickness, Color fillColor = default, double opacity = default)
+    public LineViewModel(double x1, double y1, double x2, double y2, Color lineColor, double thickness, Color fillColor, double opacity)
     {
         Name = "Линия";
         Vertices.Add(new PointViewModel(x1, y1));
         Vertices.Add(new PointViewModel(x2, y2));
 		LineColor = lineColor;
 		Thickness = thickness;
-		FillColor = fillColor == default ? Color.Transparent : fillColor;
+		FillColor = Color.Transparent;
+        Opacity = opacity;
     }
 
 
@@ -87,7 +88,7 @@ public class LineViewModel: FigureViewModel
     
     public override FigureViewModel Clone()
     {
-        var clone = new LineViewModel(X1, Y1, X2, Y2, LineColor, Thickness, FillColor)
+        var clone = new LineViewModel(X1, Y1, X2, Y2, LineColor, Thickness, FillColor, Opacity / 100.0)
         {
             IsSelected = IsSelected
         };

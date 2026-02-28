@@ -81,7 +81,7 @@ public partial class VectorCanvasControl : UserControl
                 ? new SolidColorBrush(ToAvaloniaColor(figure.FillColor)) 
                 : Brushes.Transparent;
         }
-        shape.Opacity = Math.Clamp(figure.Opacity, 0.0, 1.0);
+        shape.Opacity = Math.Clamp(figure.Opacity, 0.5, 1.0);
     }
 
 	public ICommand? PointerPressedCommand
@@ -150,9 +150,9 @@ public partial class VectorCanvasControl : UserControl
             if (control != null)
             {
                 BindFigureProperties(figure, control);
-
                 control.Opacity = 0.5;
                 control.IsHitTestVisible = false;
+                
                 DrawingCanvas.Children.Add(control);
                 _renderedFigures[figure.Id] = control;
                 control.Tag = figure;
@@ -374,6 +374,8 @@ public partial class VectorCanvasControl : UserControl
     {
         return figure switch
         {
+            PolygonViewModel polygon => CreatePolygon(polygon),
+        
             SquareViewModel square => CreateSquare(square),
             CircleViewModel circle => CreateCircle(circle),
             RectangleViewModel rect => CreateRectangle(rect),
@@ -395,6 +397,36 @@ public partial class VectorCanvasControl : UserControl
         };
     }
     
+    private Avalonia.Controls.Shapes.Path CreatePolygon(PolygonViewModel polygon)
+    {
+        var geometry = new StreamGeometry();
+        using (var ctx = geometry.Open())
+        {
+            if (polygon.Vertices.Count == 0) return null;
+        
+            ctx.BeginFigure(
+                new Avalonia.Point(polygon.Vertices[0].X, polygon.Vertices[0].Y),
+                isFilled: polygon.FillColor.A > 0
+            );
+        
+            for (int i = 1; i < polygon.Vertices.Count; i++)
+                ctx.LineTo(new Avalonia.Point(polygon.Vertices[i].X, polygon.Vertices[i].Y));
+        
+            ctx.EndFigure(isClosed: true);
+        }
+    
+        return new Avalonia.Controls.Shapes.Path
+        {
+            Data = geometry,
+            Stroke = new SolidColorBrush(ToAvaloniaColor(polygon.LineColor)),
+            StrokeThickness = Math.Max(1, polygon.Thickness),
+            Fill = polygon.FillColor.A > 0 
+                ? new SolidColorBrush(ToAvaloniaColor(polygon.FillColor)) 
+                : null,
+            Tag = polygon
+        };
+    }
+    
     private Avalonia.Controls.Shapes.Line CreateLine(LineViewModel line) => new()
     {
         StartPoint = new Avalonia.Point(line.X1, line.Y1),
@@ -410,15 +442,6 @@ public partial class VectorCanvasControl : UserControl
         [Canvas.TopProperty] = Math.Min(r.Y, r.Y + r.Height),
         Tag = r
     };
-    
-    private Avalonia.Controls.Shapes.Rectangle CreateSquare(SquareViewModel square) => new()
-    {
-        Width = Math.Abs(square.Width),
-        Height = Math.Abs(square.Width),
-        [Canvas.LeftProperty] = Math.Min(square.X, square.X + square.Width),
-        [Canvas.TopProperty] = Math.Min(square.Y, square.Y + square.Width),
-        Tag = square
-    };
 
     private Avalonia.Controls.Shapes.Ellipse CreateEllipse(EllipseViewModel e) => new()
     {
@@ -427,6 +450,15 @@ public partial class VectorCanvasControl : UserControl
         [Canvas.LeftProperty] = Math.Min(e.X, e.X + e.Width),
         [Canvas.TopProperty] = Math.Min(e.Y, e.Y + e.Height),
         Tag = e
+    };
+    
+    private Avalonia.Controls.Shapes.Rectangle CreateSquare(SquareViewModel square) => new()
+    {
+        Width = Math.Abs(square.Side),
+        Height = Math.Abs(square.Side),
+        [Canvas.LeftProperty] = Math.Min(square.X, square.X + square.Side),
+        [Canvas.TopProperty] = Math.Min(square.Y, square.Y + square.Side),
+        Tag = square
     };
     
     private Avalonia.Controls.Shapes.Ellipse CreateCircle(CircleViewModel circle) => new()
@@ -456,6 +488,16 @@ public partial class VectorCanvasControl : UserControl
         // Конвертация цвета
         if (control is not Shape shape) return;
         ApplyStyle(shape, figure);
+        
+        if (figure is PolygonViewModel polygon && control is Avalonia.Controls.Shapes.Path path)
+        {
+            polygon.VerticesChanged += (s, e) =>
+            {
+                Dispatcher.UIThread.Post(() => 
+                    UpdatePolygonGeometry(path, polygon)
+                );
+            };
+        }
 
         // Подписка на изменения
         figure.PropertyChanged += (s, e) =>
@@ -477,17 +519,17 @@ public partial class VectorCanvasControl : UserControl
                     }
                     break;
                 case nameof(FigureViewModel.Thickness):
-                    if (shape is Avalonia.Controls.Shapes.Line)
+                    if (shapeCtrl is Avalonia.Controls.Shapes.Line)
                     {
-                        shape.StrokeThickness = Math.Max(1, figure.Thickness);
+                        shapeCtrl.StrokeThickness = Math.Max(1, figure.Thickness);
                     }
                     else
                     {
-                        shape.StrokeThickness = 2;
+                        shapeCtrl.StrokeThickness = 2;
                     }
                     break;
                 case nameof(FigureViewModel.Opacity):
-                    shapeCtrl.Opacity = Math.Clamp(figure.Opacity, 0.0, 1.0);
+                    shapeCtrl.Opacity = Math.Clamp(figure.Opacity, 0.5, 1.0);
                     break;
                 case nameof(FigureViewModel.IsSelected):
                     UpdateSelectionVisual(figure, control);
@@ -510,10 +552,26 @@ public partial class VectorCanvasControl : UserControl
                 case "Y":
                 case "Width":
                 case "Height":
-                // case "Side":
+                case "Side":
                 case "Radius":
-                    UpdateShapeGeometry(shapeCtrl, figure);
+                    if (figure is PolygonViewModel poly && shapeCtrl is Avalonia.Controls.Shapes.Path p)
+                    {
+                        UpdatePolygonGeometry(p, poly);
+                    }
+                    else
+                    {
+                        // Для Rectangle/Ellipse — обычный UpdateShapeGeometry
+                        UpdateShapeGeometry(shapeCtrl, figure);
+                    }
                     break;
+                
+                // case nameof(PointViewModel.X):
+                // case nameof(PointViewModel.Y):
+                //     if (figure is PolygonViewModel polygon && shapeCtrl is Avalonia.Controls.Shapes.Path path)
+                //     {
+                //         UpdatePolygonGeometry(path, polygon);
+                //     }
+                //     break;
             }
         };
     }
@@ -522,23 +580,23 @@ public partial class VectorCanvasControl : UserControl
     {
         switch (figure)
         {
-            case SquareViewModel square:
-                if (shape is Avalonia.Controls.Shapes.Rectangle sq)
-                {
-                    sq.Width = Math.Abs(square.Width);
-                    sq.Height = Math.Abs(square.Width);
-                    Canvas.SetLeft(sq, Math.Min(square.X, square.X + square.Width));
-                    Canvas.SetTop(sq, Math.Min(square.Y, square.Y + square.Height));
-                }
+            // Многоугольники (Path)
+            case PolygonViewModel polygon when shape is Avalonia.Controls.Shapes.Path path:
+                UpdatePolygonGeometry(path, polygon);
                 break;
-            case CircleViewModel circle:
-                if (shape is Avalonia.Controls.Shapes.Ellipse cir)
-                {
-                    cir.Width = Math.Abs(circle.Radius * 2);
-                    cir.Height = Math.Abs(circle.Radius * 2);
-                    Canvas.SetLeft(cir, circle.X - circle.Radius);
-                    Canvas.SetTop(cir, circle.Y - circle.Radius);
-                }
+            
+            // Квадрат/Круг — перед базовыми классами
+            case SquareViewModel square when shape is Avalonia.Controls.Shapes.Rectangle sq:
+                sq.Width = sq.Height = Math.Abs(square.Side);
+                Canvas.SetLeft(sq, Math.Min(square.X, square.X + square.Side));
+                Canvas.SetTop(sq, Math.Min(square.Y, square.Y + square.Side));
+                break;
+        
+            case CircleViewModel circle when shape is Avalonia.Controls.Shapes.Ellipse cir:
+                var d = Math.Abs(circle.Radius * 2);
+                cir.Width = cir.Height = d;
+                Canvas.SetLeft(cir, circle.X - circle.Radius);
+                Canvas.SetTop(cir, circle.Y - circle.Radius);
                 break;
             
             case RectangleViewModel rect:
@@ -561,6 +619,30 @@ public partial class VectorCanvasControl : UserControl
                 }
                 break;
         }
+    }
+    
+    private void UpdatePolygonGeometry(Avalonia.Controls.Shapes.Path path, PolygonViewModel polygon)
+    {
+        DebugLog.Write($"[DEBUG] UpdatePolygonGeometry: {polygon.Name}, Vertices={polygon.Vertices.Count}");
+    
+        if (polygon.Vertices.Count < 3) return;
+        var geometry = new StreamGeometry();
+        using (var ctx = geometry.Open())
+        {
+            if (polygon.Vertices.Count == 0) return;
+        
+            ctx.BeginFigure(
+                new Avalonia.Point(polygon.Vertices[0].X, polygon.Vertices[0].Y),
+                isFilled: polygon.FillColor.A > 0
+            );
+        
+            for (int i = 1; i < polygon.Vertices.Count; i++)
+                ctx.LineTo(new Avalonia.Point(polygon.Vertices[i].X, polygon.Vertices[i].Y));
+        
+            ctx.EndFigure(isClosed: true);
+        }
+    
+        path.Data = geometry;
     }
 
     private void UpdateSelectionVisual(FigureViewModel figure, Control control)
@@ -670,4 +752,5 @@ public partial class VectorCanvasControl : UserControl
     /// </summary>
     private static Avalonia.Media.Color ToAvaloniaColor(System.Drawing.Color c) => 
         Avalonia.Media.Color.FromArgb(c.A, c.R, c.G, c.B);
+    
 }

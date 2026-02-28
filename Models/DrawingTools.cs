@@ -10,6 +10,12 @@ public enum DrawingTool
     Circle,        // "Круг"
     Line,          // "Линия"
     Polygon,       // "Многоугольник"
+    Pentagon,       // "Пятиугольник"
+    Hexagon,       // "Шестиугольник"
+    Heptagon,      // "Семиугольник"
+    Octagon,       // "Восьмиугольник"
+    Pentagram,     // "Пентаграмма"
+    Triangle,      // "Треугольник"
     Pen,           // "Перо"
     Text,          // "Текст"
     Hand,          // "Рука"
@@ -26,6 +32,12 @@ public static class DrawingToolExtensions
         { DrawingTool.Square, "Квадрат" },
         { DrawingTool.Ellipse, "Эллипс" },
         { DrawingTool.Circle, "Круг" },
+        { DrawingTool.Pentagon, "Пятиугольник" },
+        { DrawingTool.Hexagon, "Шестиугольник" },
+        { DrawingTool.Heptagon, "Семиугольник" },
+        { DrawingTool.Octagon, "Восьмиугольник" },
+        { DrawingTool.Pentagram, "Пентаграмма" },
+        { DrawingTool.Triangle, "Треугольник" },
         { DrawingTool.Line, "Линия" },
         { DrawingTool.Polygon, "Многоугольник" },
         { DrawingTool.Pen, "Перо" },
@@ -47,7 +59,8 @@ public static class DrawingToolExtensions
 
     /// <summary>Является ли инструмент примитивом для рисования мышью</summary>
     public static bool IsPrimitive(this DrawingTool tool) => 
-        tool is DrawingTool.Rectangle or DrawingTool.Ellipse or DrawingTool.Line or DrawingTool.Square or DrawingTool.Circle;
+        tool is DrawingTool.Rectangle or DrawingTool.Ellipse or DrawingTool.Line or DrawingTool.Square or DrawingTool.Circle or DrawingTool.Pentagon or DrawingTool.Hexagon 
+        or DrawingTool.Heptagon or DrawingTool.Octagon or DrawingTool.Pentagram or DrawingTool.Triangle;
 
     /// <summary>Требует ли инструмент режима рисования (drag-to-create)</summary>
     public static bool RequiresDrawingMode(this DrawingTool tool) => 

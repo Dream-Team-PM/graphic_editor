@@ -13,6 +13,12 @@ public record EditorCommands(
     ReactiveCommand<Unit, Unit> AddRectangle,
     ReactiveCommand<Unit, Unit> AddEllipse,
     ReactiveCommand<Unit, Unit> AddLine,
+    ReactiveCommand<Unit, Unit> AddPentagon,
+    ReactiveCommand<Unit, Unit> AddHexagon,
+    ReactiveCommand<Unit, Unit> AddOctagon,
+    ReactiveCommand<Unit, Unit> AddHeptagon,
+    ReactiveCommand<Unit, Unit> AddPentagram,
+    ReactiveCommand<Unit, Unit> AddTriangle,
 
     // Выделение
     ReactiveCommand<Unit, Unit> DeleteSelected,

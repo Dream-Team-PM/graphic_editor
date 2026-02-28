@@ -32,6 +32,10 @@ public class EllipseViewModel: FigureViewModel
         Vertices.Add(new PointViewModel(x + width, y));
         Vertices.Add(new PointViewModel(x + width, y + height));
         Vertices.Add(new PointViewModel(x, y + height));
+        LineColor = lineColor;
+        Thickness = thickness;
+        FillColor = fillColor == default ? Color.Transparent : fillColor;
+        Opacity = opacity;
         UpdateVertices();
     }
 

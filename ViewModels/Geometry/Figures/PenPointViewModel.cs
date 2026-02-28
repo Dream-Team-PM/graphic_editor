@@ -13,13 +13,14 @@ namespace graphic_editor.Geometry;
 
 public class PenPointViewModel : FigureViewModel
 {
-    public PenPointViewModel(double x, double y, Color lineColor, double thickness, Color fillColor = default, double opacity = default)
+    public PenPointViewModel(): this(100, 100, Color.Black, 1, Color.Transparent, 1.0) {}
+    public PenPointViewModel(double x, double y, Color lineColor, double thickness, Color fillColor, double opacity = 1.0)
     {
         Name = "Точка пера";
         Vertices.Add(new PointViewModel(x, y));
         LineColor = lineColor;
         Thickness = thickness;
-        FillColor = fillColor == default ? Color.Transparent : fillColor;
+        FillColor = Color.Transparent;
         Opacity = opacity;
     }
 

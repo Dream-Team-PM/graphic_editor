@@ -182,6 +182,12 @@ public partial class MainWindowViewModel : ViewModelBase
 	        AddRectangle: ReactiveCommand.Create(AddRectangle),
 	        AddEllipse: ReactiveCommand.Create(AddEllipse),
 	        AddLine: ReactiveCommand.Create(AddLine),
+	        AddPentagon: ReactiveCommand.Create(AddPentagon),
+	        AddHexagon: ReactiveCommand.Create(AddHexagon),
+	        AddOctagon: ReactiveCommand.Create(AddOctagon),
+	        AddHeptagon: ReactiveCommand.Create(AddHeptagon),
+	        AddPentagram: ReactiveCommand.Create(AddPentagram),
+	        AddTriangle: ReactiveCommand.Create(AddTriangle),
 	        DeleteSelected: ReactiveCommand.Create(DeleteSelected),
 	        DuplicateSelected: ReactiveCommand.Create(DuplicateSelected),
 	        RotateLeft: ReactiveCommand.Create(RotateLeft),
@@ -301,9 +307,8 @@ public partial class MainWindowViewModel : ViewModelBase
         Canvas?.AddFigure(ellipse);
         StatusMessage = "Добавлен эллипс";
     }
-	
-	
-
+    
+    
 	/// <summary>Приватная функция для добавления линии.</summary>	
     private void AddLine()
     {
@@ -311,6 +316,66 @@ public partial class MainWindowViewModel : ViewModelBase
         Canvas?.AddFigure(line);
         StatusMessage = "Добавлена линия";
     }
+	
+	private void AddPentagon()
+	{
+		var pentagon = new PentagonViewModel(
+			new Point_1(200, 200), 75,
+			StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
+		ApplyStyle(pentagon);
+		Canvas?.AddFigure(pentagon);
+		StatusMessage = "Добавлен пятиугольник";
+	}
+
+	private void AddHexagon()
+	{
+		var hexagon = new HexagonViewModel(
+			new Point_1(200, 200), 75,
+			StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
+		ApplyStyle(hexagon);
+		Canvas?.AddFigure(hexagon);
+		StatusMessage = "Добавлен шестиугольник";
+	}
+	
+	private void AddHeptagon()
+	{
+		var heptagon = new HeptagonViewModel(
+			new Point_1(200, 200), 75,
+			StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
+		ApplyStyle(heptagon);
+		Canvas?.AddFigure(heptagon);
+		StatusMessage = "Добавлен семиугольник";
+	}
+	
+	private void AddOctagon()
+	{
+		var octagon = new OctagonViewModel(
+			new Point_1(200, 200), 75,
+			StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
+		ApplyStyle(octagon);
+		Canvas?.AddFigure(octagon);
+		StatusMessage = "Добавлен восьмиугольник";
+	}
+	
+	private void AddTriangle()
+	{
+		var triangle = new TriangleViewModel(
+			new Point_1(200, 200), new Point_1(100, 200), new Point_1(200, 100),
+			StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
+		ApplyStyle(triangle);
+		Canvas?.AddFigure(triangle);
+		StatusMessage = "Добавлен треугольник";
+	}
+	
+	private void AddPentagram()
+	{
+		var pentagram = new PentagramViewModel(
+			new Point_1(200, 200), 50,
+			StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
+		ApplyStyle(pentagram);
+		Canvas?.AddFigure(pentagram);
+		StatusMessage = "Добавлена пентаграмма";
+	}
 
 	/// <summary>Приватная функция для удаления выбранных фигур.</summary>	
 	private void DeleteSelected()
@@ -703,6 +768,8 @@ public partial class MainWindowViewModel : ViewModelBase
 	private FigureViewModel? CreateFinalFigure(Point_1 start, Point_1 end, DrawingTool tool)
     {
 	    var size = Math.Max(Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
+	    var center = new Point_1((start.X + end.X) / 2, (start.Y + end.Y) / 2);
+	    var radius = size / 2;
 	    FigureViewModel? figure = tool switch
 	    {
 		    DrawingTool.Line => new LineViewModel(
@@ -736,6 +803,32 @@ public partial class MainWindowViewModel : ViewModelBase
 			    Math.Abs(end.X - start.X),
 			    Math.Abs(end.Y - start.Y),
 			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+		    
+		    DrawingTool.Pentagon => new PentagonViewModel(
+			    center, radius,
+			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+        
+		    DrawingTool.Hexagon => new HexagonViewModel(
+			    center, radius,
+			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+		    
+		    DrawingTool.Octagon => new OctagonViewModel(
+			    center, radius,
+			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+		    
+		    DrawingTool.Heptagon => new HeptagonViewModel(
+			    center, radius,
+			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+        
+		    DrawingTool.Pentagram => new PentagramViewModel(
+			    center, radius,
+			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+		    
+		    DrawingTool.Triangle => new TriangleViewModel(
+			    new Point_1(center.X, center.Y - radius),           // Верх
+			    new Point_1(center.X - radius, center.Y + radius),  // Лево-низ
+			    new Point_1(center.X + radius, center.Y + radius),  // Право-низ
+			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
         
 		    _ => null
 	    };
@@ -759,6 +852,8 @@ public partial class MainWindowViewModel : ViewModelBase
 	private FigureViewModel? CreatePreviewFigure(Point_1 start, Point_1 end, DrawingTool tool)
 	{
 		var size = Math.Max(Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
+		var center = new Point_1((start.X + end.X) / 2, (start.Y + end.Y) / 2);
+		var radius = size / 2;
 		FigureViewModel? figure = tool switch
 		{
 			DrawingTool.Line => new LineViewModel(
@@ -793,6 +888,32 @@ public partial class MainWindowViewModel : ViewModelBase
 			
 			DrawingTool.Pen => new PenPointViewModel(start.X, start.Y,
 				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+			
+			DrawingTool.Pentagon => new PentagonViewModel(
+				center, radius,
+				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+        
+			DrawingTool.Hexagon => new HexagonViewModel(
+				center, radius,
+				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+		    
+			DrawingTool.Octagon => new OctagonViewModel(
+				center, radius,
+				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+		    
+			DrawingTool.Heptagon => new HeptagonViewModel(
+				center, radius,
+				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+        
+			DrawingTool.Pentagram => new PentagramViewModel(
+				center, radius,
+				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+		    
+			DrawingTool.Triangle => new TriangleViewModel(
+				new Point_1(center.X, center.Y - radius),           // Верх
+				new Point_1(center.X - radius, center.Y + radius),  // Лево-низ
+				new Point_1(center.X + radius, center.Y + radius),  // Право-низ
+				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
         
 			_ => null
 		};
@@ -818,6 +939,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private void UpdatePreviewFigure(FigureViewModel preview, Point_1 start, Point_1 end)
     {
 	    var size = Math.Max(Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
+	    var center = new Point_1((start.X + end.X) / 2, (start.Y + end.Y) / 2);
+	    var radius = size / 2;
         switch (preview)
         {
             case LineViewModel line:
@@ -900,8 +1023,103 @@ public partial class MainWindowViewModel : ViewModelBase
                 ellipse.RaisePropertyChanged(nameof(EllipseViewModel.Width));
                 ellipse.RaisePropertyChanged(nameof(EllipseViewModel.Height));
                 break;
+            
+            // ✅ Правильные многоугольники (пяти-, шести-, семи-, восьмиугольник)
+            case RegularPolygonViewModel polygon:
+	            polygon.UpdateVertices(center, radius);
+	            break;
+        
+            // ✅ Пентаграмма (звезда)
+            case PentagramViewModel star:
+	            star.UpdateVertices(center, radius);
+	            break;
+        
+            // ✅ Произвольный треугольник — масштабируем bounding box
+            case TriangleViewModel triangle:
+	            UpdatePolygonBoundingBox(triangle, start, end);
+	            break;
         }
     }
+	
+	// private void UpdatePolygonVertices(PolygonViewModel polygon, Point_1 start, Point_1 end, double size)
+	// {
+	// 	// Для многоугольников: центрируем в bounding box и масштабируем
+	// 	var center = new Point_1((start.X + end.X) / 2, (start.Y + end.Y) / 2);
+	// 	var radius = size / 2;
+ //    
+	// 	// Пересоздаём вершины с новым радиусом (для RegularPolygonViewModel)
+	// 	if (polygon is RegularPolygonViewModel regular)
+	// 	{
+	// 		// Используем рефлексию или публичный метод, если есть
+	// 		// Если нет — просто масштабируем существующие вершины относительно центра
+	// 		foreach (var vertex in polygon.Vertices)
+	// 		{
+	// 			var dx = vertex.X - center.X;
+	// 			var dy = vertex.Y - center.Y;
+	// 			var scale = radius / Math.Max(Math.Abs(dx), Math.Abs(dy));
+	// 			vertex.X = center.X + dx * scale;
+	// 			vertex.Y = center.Y + dy * scale;
+	// 		}
+	// 	}
+	// 	else
+	// 	{
+	// 		// Для произвольных многоугольников (Triangle, Pentagram) — масштабируем bounding box
+	// 		var minX = polygon.Vertices.Min(v => v.X);
+	// 		var maxX = polygon.Vertices.Max(v => v.X);
+	// 		var minY = polygon.Vertices.Min(v => v.Y);
+	// 		var maxY = polygon.Vertices.Max(v => v.Y);
+ //        
+	// 		var origWidth = maxX - minX;
+	// 		var origHeight = maxY - minY;
+	// 		var scaleX = size / Math.Max(origWidth, 1);
+	// 		var scaleY = size / Math.Max(origHeight, 1);
+ //        
+	// 		foreach (var vertex in polygon.Vertices)
+	// 		{
+	// 			vertex.X = center.X + (vertex.X - (minX + origWidth/2)) * scaleX;
+	// 			vertex.Y = center.Y + (vertex.Y - (minY + origHeight/2)) * scaleY;
+	// 		}
+	// 	}
+ //    
+	// 	// Уведомляем об изменении геометрии
+	// 	polygon.RaisePropertyChanged(nameof(PolygonViewModel.Center));
+	// 	foreach (var vertex in polygon.Vertices)
+	// 	{
+	// 		vertex.RaisePropertyChanged(nameof(PointViewModel.X));
+	// 		vertex.RaisePropertyChanged(nameof(PointViewModel.Y));
+	// 	}
+	// }
+	/// <summary>Вспомогательный метод для масштабирования bounding box полигона</summary>
+	private void UpdatePolygonBoundingBox(PolygonViewModel polygon, Point_1 start, Point_1 end)
+	{
+		var minX = polygon.Vertices.Min(v => v.X);
+		var maxX = polygon.Vertices.Max(v => v.X);
+		var minY = polygon.Vertices.Min(v => v.Y);
+		var maxY = polygon.Vertices.Max(v => v.Y);
+    
+		var origWidth = maxX - minX;
+		var origHeight = maxY - minY;
+		var targetWidth = Math.Abs(end.X - start.X);
+		var targetHeight = Math.Abs(end.Y - start.Y);
+    
+		var scaleX = origWidth > 0 ? targetWidth / origWidth : 1;
+		var scaleY = origHeight > 0 ? targetHeight / origHeight : 1;
+		var scale = Math.Max(scaleX, scaleY);
+    
+		var center = new Point_1((minX + maxX) / 2, (minY + maxY) / 2);
+		var newCenter = new Point_1(Math.Min(start.X, end.X) + targetWidth/2, 
+			Math.Min(start.Y, end.Y) + targetHeight/2);
+    
+		foreach (var vertex in polygon.Vertices)
+		{
+			var dx = vertex.X - center.X;
+			var dy = vertex.Y - center.Y;
+			vertex.X = newCenter.X + dx * scale;
+			vertex.Y = newCenter.Y + dy * scale;
+		}
+    
+		polygon.NotifyPropertyChanged();
+	}
 
 	/// <summary>Приватный метод получения точки на канвасе.</summary>
     private Point_1 GetCanvasPoint(PointerEventArgs e)

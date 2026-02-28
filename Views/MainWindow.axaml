@@ -13,7 +13,7 @@
         Background="#1C1C1E"
         WindowState="Maximized"
         RequestedThemeVariant="Dark"
-        FontFamily="Segoe UI, system-ui">
+        FontFamily="Segoe UI Emoji, Segoe UI Symbol, Segoe UI, system-ui">
     <Window.Resources>
         <DrawingBrush x:Key="CheckerBrush" 
                       TileMode="Tile" 
@@ -165,6 +165,18 @@
                         <RadioButton Classes="ToolButton" Content="⭕" Tag="Круг" ToolTip.Tip="Круг (Cir)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         <RadioButton Classes="ToolButton" Content="▱" Tag="Многоугольник" ToolTip.Tip="Многоугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         <RadioButton Classes="ToolButton" Content="✒️" Tag="Перо" ToolTip.Tip="Перо (P)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="⬟" Tag="Пятиугольник" 
+                                     ToolTip.Tip="Пятиугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="⬢" Tag="Шестиугольник" 
+                                     ToolTip.Tip="Шестиугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="⯃" Tag="Семиугольник" 
+                                     ToolTip.Tip="Семиугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="⯂" Tag="Восьмиугольник" 
+                                     ToolTip.Tip="Восьмиугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="★" Tag="Пентаграмма" 
+                                     ToolTip.Tip="Пентаграмма" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="△" Tag="Треугольник" 
+                                     ToolTip.Tip="Треугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         
                         <Separator Margin="8,4" Height="1" Background="#3F3F46"/>
                         
@@ -257,39 +269,56 @@
                                     </MenuItem>
                                     
                                     <Separator/>
-                                    
-                                    <MenuItem Header="Цвет">
-                                        <!-- Тут пока нелогично - для теста заливки и цвета линии: -->
-                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🔴 Красный" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Red}"/>
-                                        <MenuItem x:Name="MenuColorGreen" Header="🟢 Зелёный" Click="ColorGreen_Click"/>
-                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🔵 Синий" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Blue}"/>
-                                        <MenuItem x:Name="MenuColorYellow" Header="🟡 Жёлтый" Click="ColorYellow_Click"/>
-                                        <MenuItem x:Name="MenuColorWhite" Header="⚪ Белый" Click="ColorWhite_Click"/>
-                                        <MenuItem x:Name="MenuColorBlack" Header="⚫ Чёрный" Click="ColorBlack_Click"/>
-                                        <MenuItem x:Name="MenuColorPicker" Header="Выбрать цвет…" Click="ColorPicker_Click"/>
-                                    </MenuItem>
-                                    
-                                    <Separator/>
                                      <MenuItem Header="Цвет обводки">
                                         <!-- Быстрые пресеты -->
-                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🔴 Красный" 
-                                                  Command="{Binding Commands.SetStrokeColorCommand}"
-                                                  CommandParameter="{x:Static Colors.Red}"/>
-                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🟢 Зелёный" 
-                                                  Command="{Binding Commands.SetStrokeColorCommand}"
-                                                  CommandParameter="{x:Static Colors.Green}"/>
-                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🔵 Синий" 
-                                                  Command="{Binding Commands.SetStrokeColorCommand}"
-                                                  CommandParameter="{x:Static Colors.Blue}"/>
-                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🟡 Жёлтый" 
-                                                  Command="{Binding Commands.SetStrokeColorCommand}"
-                                                  CommandParameter="{x:Static Colors.Yellow}"/>
-                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="⚪ Белый" 
-                                                  Command="{Binding Commands.SetStrokeColorCommand}"
-                                                  CommandParameter="{x:Static Colors.White}"/>
-                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="⚫ Чёрный" 
-                                                  Command="{Binding Commands.SetStrokeColorCommand}"
-                                                  CommandParameter="{x:Static Colors.Black}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Red}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🔴" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Красный"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Green}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🟢" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Зелёный"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Blue}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🔵" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Синий"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Yellow}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🟡" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Жёлтый"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.White}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="⚪" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Белый"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Black}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="⚫" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Чёрный"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
                                         
                                         <Separator/>
                                         
@@ -316,24 +345,54 @@
                                     <Separator/>
                                      <MenuItem Header="Цвет заливки">
                                         <!-- Быстрые пресеты -->
-                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🔴 Красный" 
-                                                  Command="{Binding Commands.SetFillColorCommand}"
-                                                  CommandParameter="{x:Static Colors.Red}"/>
-                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🟢 Зелёный" 
-                                                  Command="{Binding Commands.SetFillColorCommand}"
-                                                  CommandParameter="{x:Static Colors.Green}"/>
-                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🔵 Синий" 
-                                                  Command="{Binding Commands.SetFillColorCommand}"
-                                                  CommandParameter="{x:Static Colors.Blue}"/>
-                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🟡 Жёлтый" 
-                                                  Command="{Binding Commands.SetFillColorCommand}"
-                                                  CommandParameter="{x:Static Colors.Yellow}"/>
-                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="⚪ Белый" 
-                                                  Command="{Binding Commands.SetFillColorCommand}"
-                                                  CommandParameter="{x:Static Colors.White}"/>
-                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="⚫ Чёрный" 
-                                                  Command="{Binding Commands.SetFillColorCommand}"
-                                                  CommandParameter="{x:Static Colors.Black}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Red}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🔴" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Красный"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Green}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🟢" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Зелёный"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Blue}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🔵" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Синий"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Yellow}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🟡" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Жёлтый"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.White}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="⚪" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Белый"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Black}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="⚫" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Чёрный"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
                                         
                                         <Separator/>
                                         <!-- Кнопка "Выбрать цвет..." -->
