@@ -150,11 +150,9 @@ public partial class VectorCanvasControl : UserControl
             if (control != null)
             {
                 BindFigureProperties(figure, control);
-                if (figure?.Name == "Preview")
-                {
-                    control.Opacity = 0.5;
-                    control.IsHitTestVisible = false;
-                }
+
+                control.Opacity = 0.5;
+                control.IsHitTestVisible = false;
                 DrawingCanvas.Children.Add(control);
                 _renderedFigures[figure.Id] = control;
                 control.Tag = figure;
@@ -376,6 +374,8 @@ public partial class VectorCanvasControl : UserControl
     {
         return figure switch
         {
+            SquareViewModel square => CreateSquare(square),
+            CircleViewModel circle => CreateCircle(circle),
             RectangleViewModel rect => CreateRectangle(rect),
             EllipseViewModel ellipse => CreateEllipse(ellipse),
             PenPointViewModel pen => CreatePenPoint(pen), 
@@ -410,6 +410,15 @@ public partial class VectorCanvasControl : UserControl
         [Canvas.TopProperty] = Math.Min(r.Y, r.Y + r.Height),
         Tag = r
     };
+    
+    private Avalonia.Controls.Shapes.Rectangle CreateSquare(SquareViewModel square) => new()
+    {
+        Width = Math.Abs(square.Width),
+        Height = Math.Abs(square.Width),
+        [Canvas.LeftProperty] = Math.Min(square.X, square.X + square.Width),
+        [Canvas.TopProperty] = Math.Min(square.Y, square.Y + square.Width),
+        Tag = square
+    };
 
     private Avalonia.Controls.Shapes.Ellipse CreateEllipse(EllipseViewModel e) => new()
     {
@@ -418,6 +427,15 @@ public partial class VectorCanvasControl : UserControl
         [Canvas.LeftProperty] = Math.Min(e.X, e.X + e.Width),
         [Canvas.TopProperty] = Math.Min(e.Y, e.Y + e.Height),
         Tag = e
+    };
+    
+    private Avalonia.Controls.Shapes.Ellipse CreateCircle(CircleViewModel circle) => new()
+    {
+        Width = Math.Abs(circle.Radius * 2),
+        Height = Math.Abs(circle.Radius * 2),
+        [Canvas.LeftProperty] = circle.X - circle.Radius,
+        [Canvas.TopProperty] = circle.Y - circle.Radius,
+        Tag = circle
     };
 
     private Avalonia.Controls.Shapes.Ellipse CreatePenPoint(PenPointViewModel pen)
@@ -488,10 +506,12 @@ public partial class VectorCanvasControl : UserControl
                     break;
                 
                 // Геометрия Rectangle/Ellipse — аналогично
-                case nameof(RectangleViewModel.X):
-                case nameof(RectangleViewModel.Y):
-                case nameof(RectangleViewModel.Width):
-                case nameof(RectangleViewModel.Height):
+                case "X":
+                case "Y":
+                case "Width":
+                case "Height":
+                // case "Side":
+                case "Radius":
                     UpdateShapeGeometry(shapeCtrl, figure);
                     break;
             }
@@ -502,6 +522,25 @@ public partial class VectorCanvasControl : UserControl
     {
         switch (figure)
         {
+            case SquareViewModel square:
+                if (shape is Avalonia.Controls.Shapes.Rectangle sq)
+                {
+                    sq.Width = Math.Abs(square.Width);
+                    sq.Height = Math.Abs(square.Width);
+                    Canvas.SetLeft(sq, Math.Min(square.X, square.X + square.Width));
+                    Canvas.SetTop(sq, Math.Min(square.Y, square.Y + square.Height));
+                }
+                break;
+            case CircleViewModel circle:
+                if (shape is Avalonia.Controls.Shapes.Ellipse cir)
+                {
+                    cir.Width = Math.Abs(circle.Radius * 2);
+                    cir.Height = Math.Abs(circle.Radius * 2);
+                    Canvas.SetLeft(cir, circle.X - circle.Radius);
+                    Canvas.SetTop(cir, circle.Y - circle.Radius);
+                }
+                break;
+            
             case RectangleViewModel rect:
                 if (shape is Avalonia.Controls.Shapes.Rectangle r)
                 {

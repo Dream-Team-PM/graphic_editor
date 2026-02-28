@@ -5,7 +5,9 @@ public enum DrawingTool
 {
     Select,        // "Выделение"
     Rectangle,     // "Прямоугольник"
+    Square,        // "Квадрат"
     Ellipse,       // "Эллипс"
+    Circle,        // "Круг"
     Line,          // "Линия"
     Polygon,       // "Многоугольник"
     Pen,           // "Перо"
@@ -21,7 +23,9 @@ public static class DrawingToolExtensions
     {
         { DrawingTool.Select, "Выделение" },
         { DrawingTool.Rectangle, "Прямоугольник" },
+        { DrawingTool.Square, "Квадрат" },
         { DrawingTool.Ellipse, "Эллипс" },
+        { DrawingTool.Circle, "Круг" },
         { DrawingTool.Line, "Линия" },
         { DrawingTool.Polygon, "Многоугольник" },
         { DrawingTool.Pen, "Перо" },
@@ -43,7 +47,7 @@ public static class DrawingToolExtensions
 
     /// <summary>Является ли инструмент примитивом для рисования мышью</summary>
     public static bool IsPrimitive(this DrawingTool tool) => 
-        tool is DrawingTool.Rectangle or DrawingTool.Ellipse or DrawingTool.Line;
+        tool is DrawingTool.Rectangle or DrawingTool.Ellipse or DrawingTool.Line or DrawingTool.Square or DrawingTool.Circle;
 
     /// <summary>Требует ли инструмент режима рисования (drag-to-create)</summary>
     public static bool RequiresDrawingMode(this DrawingTool tool) => 

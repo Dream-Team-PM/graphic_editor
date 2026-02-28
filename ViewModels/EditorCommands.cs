@@ -8,6 +8,8 @@ namespace graphic_editor.ViewModels;
 /// <summary>Группа команд редактора для удобной привязки в XAML</summary>
 public record EditorCommands(
     // Фигуры
+    ReactiveCommand<Unit, Unit> AddSquare,
+    ReactiveCommand<Unit, Unit> AddCircle,
     ReactiveCommand<Unit, Unit> AddRectangle,
     ReactiveCommand<Unit, Unit> AddEllipse,
     ReactiveCommand<Unit, Unit> AddLine,

@@ -69,6 +69,7 @@ public partial class MainWindowViewModel : ViewModelBase
 		figure.LineColor = StrokeColor.Color;
 		figure.FillColor = solidFill ? StrokeColor.Color : FillColor.Color;
 		figure.Thickness = StrokeWidth;
+		// figure.Opacity = Opacity / 100.0;
 	}
 	
 	/// <summary>Публичное свойство установки статуса рисования.</summary>
@@ -171,11 +172,13 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         Canvas = new CanvasViewModel();
         Tools = new ObservableCollection<string> { 
-        "Выделение", "Прямоугольник", "Эллипс", "Линия",
+        "Выделение", "Прямоугольник", "Квадарат", "Эллипс", "Круг", "Линия",
         "Многоугольник", "Перо", "Текст", "Рука", "Масштаб"
         };
         SelectedTool = Tools[0];
         Commands = new EditorCommands(
+	        AddCircle: ReactiveCommand.Create(AddCircle),
+	        AddSquare: ReactiveCommand.Create(AddSquare),
 	        AddRectangle: ReactiveCommand.Create(AddRectangle),
 	        AddEllipse: ReactiveCommand.Create(AddEllipse),
 	        AddLine: ReactiveCommand.Create(AddLine),
@@ -268,6 +271,13 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
 	/// <summary>Приватная функция для добавления прямоугольника.</summary>
+	private void AddSquare()
+	{
+		var sq = new SquareViewModel(100, 100, 150, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
+		ApplyStyle(sq);
+		Canvas?.AddFigure(sq);
+		StatusMessage = "Добавлен квадрат";
+	}
     private void AddRectangle()
     {
         var rect = new RectangleViewModel(100, 100, 150, 100, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
@@ -275,8 +285,15 @@ public partial class MainWindowViewModel : ViewModelBase
         Canvas?.AddFigure(rect);
         StatusMessage = "Добавлен прямоугольник";
     }
-
+	
 	/// <summary>Приватная функция для добавления эллипса.</summary>
+	private void AddCircle()
+	{
+		var circle = new CircleViewModel(100, 100, 150, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
+		ApplyStyle(circle);
+		Canvas?.AddFigure(circle);
+		StatusMessage = "Добавлен круг";
+	}
     private void AddEllipse()
     {
 	    var ellipse = new EllipseViewModel(100, 100, 150, 100, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
@@ -284,6 +301,8 @@ public partial class MainWindowViewModel : ViewModelBase
         Canvas?.AddFigure(ellipse);
         StatusMessage = "Добавлен эллипс";
     }
+	
+	
 
 	/// <summary>Приватная функция для добавления линии.</summary>	
     private void AddLine()
@@ -683,10 +702,25 @@ public partial class MainWindowViewModel : ViewModelBase
 	/// <summary>Приватный метод создания финальной фигуры.</summary>
 	private FigureViewModel? CreateFinalFigure(Point_1 start, Point_1 end, DrawingTool tool)
     {
+	    var size = Math.Max(Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
 	    FigureViewModel? figure = tool switch
 	    {
 		    DrawingTool.Line => new LineViewModel(
 			    start.X, start.Y, end.X, end.Y,
+			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+		    
+		    DrawingTool.Square => new SquareViewModel(
+			    Math.Min(start.X, end.X),
+			    Math.Min(start.Y, end.Y),
+			    size,  // ← ширина = size
+			    size,  // ← высота = size (такая же!) 
+			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+		    
+		    DrawingTool.Circle => new CircleViewModel(
+			    Math.Min(start.X, end.X),  // левый-верхний угол
+			    Math.Min(start.Y, end.Y),
+			    size,  // ← ширина = size
+			    size,  // ← высота = size (такая же!)
 			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
         
 		    DrawingTool.Rectangle => new RectangleViewModel(
@@ -724,10 +758,23 @@ public partial class MainWindowViewModel : ViewModelBase
 	/// <summary>Приватный метод создания отображаемой фигуры.</summary>
 	private FigureViewModel? CreatePreviewFigure(Point_1 start, Point_1 end, DrawingTool tool)
 	{
+		var size = Math.Max(Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
 		FigureViewModel? figure = tool switch
 		{
 			DrawingTool.Line => new LineViewModel(
 				start.X, start.Y, end.X, end.Y,
+				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+			
+			DrawingTool.Square => new SquareViewModel(
+				Math.Min(start.X, end.X),
+				Math.Min(start.Y, end.Y),
+				size, size,
+				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+		    
+			DrawingTool.Circle => new CircleViewModel(
+				Math.Min(start.X, end.X),
+				Math.Min(start.Y, end.Y),
+				size, size,
 				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
         
 			DrawingTool.Rectangle => new RectangleViewModel(
@@ -770,6 +817,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	/// <summary>Приватный метод обновления отображаемой фигуры.</summary>
     private void UpdatePreviewFigure(FigureViewModel preview, Point_1 start, Point_1 end)
     {
+	    var size = Math.Max(Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
         switch (preview)
         {
             case LineViewModel line:
@@ -778,6 +826,21 @@ public partial class MainWindowViewModel : ViewModelBase
                 line.RaisePropertyChanged(nameof(LineViewModel.X2));
                 line.RaisePropertyChanged(nameof(LineViewModel.Y2));
                 break;
+            
+            case RectangleViewModel rect when rect.Name == "Квадрат":
+	            rect.Vertices[0].X = Math.Min(start.X, end.X);
+	            rect.Vertices[0].Y = Math.Min(start.Y, end.Y);
+	            rect.Vertices[1].X = rect.Vertices[0].X + size;
+	            rect.Vertices[1].Y = rect.Vertices[0].Y;
+	            rect.Vertices[2].X = rect.Vertices[0].X + size;
+	            rect.Vertices[2].Y = rect.Vertices[0].Y + size;  // ← size, не height!
+	            rect.Vertices[3].X = rect.Vertices[0].X;
+	            rect.Vertices[3].Y = rect.Vertices[0].Y + size;
+	            rect.RaisePropertyChanged(nameof(RectangleViewModel.X));
+	            rect.RaisePropertyChanged(nameof(RectangleViewModel.Y));
+	            rect.RaisePropertyChanged(nameof(RectangleViewModel.Width));
+	            rect.RaisePropertyChanged(nameof(RectangleViewModel.Height));
+	            break;
                 
             case RectangleViewModel rect:
                 // Обновляем вершины прямоугольника
@@ -800,6 +863,21 @@ public partial class MainWindowViewModel : ViewModelBase
                 rect.RaisePropertyChanged(nameof(RectangleViewModel.Width));
                 rect.RaisePropertyChanged(nameof(RectangleViewModel.Height));
                 break;
+            
+            case EllipseViewModel ellipse when ellipse.Name == "Круг":
+	            ellipse.Vertices[0].X = Math.Min(start.X, end.X);
+	            ellipse.Vertices[0].Y = Math.Min(start.Y, end.Y);
+	            ellipse.Vertices[1].X = ellipse.Vertices[0].X + size;
+	            ellipse.Vertices[1].Y = ellipse.Vertices[0].Y;
+	            ellipse.Vertices[2].X = ellipse.Vertices[0].X + size;
+	            ellipse.Vertices[2].Y = ellipse.Vertices[0].Y + size;  // ← size, не height!
+	            ellipse.Vertices[3].X = ellipse.Vertices[0].X;
+	            ellipse.Vertices[3].Y = ellipse.Vertices[0].Y + size;
+	            ellipse.RaisePropertyChanged(nameof(EllipseViewModel.X));
+	            ellipse.RaisePropertyChanged(nameof(EllipseViewModel.Y));
+	            ellipse.RaisePropertyChanged(nameof(EllipseViewModel.Width));
+	            ellipse.RaisePropertyChanged(nameof(EllipseViewModel.Height));
+	            break;
                 
             case EllipseViewModel ellipse:
                 // Обновляем ограничивающий прямоугольник эллипса

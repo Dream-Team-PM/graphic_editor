@@ -158,9 +158,11 @@
                         
                         <Separator Margin="8,4" Height="1" Background="#3F3F46"/>
                         
-                        <RadioButton Classes="ToolButton" Content="▬▬" Tag="Линия" ToolTip.Tip="Линия (L)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
-                        <RadioButton Classes="ToolButton" Content="⬛" Tag="Прямоугольник" ToolTip.Tip="Прямоугольник (M)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
-                        <RadioButton Classes="ToolButton" Content="⭕" Tag="Эллипс" ToolTip.Tip="Эллипс (E)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="───" Tag="Линия" ToolTip.Tip="Линия (L)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content=" ⃢ " Tag="Прямоугольник" ToolTip.Tip="Прямоугольник (Rect)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="⬛" Tag="Квадрат" ToolTip.Tip="Квадрат (Sq)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="🕳️" Tag="Эллипс" ToolTip.Tip="Эллипс (E)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="⭕" Tag="Круг" ToolTip.Tip="Круг (Cir)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         <RadioButton Classes="ToolButton" Content="▱" Tag="Многоугольник" ToolTip.Tip="Многоугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         <RadioButton Classes="ToolButton" Content="✒️" Tag="Перо" ToolTip.Tip="Перо (P)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         
