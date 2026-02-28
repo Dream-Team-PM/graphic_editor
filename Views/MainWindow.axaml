@@ -29,6 +29,7 @@
         <converters:IsZeroToVisibleConverter x:Key="IsZeroToVisible"/>
         <converters:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
         <converters:DrawingColorConverter x:Key="DrawingColorConverter"/>
+        <converters:PercentToDoubleConverter x:Key="PercentToDoubleConverter"/>
     </Window.Resources>
 
     <Window.Styles>
@@ -488,7 +489,7 @@
                                 <TextBlock Text="Внешний вид" FontWeight="SemiBold" Margin="0,8,0,4"/>
                                 <StackPanel Spacing="8">
                                     <TextBlock Text="Заливка"/>
-                                    <Border Classes="ColorPreview" Height="28" Background="#FF4A90" CornerRadius="3" BorderBrush="#555" BorderThickness="1"/>
+                                    <Border x:DataType="vm:MainWindowViewModel"  Classes="ColorPreview" Height="28" Background="{Binding FillColor.Color, Converter={StaticResource ColorToBrushConverter}}" CornerRadius="3" BorderBrush="#555" BorderThickness="1"/>
                                     <TextBlock Text="Обводка"/>
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                     <Border x:DataType="vm:MainWindowViewModel" Classes="ColorPreview" Height="28" Width="28"
@@ -504,10 +505,24 @@
                                     </StackPanel>
                                 </StackPanel>
 
-                                <Slider x:Name="OpacitySlider" Minimum="0" Maximum="100" Value="100" 
-                                        TickPlacement="BottomRight" ValueChanged="OpacitySlider_ValueChanged"
-                                />
-                                <TextBlock x:Name="OpacityText" Text="Непрозрачность: 100%" HorizontalAlignment="Center"/>
+                                <StackPanel Spacing="8">
+                                    <Slider x:DataType="vm:MainWindowViewModel" x:Name="OpacitySlider" 
+                                            Minimum="0" Maximum="100" 
+                                            Value="{Binding Opacity, Mode=TwoWay}"
+                                            TickPlacement="BottomRight"/>
+                                    <TextBlock x:DataType="vm:MainWindowViewModel" Text="{Binding Opacity, StringFormat='{}{0:F0}%'}" 
+                                              HorizontalAlignment="Center" Foreground="#999"/>
+                                    
+                                    <!-- Превью прозрачности -->
+                                    <Border Height="20" CornerRadius="3" BorderBrush="#555" BorderThickness="1">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                                <GradientStop x:DataType="vm:MainWindowViewModel" Color="{Binding FillColor.Color, Converter={StaticResource DrawingColorConverter}}" Offset="0"/>
+                                                <GradientStop x:DataType="vm:MainWindowViewModel" Color="Transparent" Offset="{Binding Opacity, Converter={StaticResource PercentToDoubleConverter}}"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+                                </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>

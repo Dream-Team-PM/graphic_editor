@@ -50,6 +50,9 @@ public class PointViewModel : ViewModelBase
     /// </summary>
     public override string ToString() => $"({X:F15}, {Y:F15})";
     
+    /// <summary>
+    /// Уведомление о изменениях параметра класса.
+    /// </summary>
     private void NotifyPropertyChanged()
     {
         this.RaisePropertyChanged(nameof(X));

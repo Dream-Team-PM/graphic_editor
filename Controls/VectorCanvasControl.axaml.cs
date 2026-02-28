@@ -75,12 +75,13 @@ public partial class VectorCanvasControl : UserControl
         }
         else
         {
-            shape.StrokeThickness = 1;
+            shape.StrokeThickness = 2;
             // Fill — только для фигур (не для Line)
             shape.Fill = figure.FillColor.A > 0 
                 ? new SolidColorBrush(ToAvaloniaColor(figure.FillColor)) 
                 : Brushes.Transparent;
         }
+        shape.Opacity = Math.Clamp(figure.Opacity, 0.0, 1.0);
     }
 
 	public ICommand? PointerPressedCommand
@@ -149,8 +150,11 @@ public partial class VectorCanvasControl : UserControl
             if (control != null)
             {
                 BindFigureProperties(figure, control);
-                control.Opacity = 0.5; // Полупрозрачная для предварительного просмотра
-                control.IsHitTestVisible = false; // Не перехватываем события
+                if (figure?.Name == "Preview")
+                {
+                    control.Opacity = 0.5;
+                    control.IsHitTestVisible = false;
+                }
                 DrawingCanvas.Children.Add(control);
                 _renderedFigures[figure.Id] = control;
                 control.Tag = figure;
@@ -455,10 +459,17 @@ public partial class VectorCanvasControl : UserControl
                     }
                     break;
                 case nameof(FigureViewModel.Thickness):
-                    if (shapeCtrl is Avalonia.Controls.Shapes.Line)
+                    if (shape is Avalonia.Controls.Shapes.Line)
                     {
-                        shapeCtrl.StrokeThickness = Math.Max(1, figure.Thickness);
+                        shape.StrokeThickness = Math.Max(1, figure.Thickness);
                     }
+                    else
+                    {
+                        shape.StrokeThickness = 2;
+                    }
+                    break;
+                case nameof(FigureViewModel.Opacity):
+                    shapeCtrl.Opacity = Math.Clamp(figure.Opacity, 0.0, 1.0);
                     break;
                 case nameof(FigureViewModel.IsSelected):
                     UpdateSelectionVisual(figure, control);
@@ -470,10 +481,10 @@ public partial class VectorCanvasControl : UserControl
                 case nameof(LineViewModel.Y2):
                     if (shapeCtrl is Avalonia.Controls.Shapes.Line line && 
                         figure is LineViewModel lineVm)
-                    {
-                        line.StartPoint = new Avalonia.Point(lineVm.X1, lineVm.Y1);
-                        line.EndPoint = new Avalonia.Point(lineVm.X2, lineVm.Y2);
-                    }
+                        {
+                            line.StartPoint = new Avalonia.Point(lineVm.X1, lineVm.Y1);
+                            line.EndPoint = new Avalonia.Point(lineVm.X2, lineVm.Y2);
+                        }
                     break;
                 
                 // Геометрия Rectangle/Ellipse — аналогично
@@ -544,7 +555,7 @@ public partial class VectorCanvasControl : UserControl
         {
             if (adorner?.Parent is Panel parent)
                 parent.Children.Remove(adorner);
-            control.Opacity = 1.0;
+            // control.Opacity = 1.0;
         }
     }
 

@@ -37,7 +37,6 @@ public partial class MainWindow : Window
         // Начальные значения
         SelectedToolText.Text = "Выделение";
         StrokePercentText.Text = "75%";
-        OpacityText.Text = $"Непрозрачность: 100%";
 
 		if (this.FindControl<Canvas>("MainCanvas") is Canvas canvas) 
 		{
@@ -101,13 +100,6 @@ public partial class MainWindow : Window
     private void StrokeSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
 		StrokePercentText.Text = $"{(int)e.NewValue}%";
-    }
-
-    private void OpacitySlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
-    {
-		if (_viewModel != null)
-            _viewModel.Opacity = e.NewValue;
-        OpacityText.Text = $"Непрозрачность: {(int)e.NewValue}%";
     }
 
     // ========== КОНТЕКСТНОЕ МЕНЮ - ПОВОРОТ ==========

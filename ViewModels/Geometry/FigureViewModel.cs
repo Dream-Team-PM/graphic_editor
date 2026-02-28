@@ -18,8 +18,9 @@ namespace graphic_editor.ViewModels;
 public abstract class FigureViewModel: ViewModelBase, IGraphicFigure, IFigure
 {
     private Guid _id; /// <summary>Приватное свойство - айди фигуры.</summary>
-    private Color _lineColor = Color.Black; /// <summary>Приватное свойство - цвет линии.</summary>
-    private Color _fillColor = Color.Transparent; /// <summary>Приватное свойство - цвет заполнения.</summary>
+    //private Color _lineColor = Color.Black; /// <summary>Приватное свойство - цвет линии.</summary>
+    //private Color _fillColor = Color.Transparent; /// <summary>Приватное свойство - цвет заполнения.</summary>
+    private double _opacity = 1.0;
     private double _thickness = 1.0; /// <summary>Приватное свойство - толщина.</summary>
     private bool _isSelected; /// <summary>Приватное свойство - флаг выбранности.</summary>
     private string _name; /// <summary>Приватное свойство - имя фигурф.</summary>
@@ -67,6 +68,13 @@ public abstract class FigureViewModel: ViewModelBase, IGraphicFigure, IFigure
     {
         get => field;
         set => this.RaiseAndSetIfChanged(ref field, value);
+    }
+
+    /// <summary>Публичное свойство - получение размера прозрачности.</summary>
+    public double Opacity
+    {
+        get => _opacity;
+        set => this.RaiseAndSetIfChanged(ref _opacity, value);
     }
     
     public ObservableCollection<PointViewModel> Vertices { get; protected set;  } /// <summary>Публичная коллекция вершин.</summary>

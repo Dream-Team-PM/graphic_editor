@@ -16,15 +16,19 @@ namespace graphic_editor.Geometry;
 /// </summary>
 public class EllipseViewModel: FigureViewModel
 {
-    public EllipseViewModel(): this(0, 0, 100, 100) {}
+    public EllipseViewModel(): this(0, 0, 100, 100, Color.Black, 1, Color.Green, 1.0) {}
 
-    public EllipseViewModel(double x, double y, double width, double height)
+    public EllipseViewModel(double x, double y, double width, double height, Color lineColor, double thickness, Color fillColor, double opacity)
     {
         Name = "Эллипс";
         Vertices.Add(new PointViewModel(x, y));
         Vertices.Add(new PointViewModel(x + width, y));
         Vertices.Add(new PointViewModel(x + width, y + height));
         Vertices.Add(new PointViewModel(x, y + height));
+        LineColor = lineColor;
+        Thickness = thickness;
+        FillColor = fillColor == default ? Color.Transparent : fillColor;
+        Opacity = opacity;
     }
 
     public double X => Vertices[0].X;

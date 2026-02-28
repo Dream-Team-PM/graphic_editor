@@ -18,7 +18,7 @@ public class LineViewModel: FigureViewModel
 {
     public LineViewModel(): this(0, 0, 100, 100, Color.Black, 1) {}
 
-    public LineViewModel(double x1, double y1, double x2, double y2, Color lineColor, double thickness, Color fillColor = default)
+    public LineViewModel(double x1, double y1, double x2, double y2, Color lineColor, double thickness, Color fillColor = default, double opacity = default)
     {
         Name = "Линия";
         Vertices.Add(new PointViewModel(x1, y1));

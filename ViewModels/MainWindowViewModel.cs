@@ -202,7 +202,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         _coordinatesText = this
             .WhenAnyValue(x => x.MouseX, x => x.MouseY)
-            .Select(_ => $"X: {MouseX:F0}  Y: {MouseY:F0}")
+            .Select(_ => $"X: {MouseX:F10}  Y: {MouseY:F10}")
             .ToProperty(this, x => x.CoordinatesText);
         this.WhenAnyValue(x => x.Canvas.SelectedFigure)
 	        .Subscribe(_ => this.RaisePropertyChanged(nameof(HasSelection)));
@@ -214,6 +214,9 @@ public partial class MainWindowViewModel : ViewModelBase
     
         this.WhenAnyValue(x => x.StrokeWidth)
 	        .Subscribe(thickness => ApplyStyleToSelected(f => f.Thickness = thickness));
+        
+        this.WhenAnyValue(x => x.Opacity)
+	        .Subscribe(opacity => ApplyStyleToSelected(f => f.Opacity = opacity / 100.0));
         
     }
 	
@@ -267,7 +270,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	/// <summary>Приватная функция для добавления прямоугольника.</summary>
     private void AddRectangle()
     {
-        var rect = new RectangleViewModel(100, 100, 150, 100);
+        var rect = new RectangleViewModel(100, 100, 150, 100, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
         ApplyStyle(rect);
         Canvas?.AddFigure(rect);
         StatusMessage = "Добавлен прямоугольник";
@@ -276,7 +279,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	/// <summary>Приватная функция для добавления эллипса.</summary>
     private void AddEllipse()
     {
-	    var ellipse = new EllipseViewModel(100, 100, 150, 100);
+	    var ellipse = new EllipseViewModel(100, 100, 150, 100, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
 	    ApplyStyle(ellipse);
         Canvas?.AddFigure(ellipse);
         StatusMessage = "Добавлен эллипс";
@@ -285,7 +288,7 @@ public partial class MainWindowViewModel : ViewModelBase
 	/// <summary>Приватная функция для добавления линии.</summary>	
     private void AddLine()
     {
-        var line = new LineViewModel(100, 100, 300, 300, StrokeColor.Color, StrokeWidth, FillColor.Color);
+        var line = new LineViewModel(100, 100, 300, 300, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
         Canvas?.AddFigure(line);
         StatusMessage = "Добавлена линия";
     }
@@ -510,12 +513,12 @@ public partial class MainWindowViewModel : ViewModelBase
     	_penPoints.Add(startPoint);
     	
     	// Создаем первую точку (она остается на холсте)
-	    var firstPoint = new PenPointViewModel(startPoint.X, startPoint.Y);
+	    var firstPoint = new PenPointViewModel(startPoint.X, startPoint.Y, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
 	    ApplyStyle(firstPoint, solidFill: true);
     	Canvas?.AddFigure(firstPoint);
     	
     	// Создаем предварительную точку для следующего клика
-	    _previewFigure = new PenPointViewModel(startPoint.X, startPoint.Y);
+	    _previewFigure = new PenPointViewModel(startPoint.X, startPoint.Y, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
 	    ApplyStyle(_previewFigure, solidFill: true);
     	Canvas?.AddFigure(_previewFigure);
     	_drawingStartPoint = startPoint;
@@ -639,11 +642,11 @@ public partial class MainWindowViewModel : ViewModelBase
     	}
         
         // Создаем и добавляем точку на канвас
-        var penPoint = new PenPointViewModel(point.X, point.Y);
+        var penPoint = new PenPointViewModel(point.X, point.Y, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
         ApplyStyle(penPoint, solidFill: true);
         
         Canvas?.AddFigure(penPoint);
-        _previewFigure = new PenPointViewModel(point.X, point.Y);
+        _previewFigure = new PenPointViewModel(point.X, point.Y, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
         ApplyStyle(_previewFigure, solidFill: true);
     	Canvas?.AddFigure(_previewFigure);
         StatusMessage = $"Точка {_penPoints.Count}: ({point.X:F0}, {point.Y:F0})";
@@ -684,19 +687,21 @@ public partial class MainWindowViewModel : ViewModelBase
 	    {
 		    DrawingTool.Line => new LineViewModel(
 			    start.X, start.Y, end.X, end.Y,
-			    StrokeColor.Color, StrokeWidth, FillColor.Color),
+			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
         
 		    DrawingTool.Rectangle => new RectangleViewModel(
 			    Math.Min(start.X, end.X),
 			    Math.Min(start.Y, end.Y),
 			    Math.Abs(end.X - start.X),
-			    Math.Abs(end.Y - start.Y)),
+			    Math.Abs(end.Y - start.Y),
+			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
         
 		    DrawingTool.Ellipse => new EllipseViewModel(
 			    Math.Min(start.X, end.X),
 			    Math.Min(start.Y, end.Y),
 			    Math.Abs(end.X - start.X),
-			    Math.Abs(end.Y - start.Y)),
+			    Math.Abs(end.Y - start.Y),
+			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
         
 		    _ => null
 	    };
@@ -723,21 +728,24 @@ public partial class MainWindowViewModel : ViewModelBase
 		{
 			DrawingTool.Line => new LineViewModel(
 				start.X, start.Y, end.X, end.Y,
-				StrokeColor.Color, StrokeWidth, FillColor.Color),
+				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
         
 			DrawingTool.Rectangle => new RectangleViewModel(
 				Math.Min(start.X, end.X),
 				Math.Min(start.Y, end.Y),
 				Math.Abs(end.X - start.X),
-				Math.Abs(end.Y - start.Y)),
+				Math.Abs(end.Y - start.Y),
+				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
         
 			DrawingTool.Ellipse => new EllipseViewModel(
 				Math.Min(start.X, end.X),
 				Math.Min(start.Y, end.Y),
 				Math.Abs(end.X - start.X),
-				Math.Abs(end.Y - start.Y)),
+				Math.Abs(end.Y - start.Y),
+				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
 			
-			DrawingTool.Pen => new PenPointViewModel(start.X, start.Y),
+			DrawingTool.Pen => new PenPointViewModel(start.X, start.Y,
+				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
         
 			_ => null
 		};

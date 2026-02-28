@@ -13,11 +13,14 @@ namespace graphic_editor.Geometry;
 
 public class PenPointViewModel : FigureViewModel
 {
-    public PenPointViewModel(double x, double y)
+    public PenPointViewModel(double x, double y, Color lineColor, double thickness, Color fillColor = default, double opacity = default)
     {
         Name = "Точка пера";
-        // Создаём единственную вершину для точки
         Vertices.Add(new PointViewModel(x, y));
+        LineColor = lineColor;
+        Thickness = thickness;
+        FillColor = fillColor == default ? Color.Transparent : fillColor;
+        Opacity = opacity;
     }
 
     public double X => Vertices[0].X;
@@ -25,9 +28,15 @@ public class PenPointViewModel : FigureViewModel
 
     public override Point_1 Center => new Point_1(X, Y);
 
-    public override void Rotate(double angle) { /* Точка не вращается */ }
-    
-    public override void Scale(double sx, double sy) { /* Точка не масштабируется */ }
+    public override void Rotate(double angle) 
+    {
+        NotifyPropertyChanged(); 
+    }
+
+    public override void Scale(double sx, double sy)
+    {
+        NotifyPropertyChanged(); 
+    }
     
     public override void Move(double dx, double dy)
     {
@@ -46,5 +55,11 @@ public class PenPointViewModel : FigureViewModel
     public override IEnumerable<Point_1> GetVertexPoint()
     {
         yield return new Point_1(X, Y);
+    }
+    
+    private void NotifyPropertyChanged()
+    {
+        this.RaisePropertyChanged(nameof(X));
+        this.RaisePropertyChanged(nameof(Y));
     }
 }
