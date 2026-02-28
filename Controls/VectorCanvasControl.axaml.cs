@@ -498,6 +498,27 @@ public partial class VectorCanvasControl : UserControl
                 );
             };
         }
+        
+        foreach (var vertex in figure.Vertices)
+        {
+            vertex.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(PointViewModel.X) || 
+                    e.PropertyName == nameof(PointViewModel.Y))
+                {
+                    if (control is Avalonia.Controls.Shapes.Path path)
+                    {
+                        Dispatcher.UIThread.Post(() => 
+                            UpdatePolygonGeometry(path, figure as PolygonViewModel)
+                        );
+                    }
+                    else
+                    {
+                        UpdateShapeGeometry(control as Shape, figure);
+                    }
+                }
+            };
+        }
 
         // Подписка на изменения
         figure.PropertyChanged += (s, e) =>
