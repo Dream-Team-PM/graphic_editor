@@ -30,11 +30,21 @@
         <converters:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
         <converters:DrawingColorConverter x:Key="DrawingColorConverter"/>
         <converters:PercentToDoubleConverter x:Key="PercentToDoubleConverter"/>
+        <converters:MathSubtractConverter x:Key="MathSubtract"/>
     </Window.Resources>
 
     <Window.Styles>
         <StyleInclude Source="Styles/GraphicEditorStyles.axaml"></StyleInclude> 
     </Window.Styles>
+
+    <Window.KeyBindings>
+        <KeyBinding x:DataType="vm:MainWindowViewModel"  Command="{Binding Commands.MoveUp}" Gesture="Up"/>
+        <KeyBinding x:DataType="vm:MainWindowViewModel"  Command="{Binding Commands.MoveDown}" Gesture="Down"/>
+        <KeyBinding x:DataType="vm:MainWindowViewModel"  Command="{Binding Commands.MoveLeft}" Gesture="Left"/>
+        <KeyBinding x:DataType="vm:MainWindowViewModel"  Command="{Binding Commands.MoveRight}" Gesture="Right"/>
+        <KeyBinding x:DataType="vm:MainWindowViewModel"  Command="{Binding Commands.GroupSelected}" Gesture="Ctrl+G"/>
+        <KeyBinding x:DataType="vm:MainWindowViewModel"  Command="{Binding Commands.UngroupSelected}" Gesture="Ctrl+Shift+G"/>
+    </Window.KeyBindings>
 
     <Grid Classes="MainTheme" RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="Auto,*,Auto">
         <!-- 1. Главное меню -->
@@ -101,7 +111,7 @@
                         <TextBlock Classes="ThemeIcon" Text="🌙" FontSize="14" 
                                    VerticalAlignment="Center" Margin="0,0,0,2"/>
                         
-                        <Slider x:Name="ThemeSlider" Width="80" Height="50" Minimum="0" Maximum="1" Value="0" 
+                        <Slider x:DataType="vm:MainWindowViewModel" x:Name="ThemeSlider" Width="80" Height="50" Minimum="0" Maximum="1" Value="0" 
                                 VerticalAlignment="Center"
                                 TickFrequency="1" IsSnapToTickEnabled="True"
                                 ToolTip.Tip="Переключение темы: 0 — тёмная, 1 — светлая"
@@ -153,7 +163,7 @@
                     <StackPanel Margin="4" Spacing="2">
                         <TextBlock Text="TOOLS" FontWeight="Bold" FontSize="11" Margin="6,4,6,8" Foreground="#999" HorizontalAlignment="Center"/>
                         
-                        <RadioButton Classes="ToolButton" Content="🖱" Tag="Выделение" ToolTip.Tip="Выделение (V)" IsChecked="True" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="🖱" Tag="Выделение" ToolTip.Tip="Выделение (V)&#x0A;Ctrl+Click — мульти-выделение"  IsChecked="True" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         <RadioButton Classes="ToolButton" Content="✂️" Tag="Прямое выделение" ToolTip.Tip="Прямое выделение (A)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         
                         <Separator Margin="8,4" Height="1" Background="#3F3F46"/>
@@ -171,7 +181,7 @@
                                      ToolTip.Tip="Шестиугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         <RadioButton Classes="ToolButton" Content="⯃" Tag="Семиугольник" 
                                      ToolTip.Tip="Семиугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
-                        <RadioButton Classes="ToolButton" Content="⯂" Tag="Восьмиугольник" 
+                        <RadioButton Classes="ToolButton" Content="🛑" Tag="Восьмиугольник" 
                                      ToolTip.Tip="Восьмиугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         <RadioButton Classes="ToolButton" Content="★" Tag="Пентаграмма" 
                                      ToolTip.Tip="Пентаграмма" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
@@ -265,7 +275,15 @@
                                         <MenuItem x:Name="MenuMoveDown" Header="↓ Вниз (10px)" Click="MoveDown_Click"/>
                                         <MenuItem x:Name="MenuMoveLeft" Header="← Влево (10px)" Click="MoveLeft_Click"/>
                                         <MenuItem x:Name="MenuMoveRight" Header="→ Вправо (10px)" Click="MoveRight_Click"/>
-                                        <MenuItem x:Name="MenuMoveCenter" Header="По центру" Click="MoveCenter_Click"/>
+                                    </MenuItem>
+
+                                    <MenuItem Header="Группа">
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="📦 Сгруппировать" 
+                                                  Command="{Binding Commands.GroupSelected}"
+                                                  InputGesture="Ctrl+G"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="📦 Разгруппировать" 
+                                                  Command="{Binding Commands.UngroupSelected}"
+                                                  InputGesture="Ctrl+Shift+G"/>
                                     </MenuItem>
                                     
                                     <Separator/>
@@ -413,7 +431,7 @@
 
                             <Grid>
                                 <!-- Popup для выбора цвета -->
-                                <!-- Popup для выбора цвета заливки -->
+                                <!-- Popup для выбора цвета заливки (неактивен для выделения и частично активен для заливки - проблема с отображением ColorPicker) -->
                                 <Popup x:DataType="vm:MainWindowViewModel" 
                                        x:Name="ColorPickerPopup"
                                        IsOpen="{Binding IsColorPickerOpen, Mode=TwoWay}"
@@ -507,6 +525,34 @@
     								PointerPressed="OnCanvasPointerPressed"
     								PointerReleased="OnCanvasPointerReleased"
                                 />
+                                <Canvas IsHitTestVisible="False">
+                                    <Rectangle
+                                        x:DataType="vm:MainWindowViewModel"
+                                        Stroke="#0078D4"
+                                        StrokeThickness="1"
+                                        StrokeDashArray="4,2"
+                                        Fill="#0078D420"
+                                        Canvas.Left="{Binding SelectionStart.X}"
+                                        Canvas.Top="{Binding SelectionStart.Y}"
+                                        IsVisible="{Binding IsSelectingArea}">
+                                        
+                                        <!-- ✅ MultiBinding для Width: SelectionEnd.X - SelectionStart.X -->
+                                        <Rectangle.Width>
+                                            <MultiBinding Converter="{StaticResource MathSubtract}">
+                                                <Binding Path="SelectionEnd.X"/>
+                                                <Binding Path="SelectionStart.X"/>
+                                            </MultiBinding>
+                                        </Rectangle.Width>
+                                        
+                                        <!-- ✅ MultiBinding для Height: SelectionEnd.Y - SelectionStart.Y -->
+                                        <Rectangle.Height>
+                                            <MultiBinding Converter="{StaticResource MathSubtract}">
+                                                <Binding Path="SelectionEnd.Y"/>
+                                                <Binding Path="SelectionStart.Y"/>
+                                            </MultiBinding>
+                                        </Rectangle.Height>
+                                    </Rectangle>
+                                </Canvas>
 
                                 <!-- Текст-подсказка (исчезает при активации) -->
                                 <TextBlock x:DataType="vm:MainWindowViewModel" Classes="CanvasText"
@@ -639,9 +685,9 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="StatusText" Text="Готово" VerticalAlignment="Center"/>
+                <TextBlock x:DataType="vm:MainWindowViewModel" Text="{Binding StatusMessage}" VerticalAlignment="Center"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" Margin="0,0,20,0">
-                    <TextBlock Text="X: 342  Y: 189" Foreground="#999"/>
+                    <TextBlock x:DataType="vm:MainWindowViewModel" Text="{Binding CoordinatesText}" Foreground="#999"/>
                     <TextBlock Text="Ш: 480  В: 320" Foreground="#999"/>
                 </StackPanel>
                 <TextBlock Grid.Column="2" Text="100%" VerticalAlignment="Center" Margin="0,0,20,0"/>

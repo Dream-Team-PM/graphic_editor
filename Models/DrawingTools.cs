@@ -1,4 +1,6 @@
-﻿namespace graphic_editor.Models;
+﻿// Models/DrawingTools.cs
+
+namespace graphic_editor.Models;
 
 /// <summary>Типы инструментов рисования</summary>
 public enum DrawingTool
@@ -10,7 +12,7 @@ public enum DrawingTool
     Circle,        // "Круг"
     Line,          // "Линия"
     Polygon,       // "Многоугольник"
-    Pentagon,       // "Пятиугольник"
+    Pentagon,      // "Пятиугольник"
     Hexagon,       // "Шестиугольник"
     Heptagon,      // "Семиугольник"
     Octagon,       // "Восьмиугольник"

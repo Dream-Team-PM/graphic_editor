@@ -14,7 +14,6 @@ using Avalonia.Threading;
 using System.Windows.Input;
 
 using graphic_editor.ViewModels;
-using graphic_editor.Models;
 using graphic_editor.Geometry;
 using graphic_editor.Helpers;
 
@@ -29,15 +28,15 @@ public partial class VectorCanvasControl : UserControl
     private LayerViewModel? _currentLayer;
     public static readonly StyledProperty<CanvasViewModel?> CanvasViewModelProperty =
         AvaloniaProperty.Register<VectorCanvasControl, CanvasViewModel?>(nameof(CanvasViewModel));
+ //
+	// public static readonly StyledProperty<ICommand?> PointerPressedCommandProperty =
+ //        AvaloniaProperty.Register<VectorCanvasControl, ICommand?>(nameof(PointerPressedCommand));
+ //
+ //    public static readonly StyledProperty<ICommand?> PointerMovedCommandProperty =
+ //        AvaloniaProperty.Register<VectorCanvasControl, ICommand?>(nameof(PointerMovedCommand));
 
-	public static readonly StyledProperty<ICommand?> PointerPressedCommandProperty =
-        AvaloniaProperty.Register<VectorCanvasControl, ICommand?>(nameof(PointerPressedCommand));
-
-    public static readonly StyledProperty<ICommand?> PointerMovedCommandProperty =
-        AvaloniaProperty.Register<VectorCanvasControl, ICommand?>(nameof(PointerMovedCommand));
-
-    public static readonly StyledProperty<ICommand?> PointerReleasedCommandProperty =
-        AvaloniaProperty.Register<VectorCanvasControl, ICommand?>(nameof(PointerReleasedCommand));
+    // public static readonly StyledProperty<ICommand?> PointerReleasedCommandProperty =
+    //     AvaloniaProperty.Register<VectorCanvasControl, ICommand?>(nameof(PointerReleasedCommand));
     
     // public static readonly StyledProperty<ObservableCollection<FigureViewModel>?> ActiveFiguresProperty = 
     //     AvaloniaProperty.Register<VectorCanvasControl, ObservableCollection<FigureViewModel>?>(nameof(ActiveFigures));
@@ -59,16 +58,14 @@ public partial class VectorCanvasControl : UserControl
         //this.AddHandler(PointerReleasedEvent, OnPointerReleased, handledEventsToo: true);
     }
     
-    /// <summary>Единый метод применения стиля к Shape</summary>
+    /// <summary>Единый метод применения стиля к Shape.</summary>
+    /// <param name="shape">Элемент управления Shape для применения стиля.</param>
+    /// <param name="figure">Модель фигуры, содержащая параметры стиля.</param>
     private void ApplyStyle(Shape shape, FigureViewModel figure)
     {
-        // Конвертируем цвет один раз
         var strokeColor = ToAvaloniaColor(figure.LineColor);
-    
-        // Stroke — для всех фигур
         shape.Stroke = new SolidColorBrush(strokeColor);
-    
-        // StrokeThickness — линии используют Thickness, фигуры — контур 1px
+        // StrokeThickness — линии используют Thickness, фигуры — контур 2px
         if (shape is Avalonia.Controls.Shapes.Line)
         {
             shape.StrokeThickness = Math.Max(1, figure.Thickness);
@@ -76,37 +73,30 @@ public partial class VectorCanvasControl : UserControl
         else
         {
             shape.StrokeThickness = 2;
-            // Fill — только для фигур (не для Line)
             shape.Fill = figure.FillColor.A > 0 
                 ? new SolidColorBrush(ToAvaloniaColor(figure.FillColor)) 
                 : Brushes.Transparent;
         }
-        shape.Opacity = Math.Clamp(figure.Opacity, 0.5, 1.0);
+        shape.Opacity = Math.Clamp(figure.Opacity, 0.1, 1.0);
     }
 
-	public ICommand? PointerPressedCommand
-    {
-        get => GetValue(PointerPressedCommandProperty);
-        set => SetValue(PointerPressedCommandProperty, value);
-    }
-
-    public ICommand? PointerMovedCommand
-    {
-        get => GetValue(PointerMovedCommandProperty);
-        set => SetValue(PointerMovedCommandProperty, value);
-    }
-
-    public ICommand? PointerReleasedCommand
-    {
-        get => GetValue(PointerReleasedCommandProperty);
-        set => SetValue(PointerReleasedCommandProperty, value);
-    }
-
-    // public ObservableCollection<FigureViewModel> ActiveFigures
-    // {
-    //     get => GetValue(ActiveFiguresProperty);
-    //     set => SetValue(ActiveFiguresProperty, value);
-    // }
+	// public ICommand? PointerPressedCommand
+ //    {
+ //        get => GetValue(PointerPressedCommandProperty);
+ //        set => SetValue(PointerPressedCommandProperty, value);
+ //    }
+ //
+ //    public ICommand? PointerMovedCommand
+ //    {
+ //        get => GetValue(PointerMovedCommandProperty);
+ //        set => SetValue(PointerMovedCommandProperty, value);
+ //    }
+ //
+ //    public ICommand? PointerReleasedCommand
+ //    {
+ //        get => GetValue(PointerReleasedCommandProperty);
+ //        set => SetValue(PointerReleasedCommandProperty, value);
+ //    }
 
     public CanvasViewModel? CanvasViewModel
     {
@@ -132,6 +122,8 @@ public partial class VectorCanvasControl : UserControl
         set => SetValue(OffsetYProperty, value);
     }
 
+    /// <summary>Метод для отображения предварительной фигуры на канвасе.</summary>
+    /// <param name="figure">Фигура для предварительного отображения (или null для скрытия).</param>
 	public void ShowPreviewFigure(FigureViewModel? figure)
     {
         // Удаляем старую предварительную фигуру
@@ -141,11 +133,10 @@ public partial class VectorCanvasControl : UserControl
             DrawingCanvas.Children.Remove(existingPreview);
             _renderedFigures.Remove(_renderedFigures.First(kvp => kvp.Value == existingPreview).Key);
         }
-        
         // Добавляем новую предварительную фигуру
         if (figure != null)
         {
-            figure.Name = "Preview"; // Помечаем как предварительную
+            figure.Name = "Preview";
             var control = CreateControlForFigure(figure);
             if (control != null)
             {
@@ -160,7 +151,6 @@ public partial class VectorCanvasControl : UserControl
         }
     }
     
-
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
@@ -179,6 +169,16 @@ public partial class VectorCanvasControl : UserControl
         if (CanvasViewModel != null)
         {
             CanvasViewModel.PropertyChanged += OnCanvasViewModelPropertyChanged;
+            if (CanvasViewModel.SelectedFigures is INotifyCollectionChanged selectedFigures)
+            {
+                selectedFigures.CollectionChanged += (s, e) =>
+                {
+                    Dispatcher.UIThread.Post(UpdateSelectionVisuals);
+                    DebugLog.Write(
+                        $"[DEBUG] SelectedFigures.CollectionChanged: Action={e.Action}, NewItems={e.NewItems?.Count ?? 0}");
+                };
+                DebugLog.Write("[DEBUG] Entered to SubscribeToCanvasViewModel");
+            }
             SubscribeToCurrentLayer();
         }
     }
@@ -231,12 +231,6 @@ public partial class VectorCanvasControl : UserControl
             SubscribeToCanvasViewModel();
             RenderAllFigures();
         }
-        // else if (change.Property == ActiveFiguresProperty)
-        // {
-        //     UnsubscribeFromCanvasViewModel();
-        //     SubscribeToCanvasViewModel();
-        //     RenderAllFigures();
-        // }
         else if (change.Property == ZoomProperty || 
                  change.Property == OffsetXProperty || 
                  change.Property == OffsetYProperty)
@@ -347,10 +341,8 @@ public partial class VectorCanvasControl : UserControl
     {
         DebugLog.Write($"[DEBUG] RenderFigure: {figure.Name}, DrawingCanvas={DrawingCanvas != null}");
         DebugLog.Write($"[DEBUG] RenderFigure in Control, CanvasVM Hash={CanvasViewModel?.GetHashCode()}");
-    
         if (_renderedFigures.ContainsKey(figure.Id))
             return;
-    
         var control = CreateControlForFigure(figure);
         if (control != null)
         {
@@ -374,8 +366,8 @@ public partial class VectorCanvasControl : UserControl
     {
         return figure switch
         {
-            PolygonViewModel polygon => CreatePolygon(polygon),
-        
+            GroupViewModel group => CreateGroup(group),
+            PolygonViewModel polygon => CreatePolygon(polygon), // Включает в себя треугольник и многоугольники
             SquareViewModel square => CreateSquare(square),
             CircleViewModel circle => CreateCircle(circle),
             RectangleViewModel rect => CreateRectangle(rect),
@@ -385,14 +377,8 @@ public partial class VectorCanvasControl : UserControl
             // BezieCurveViewModel bezie => CreateBezieCurve(bezie),
             // CurveViewModel curve => CreateCurve(curve),
             // SplineViewModel spline => CreateSpline(spline),
-            // HeptagonViewModel heptagon => CreateHeptagon(heptagon),
-            // HexagonViewModel hexagon => CreateHexagon(hexagon),
-            // N_Angle_Figure_ViewModel n_figure => CreateN_Angle_Figure(n_figure),
-            // OctagonViewModel octagon => CreateOctagon(octagon),
-            // PentagonViewModel pentagon => CreatePentagon(pentagon),
             // RhombusViewModel rhombus => CreateRhombus(rhombus),
             // RightTriangleViewModel right_triangle => CreateRightTriangle(right_triangle),
-            // TriangleViewModel triangle => CreateTriangle(triangle),
             _ => null
         };
     }
@@ -425,6 +411,23 @@ public partial class VectorCanvasControl : UserControl
                 : null,
             Tag = polygon
         };
+    }
+    
+    private Panel CreateGroup(GroupViewModel group)
+    {
+        var panel = new Panel(); // Контейнер для детей
+        foreach (var child in group.Children)
+        {
+            var childControl = CreateControlForFigure(child);
+            if (childControl != null)
+            {
+                BindFigureProperties(child, childControl);
+                panel.Children.Add(childControl);
+            }
+        }
+        panel.Tag = group;
+        DebugLog.Write("[DEBUG] Entered to CreateGroup");
+        return panel;
     }
     
     private Avalonia.Controls.Shapes.Line CreateLine(LineViewModel line) => new()
@@ -483,12 +486,32 @@ public partial class VectorCanvasControl : UserControl
         };
     }
 
+    /// <summary>Метод для привязки свойств фигуры к элементу управления.</summary>
+    /// <param name="figure">Модель фигуры.</param>
+    /// <param name="control">Элемент управления для привязки.</param>
     private void BindFigureProperties(FigureViewModel figure, Control control)
     {
         // Конвертация цвета
         if (control is not Shape shape) return;
         ApplyStyle(shape, figure);
         
+        if (figure is GroupViewModel group && control is Panel panel)
+        {
+            foreach (var child in group.Children)
+            {
+                child.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName is nameof(PointViewModel.X) or nameof(PointViewModel.Y))
+                    {
+                        // Перерисовываем рамку группы при изменении детей
+                        Dispatcher.UIThread.Post(() => 
+                            UpdateSelectionVisual(group, panel)
+                        );
+                        DebugLog.Write("[DEBUG] Entered to group BindFigureProperties");
+                    }
+                };
+            }
+        }
         if (figure is PolygonViewModel polygon && control is Avalonia.Controls.Shapes.Path path)
         {
             polygon.VerticesChanged += (s, e) =>
@@ -498,7 +521,6 @@ public partial class VectorCanvasControl : UserControl
                 );
             };
         }
-        
         foreach (var vertex in figure.Vertices)
         {
             vertex.PropertyChanged += (s, e) =>
@@ -519,8 +541,6 @@ public partial class VectorCanvasControl : UserControl
                 }
             };
         }
-
-        // Подписка на изменения
         figure.PropertyChanged += (s, e) =>
         {
             if (control is not Shape shapeCtrl) return;
@@ -550,12 +570,11 @@ public partial class VectorCanvasControl : UserControl
                     }
                     break;
                 case nameof(FigureViewModel.Opacity):
-                    shapeCtrl.Opacity = Math.Clamp(figure.Opacity, 0.5, 1.0);
+                    shapeCtrl.Opacity = Math.Clamp(figure.Opacity, 0.1, 1.0);
                     break;
                 case nameof(FigureViewModel.IsSelected):
                     UpdateSelectionVisual(figure, control);
                     break;
-                // Геометрия Line
                 case nameof(LineViewModel.X1):
                 case nameof(LineViewModel.Y1):
                 case nameof(LineViewModel.X2):
@@ -567,8 +586,6 @@ public partial class VectorCanvasControl : UserControl
                             line.EndPoint = new Avalonia.Point(lineVm.X2, lineVm.Y2);
                         }
                     break;
-                
-                // Геометрия Rectangle/Ellipse — аналогично
                 case "X":
                 case "Y":
                 case "Width":
@@ -581,18 +598,9 @@ public partial class VectorCanvasControl : UserControl
                     }
                     else
                     {
-                        // Для Rectangle/Ellipse — обычный UpdateShapeGeometry
                         UpdateShapeGeometry(shapeCtrl, figure);
                     }
                     break;
-                
-                // case nameof(PointViewModel.X):
-                // case nameof(PointViewModel.Y):
-                //     if (figure is PolygonViewModel polygon && shapeCtrl is Avalonia.Controls.Shapes.Path path)
-                //     {
-                //         UpdatePolygonGeometry(path, polygon);
-                //     }
-                //     break;
             }
         };
     }
@@ -601,12 +609,19 @@ public partial class VectorCanvasControl : UserControl
     {
         switch (figure)
         {
+            case GroupViewModel:
+                break;
+            
+            case LineViewModel lineVm when shape is Avalonia.Controls.Shapes.Line line:
+                line.StartPoint = new Avalonia.Point(lineVm.X1, lineVm.Y1);
+                line.EndPoint = new Avalonia.Point(lineVm.X2, lineVm.Y2);
+                break;
+            
             // Многоугольники (Path)
             case PolygonViewModel polygon when shape is Avalonia.Controls.Shapes.Path path:
                 UpdatePolygonGeometry(path, polygon);
                 break;
             
-            // Квадрат/Круг — перед базовыми классами
             case SquareViewModel square when shape is Avalonia.Controls.Shapes.Rectangle sq:
                 sq.Width = sq.Height = Math.Abs(square.Side);
                 Canvas.SetLeft(sq, Math.Min(square.X, square.X + square.Side));
@@ -645,39 +660,70 @@ public partial class VectorCanvasControl : UserControl
     private void UpdatePolygonGeometry(Avalonia.Controls.Shapes.Path path, PolygonViewModel polygon)
     {
         DebugLog.Write($"[DEBUG] UpdatePolygonGeometry: {polygon.Name}, Vertices={polygon.Vertices.Count}");
-    
         if (polygon.Vertices.Count < 3) return;
         var geometry = new StreamGeometry();
         using (var ctx = geometry.Open())
         {
             if (polygon.Vertices.Count == 0) return;
-        
             ctx.BeginFigure(
                 new Avalonia.Point(polygon.Vertices[0].X, polygon.Vertices[0].Y),
                 isFilled: polygon.FillColor.A > 0
             );
-        
             for (int i = 1; i < polygon.Vertices.Count; i++)
                 ctx.LineTo(new Avalonia.Point(polygon.Vertices[i].X, polygon.Vertices[i].Y));
         
             ctx.EndFigure(isClosed: true);
         }
-    
         path.Data = geometry;
     }
-
+    
+    /// <summary>Метод для обновления визуального выделения фигуры.</summary>
+    /// <param name="figure">Модель фигуры для обновления выделения.</param>
+    /// <param name="control">Элемент управления, отображающий фигуру.</param>
     private void UpdateSelectionVisual(FigureViewModel figure, Control control)
     {
-        // Убираем старую рамку, если есть
-        var adorner = control.Parent is Panel p 
-            ? p.Children.OfType<Border>().FirstOrDefault(b => b.Tag as string == "SelectionAdorner") 
-            : null;
+        DebugLog.Write($"[DEBUG] UpdateSelectionVisual: {figure.Name}, IsSelected={figure.IsSelected}, Control={control?.GetType().Name}, Parent={control?.Parent?.GetType().Name}");
+        var adorner = control.Parent is Panel p ? p.Children.OfType<Border>().FirstOrDefault(b => b.Tag as string == "SelectionAdorner") : null;
     
+        if (figure is GroupViewModel group && control is Panel panel)
+        {
+            var groupAdorner = panel.Children.OfType<Border>()
+            .FirstOrDefault(b => b.Tag as string == "GroupSelectionAdorner");
+        
+            if (figure.IsSelected)
+            {
+                if (groupAdorner == null)
+                {
+                    var border = new Border
+                    {
+                        BorderBrush = Brushes.Cyan,
+                        BorderThickness = new Thickness(1),
+                        IsHitTestVisible = false,
+                        Tag = "GroupSelectionAdorner"
+                    };
+                
+                    var bbox = group.GetBoundingBox();
+                    border.Width = bbox.MaxX - bbox.MinX;
+                    border.Height = bbox.MaxY - bbox.MinY;
+                    Canvas.SetLeft(border, bbox.MinX);
+                    Canvas.SetTop(border, bbox.MinY);
+                
+                    panel.Children.Add(border);
+                }
+            }
+            else
+            {
+                if (groupAdorner?.Parent is Panel parent)
+                    parent.Children.Remove(groupAdorner);
+            }
+            return;
+        }
+    
+        // ✅ Для обычных фигур (Rectangle, Ellipse, Path, Line)
         if (figure.IsSelected)
         {
             if (adorner == null && control is Shape shape)
             {
-                // Создаём рамку выделения
                 var border = new Border
                 {
                     BorderBrush = Brushes.Blue,
@@ -685,11 +731,47 @@ public partial class VectorCanvasControl : UserControl
                     IsHitTestVisible = false,
                     Tag = "SelectionAdorner"
                 };
-            
-                // Привязываем размер/позицию к фигуре
+                if (shape is Avalonia.Controls.Shapes.Rectangle rect)
+                {
+                    border.Width = rect.Width;
+                    border.Height = rect.Height;
+                    Canvas.SetLeft(border, Canvas.GetLeft(rect));
+                    Canvas.SetTop(border, Canvas.GetTop(rect));
+                }
+                else if (shape is Avalonia.Controls.Shapes.Ellipse ellipse)
+                {
+                    border.Width = ellipse.Width;
+                    border.Height = ellipse.Height;
+                    Canvas.SetLeft(border, Canvas.GetLeft(ellipse));
+                    Canvas.SetTop(border, Canvas.GetTop(ellipse));
+                }
+                else if (shape is Avalonia.Controls.Shapes.Path path)
+                {
+                    // Для полигонов — используем bounding box фигуры
+                    var bbox = figure.GetBoundingBox();
+                    border.Width = bbox.MaxX - bbox.MinX;
+                    border.Height = bbox.MaxY - bbox.MinY;
+                    Canvas.SetLeft(border, bbox.MinX);
+                    Canvas.SetTop(border, bbox.MinY);
+                }
+                else if (shape is Avalonia.Controls.Shapes.Line line)
+                {
+                    // Для линии — используем StartPoint и EndPoint
+                    border.Width = Math.Abs(line.EndPoint.X - line.StartPoint.X);
+                    border.Height = Math.Abs(line.EndPoint.Y - line.StartPoint.Y);
+                    Canvas.SetLeft(border, Math.Min(line.StartPoint.X, line.EndPoint.X));
+                    Canvas.SetTop(border, Math.Min(line.StartPoint.Y, line.EndPoint.Y));
+                }
             
                 if (shape.Parent is Panel parent)
+                {
+                    DebugLog.Write($"[DEBUG] Adding border to parent: Width={border.Width}, Height={border.Height}, Left={Canvas.GetLeft(border)}, Top={Canvas.GetTop(border)}");
                     parent.Children.Add(border);
+                }
+                else
+                {
+                    DebugLog.Write("[ERROR] shape.Parent is not Panel!");
+                }
             }
             control.Opacity = 1.0;
         }
@@ -697,16 +779,19 @@ public partial class VectorCanvasControl : UserControl
         {
             if (adorner?.Parent is Panel parent)
                 parent.Children.Remove(adorner);
-            // control.Opacity = 1.0;
         }
     }
 
+    /// <summary>Метод для обновления визуального выделения всех фигур.</summary>
     private void UpdateSelectionVisuals()
     {
+        DebugLog.Write($"[DEBUG] UpdateSelectionVisuals: SelectedFigures.Count = {CanvasViewModel?.SelectedFigures?.Count ?? 0}");
         foreach (var kvp in _renderedFigures)
         {
             if (kvp.Value.Tag is FigureViewModel figure)
             {
+                figure.IsSelected = CanvasViewModel?.SelectedFigures?.Contains(figure) == true;
+                DebugLog.Write($"[DEBUG]   {figure.Name}: IsSelected={figure.IsSelected}");
                 UpdateSelectionVisual(figure, kvp.Value);
             }
         }
@@ -716,8 +801,10 @@ public partial class VectorCanvasControl : UserControl
     {
         if (sender is Control control && control.Tag is FigureViewModel figure)
         {
-            CanvasViewModel?.SelectFigureAt(figure.Center);
+            var addToSelection = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+            CanvasViewModel?.SelectFigureAt(figure.Center, addToSelection);
             e.Handled = true;
+            DebugLog.Write("[DEBUG] Entered to OnFigurePointerPressed");
         }
     }
 
@@ -755,23 +842,22 @@ public partial class VectorCanvasControl : UserControl
     }
 
     // Метод для конвертации координат мыши в координаты холста
-    public graphic_editor.Models.Point_1 ScreenToCanvas(Avalonia.Point screenPoint)
+    public graphic_editor.Geometry.Point2D ScreenToCanvas(Avalonia.Point screenPoint)
     {
         var canvasPoint = DrawingCanvas.TranslatePoint(screenPoint, this);
         if (canvasPoint.HasValue)
         {
-            return new graphic_editor.Models.Point_1(
+            return new graphic_editor.Geometry.Point2D(
                 (canvasPoint.Value.X - OffsetX) / Zoom,
                 (canvasPoint.Value.Y - OffsetY) / Zoom
             );
         }
-        return graphic_editor.Models.Point_1.Zero;
+        return graphic_editor.Geometry.Point2D.Zero;
     }
     
-    /// <summary>
-    /// Конвертирует System.Drawing.Color в Avalonia.Media.Color
-    /// </summary>
+    /// <summary>Метод для конвертации System.Drawing.Color в Avalonia.Media.Color.</summary>
+    /// <param name="c">Исходный цвет в формате System.Drawing.Color.</param>
+    /// <returns>Цвет в формате Avalonia.Media.Color.</returns>
     private static Avalonia.Media.Color ToAvaloniaColor(System.Drawing.Color c) => 
         Avalonia.Media.Color.FromArgb(c.A, c.R, c.G, c.B);
-    
 }

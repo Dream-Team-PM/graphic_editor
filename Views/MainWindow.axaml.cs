@@ -24,7 +24,6 @@ public partial class MainWindow : Window
     private double _objectY = 240;
     private double _objectScale = 1.0;
     private double _objectRotation = 0;
-    private string _objectColor = "#FF4A90";
 
 	private MainWindowViewModel? _viewModel;
 
@@ -33,17 +32,14 @@ public partial class MainWindow : Window
         InitializeComponent();
 		_viewModel = new MainWindowViewModel();
 		DataContext = _viewModel;
-
         // Начальные значения
         SelectedToolText.Text = "Выделение";
-        StrokePercentText.Text = "75%";
-
+        StrokePercentText.Text = "50%";
 		if (this.FindControl<Canvas>("MainCanvas") is Canvas canvas) 
 		{
 			canvas.AddHandler(PointerMovedEvent, OnCanvasPointerMoved);
 			canvas.AddHandler(PointerPressedEvent, OnCanvasPointerPressed);
 		}
-
         if (ThemeSlider != null)
         {
             ThemeSlider.Value = _viewModel.CurrentTheme == ThemeVariant.Light ? 1 : 0;
@@ -53,13 +49,10 @@ public partial class MainWindow : Window
 	private void OnCanvasPointerMoved(object? sender, PointerEventArgs e) 
 	{
     	if (_viewModel == null) return;
-    
     	// Обновляем координаты
     	var screenPos = e.GetPosition(VectorCanvas);
     	var canvasPoint = VectorCanvas.ScreenToCanvas(screenPos);
     	_viewModel.Commands.UpdateCoordinates.Execute((canvasPoint.X, canvasPoint.Y));
-    
-    	// Вызываем обработчик рисования
     	_viewModel.HandlePointerMoved(e);
 	}
 
@@ -68,18 +61,14 @@ public partial class MainWindow : Window
     	if (_viewModel == null) return;
     	var screenPos = e.GetPosition(VectorCanvas);
     	var point = VectorCanvas.ScreenToCanvas(screenPos);
-    	// Вызываем обработчик рисования
     	_viewModel.HandlePointerPressed(e);
 	}
 
 	private void OnCanvasPointerReleased(object? sender, PointerReleasedEventArgs e) 
 	{
     	if (_viewModel == null) return;
-    
     	var screenPos = e.GetPosition(VectorCanvas);
     	var point = VectorCanvas.ScreenToCanvas(screenPos);
-    	
-    	// Вызываем обработчик рисования
     	_viewModel.HandlePointerReleased(e);
 	}
 
@@ -88,7 +77,7 @@ public partial class MainWindow : Window
         if (sender is RadioButton btn && btn.IsChecked == true && btn.Tag is string toolName)
         {
             DebugLog.Write($"[DEBUG] ToolButton_Checked: Setting SelectedTool to '{toolName}' (Tag={btn.Tag})");
-            _viewModel.SelectedTool = toolName;
+            _viewModel.SetToolByName(toolName);
             SelectedToolText.Text = toolName;
         }
         else
@@ -187,50 +176,6 @@ public partial class MainWindow : Window
         ShowStatus($"Перемещение: X = {_objectX}");
     }
 
-    private void MoveCenter_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectX = 450;
-        _objectY = 310;
-        ShowStatus("Перемещение: по центру");
-    }
-
-    // ========== КОНТЕКСТНОЕ МЕНЮ - ЦВЕТ ==========
-    private void ColorRed_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectColor = "#FF0000";
-        ShowStatus("Цвет: Красный");
-    }
-
-    private void ColorGreen_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectColor = "#00FF00";
-        ShowStatus("Цвет: Зелёный");
-    }
-
-    private void ColorBlue_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectColor = "#0000FF";
-        ShowStatus("Цвет: Синий");
-    }
-
-    private void ColorYellow_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectColor = "#FFFF00";
-        ShowStatus("Цвет: Жёлтый");
-    }
-
-    private void ColorWhite_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectColor = "#FFFFFF";
-        ShowStatus("Цвет: Белый");
-    }
-
-    private void ColorBlack_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectColor = "#000000";
-        ShowStatus("Цвет: Чёрный");
-    }
-
     private void ColorPicker_Click(object? sender, RoutedEventArgs e)
     {
         ShowStatus("Открытие выбора цвета...");
@@ -250,7 +195,7 @@ public partial class MainWindow : Window
     // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
     private void ShowStatus(string message)
     {
-        StatusText.Text = message;
+        //StatusText.Text = message;
     }
 
 	private void ThemeSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
@@ -262,6 +207,6 @@ public partial class MainWindow : Window
             : ThemeVariant.Dark;
         
         this.RequestedThemeVariant = _viewModel.CurrentTheme;
-		ShowStatus($"Тема: {(e.NewValue >= 0.5 ? "Светлая ☀️" : "Тёмная 🌙")}");
+        _viewModel.ToggleTheme();
     }
 }

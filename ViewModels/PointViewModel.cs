@@ -4,6 +4,7 @@ using ReactiveUI;
 
 using graphic_editor.Models;
 namespace graphic_editor.ViewModels;
+using graphic_editor.Geometry;
 
 /// <summary>
 /// Модель точки, основывается на ViewModelBase.
@@ -37,13 +38,13 @@ public class PointViewModel : ViewModelBase
     }
 
     /// <summary>Приведение к типу точки.</summary>
-    public Point_1 ToPoint() => new Point_1(X, Y);
+    public Point2D ToPoint() => new Point2D(X, Y);
 
     /// <summary>
     /// Приведение из точки Point_1 в PointViewModelPointViewModel.
     /// </summary>
     /// <param name="point">Точка, необходимая для приведения к типу PointViewModel.</param>
-    public static PointViewModel FromPoint(Point_1 point) => new PointViewModel(point.X, point.Y);
+    public static PointViewModel FromPoint(Point2D point) => new PointViewModel(point.X, point.Y);
 
     /// <summary>
     /// Приведение точки в строчный вид.
