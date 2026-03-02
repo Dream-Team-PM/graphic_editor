@@ -683,7 +683,12 @@ public partial class VectorCanvasControl : UserControl
     private void UpdateSelectionVisual(FigureViewModel figure, Control control)
     {
         DebugLog.Write($"[DEBUG] UpdateSelectionVisual: {figure.Name}, IsSelected={figure.IsSelected}, Control={control?.GetType().Name}, Parent={control?.Parent?.GetType().Name}");
-        var adorner = control.Parent is Panel p ? p.Children.OfType<Border>().FirstOrDefault(b => b.Tag as string == "SelectionAdorner") : null;
+        if (control.Parent is not Panel parent)
+    	{
+        	DebugLog.Write($"[WARN] UpdateSelectionVisual: control.Parent is null or not Panel, skipping");
+        	return;  // ← Выходим, не пытаемся добавить adorner
+    	}
+		var adorner = control.Parent is Panel groupPanel ? groupPanel.Children.OfType<Border>().FirstOrDefault(b => b.Tag as string == "SelectionAdorner") : null;
     
         if (figure is GroupViewModel group && control is Panel panel)
         {
@@ -707,14 +712,13 @@ public partial class VectorCanvasControl : UserControl
                     border.Height = bbox.MaxY - bbox.MinY;
                     Canvas.SetLeft(border, bbox.MinX);
                     Canvas.SetTop(border, bbox.MinY);
-                
-                    panel.Children.Add(border);
+                	parent.Children.Add(border);
                 }
             }
             else
             {
-                if (groupAdorner?.Parent is Panel parent)
-                    parent.Children.Remove(groupAdorner);
+                if (groupAdorner?.Parent is Panel groupAdornerParent)
+                    groupAdornerParent.Children.Remove(groupAdorner);
             }
             return;
         }
@@ -763,10 +767,10 @@ public partial class VectorCanvasControl : UserControl
                     Canvas.SetTop(border, Math.Min(line.StartPoint.Y, line.EndPoint.Y));
                 }
             
-                if (shape.Parent is Panel parent)
+                if (shape.Parent is Panel shapeParent)
                 {
                     DebugLog.Write($"[DEBUG] Adding border to parent: Width={border.Width}, Height={border.Height}, Left={Canvas.GetLeft(border)}, Top={Canvas.GetTop(border)}");
-                    parent.Children.Add(border);
+                    shapeParent.Children.Add(border);
                 }
                 else
                 {
@@ -777,8 +781,8 @@ public partial class VectorCanvasControl : UserControl
         }
         else
         {
-            if (adorner?.Parent is Panel parent)
-                parent.Children.Remove(adorner);
+            if (adorner?.Parent is Panel adornerParent)
+                adornerParent.Children.Remove(adorner);
         }
     }
 
@@ -809,14 +813,41 @@ public partial class VectorCanvasControl : UserControl
     }
 
     private void RemoveFigure(FigureViewModel figure)
+{
+    if (_renderedFigures.TryGetValue(figure.Id, out var control))
     {
-        if (_renderedFigures.TryGetValue(figure.Id, out var control))
+        // ✅ Отписываемся от событий
+        control.PointerPressed -= OnFigurePointerPressed;
+        
+        // ✅ Удаляем adorner если есть
+        if (control.Parent is Panel parent)
         {
-            control.PointerPressed -= OnFigurePointerPressed;
-             DrawingCanvas.Children.Remove(control);
-            _renderedFigures.Remove(figure.Id);
+            var adorner = parent.Children.OfType<Border>()
+                .FirstOrDefault(b => b.Tag as string == "SelectionAdorner");
+            if (adorner != null)
+            {
+                parent.Children.Remove(adorner);
+                DebugLog.Write($"[DEBUG] RemoveFigure: Removed adorner for {figure.Name}");
+            }
         }
+        
+        // ✅ Удаляем из Canvas
+        if (DrawingCanvas != null && DrawingCanvas.Children.Contains(control))
+        {
+            DrawingCanvas.Children.Remove(control);
+            DebugLog.Write($"[DEBUG] RemoveFigure: Removed control from DrawingCanvas for {figure.Name}");
+        }
+        
+        // ✅ Удаляем из словаря
+        _renderedFigures.Remove(figure.Id);
+        
+        DebugLog.Write($"[DEBUG] RemoveFigure: {figure.Name}, Id={figure.Id}, Remaining={_renderedFigures.Count}");
     }
+    else
+    {
+        DebugLog.Write($"[WARN] RemoveFigure: Figure {figure.Name} not found in _renderedFigures");
+    }
+}
     
     private void ClearAllFigures()
     {

@@ -47,6 +47,8 @@ public class RectangleViewModel: FigureViewModel
             vertex.X = rotated.X;
             vertex.Y = rotated.Y;
         }
+        _rotation = (_rotation + angle) % 360;
+        this.RaisePropertyChanged(nameof(Rotation));
         NotifyPropertyChanged();
     }
 

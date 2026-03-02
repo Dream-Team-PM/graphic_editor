@@ -105,7 +105,7 @@ public abstract class FigureCommandBase : IHistoryAction
     protected readonly Dictionary<Guid, FigureState> _after = new();
     
     protected record FigureState(
-        double MinX, double MaxX, double MinY, double MaxY,
+        double MinX, double MaxX, double MinY, double MaxY, double Rotation,
         Color LineColor, Color FillColor, double Thickness, double Opacity);
     
     public abstract string Description { get; }
@@ -129,7 +129,7 @@ public abstract class FigureCommandBase : IHistoryAction
         {
             var bbox = figure.GetBoundingBox();
             _before[figure.Id] = new FigureState(
-                bbox.MinX, bbox.MaxX, bbox.MinY, bbox.MaxY,
+                bbox.MinX, bbox.MaxX, bbox.MinY, bbox.MaxY, figure.Rotation,
                 figure.LineColor, figure.FillColor, figure.Thickness, figure.Opacity);
         }
     }
@@ -138,7 +138,7 @@ public abstract class FigureCommandBase : IHistoryAction
     {
         var bbox = figure.GetBoundingBox();
         _after[figure.Id] = new FigureState(
-            bbox.MinX, bbox.MaxX, bbox.MinY, bbox.MaxY,
+            bbox.MinX, bbox.MaxX, bbox.MinY, bbox.MaxY, figure.Rotation,
             figure.LineColor, figure.FillColor, figure.Thickness, figure.Opacity);
     }
     
@@ -152,6 +152,13 @@ public abstract class FigureCommandBase : IHistoryAction
         var dx = state.MinX - currentBbox.MinX;
         var dy = state.MinY - currentBbox.MinY;
         figure.Move(dx, dy);
+
+		// ✅ Восстанавливаем угол поворота
+    var angleDiff = state.Rotation - figure.Rotation;
+    if (Math.Abs(angleDiff) > 0.01)
+    {
+        figure.Rotate(angleDiff);
+    }
         
         // Восстанавливаем стиль
         figure.LineColor = state.LineColor;

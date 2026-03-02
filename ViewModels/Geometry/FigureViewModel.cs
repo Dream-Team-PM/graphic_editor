@@ -21,6 +21,7 @@ public abstract class FigureViewModel: ViewModelBase, ITransformable, ISelectabl
 {
     private Guid _id; /// <summary>Приватное свойство - айди фигуры.</summary>
     private double _opacity = 1.0;
+    public double _rotation = 0;
     private string _name; /// <summary>Приватное свойство - имя фигуры.</summary>
 
 	/// <summary>Защищённый конструктор создания фигуры.</summary>
@@ -73,6 +74,12 @@ public abstract class FigureViewModel: ViewModelBase, ITransformable, ISelectabl
     {
         get => _opacity;
         set => this.RaiseAndSetIfChanged(ref _opacity, value);
+    }
+    
+    public double Rotation
+    {
+        get => _rotation;
+        set => this.RaiseAndSetIfChanged(ref _rotation, value);
     }
     
     public ObservableCollection<PointViewModel> Vertices { get; protected set;  } /// <summary>Публичная коллекция вершин.</summary>
