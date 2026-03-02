@@ -54,7 +54,7 @@ public class PointViewModel : ViewModelBase
     /// <summary>
     /// Уведомление о изменениях параметра класса.
     /// </summary>
-    private void NotifyPropertyChanged()
+    public void NotifyPropertyChanged()
     {
         this.RaisePropertyChanged(nameof(X));
         this.RaisePropertyChanged(nameof(Y));

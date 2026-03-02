@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.ObjectModel;
+using graphic_editor.Interfaces;
 
 using ReactiveUI;
 
@@ -30,6 +31,7 @@ public class HistoryViewModel : ViewModelBase
         _currentIndex++;
         this.RaisePropertyChanged(nameof(CanUndo));
         this.RaisePropertyChanged(nameof(CanRedo));
+        this.RaisePropertyChanged(nameof(Actions));
     }
 
 	/// <summary>Публичная функция отмены.</summary>
@@ -63,15 +65,6 @@ public class HistoryViewModel : ViewModelBase
         _currentIndex = -1;
         this.RaisePropertyChanged(nameof(CanUndo));
         this.RaisePropertyChanged(nameof(CanRedo));
+        this.RaisePropertyChanged(nameof(Actions));
     }
-}
-
-/// <summary>
-/// Публичный интерфейс для работы с операциями (Находится в разработке).
-/// </summary>
-public interface IHistoryAction
-{
-    string Description { get; } /// <summary>Описание операции.</summary>
-    void Undo(); /// <summary>Отменить.</summary>
-    void Redo(); /// <summary>Повторить.</summary>
 }

@@ -15,9 +15,9 @@ using graphic_editor.Geometry;
 namespace graphic_editor.ViewModels;
 
 /// <summary>
-/// Основной публичный абстрактный класс для работы с геометрическими примитивами (основывается на ViewModelBase и IGraphicFigure).
+/// Основной публичный абстрактный класс для работы с геометрическими примитивами (основывается на ViewModelBase и ITransformable, ISelectable, ICloneableFigure, IRenderable, IFigure).
 /// </summary>
-public abstract class FigureViewModel: ViewModelBase, IGraphicFigure, IFigure
+public abstract class FigureViewModel: ViewModelBase, ITransformable, ISelectable, ICloneableFigure, IRenderable, IFigure
 {
     private Guid _id; /// <summary>Приватное свойство - айди фигуры.</summary>
     private double _opacity = 1.0;
@@ -76,9 +76,14 @@ public abstract class FigureViewModel: ViewModelBase, IGraphicFigure, IFigure
     }
     
     public ObservableCollection<PointViewModel> Vertices { get; protected set;  } /// <summary>Публичная коллекция вершин.</summary>
+    // Абстрактные методы для конкретных фигур
+    public IEnumerable<Point2D> GetRenderVertices() => GetVertexPoint();
+    IEnumerable<Point2D> IFigure.Vertices => GetVertexPoint();
+    public virtual FigureViewModel Clone() => (FigureViewModel)MemberwiseClone();
+    IFigure ICloneableFigure.Clone() => Clone();
     
     public abstract Point2D Center { get; } /// <summary>Публичное абстрактное свойство центрирования фигуры.</summary>
-	IEnumerable<Point2D> IFigure.Vertices => GetVertexPoint(); /// <summary>Публичный абстрактный метод получения вершин фигуры.</summary>
+	public abstract IEnumerable<Point2D> GetVertexPoint(); /// <summary>Публичный абстрактный метод получения вершин фигуры.</summary>
 
     public abstract void Rotate(double angle); /// <summary>Публичный абстрактный метод вращения фигуры на угол.</summary>
     public abstract void Scale(double sx, double sy); /// <summary>Публичный абстрактный метод масштабирования фигуры.</summary>
@@ -111,13 +116,6 @@ public abstract class FigureViewModel: ViewModelBase, IGraphicFigure, IFigure
                  bounds.MaxY < minY || bounds.MinY > maxY);
     }
 
-	/// <summary>Публичный виртуальный метод копирования (клонирования) фигуры.</summary>
-	IFigure IFigure.Clone() => Clone();
-    
-    // Абстрактные методы для конкретных фигур
-    public abstract IEnumerable<Point2D> GetVertexPoint();
-    public virtual FigureViewModel Clone() => (FigureViewModel)MemberwiseClone();
-    
     // Вспомогательные методы
     public virtual (double MinX, double MaxX, double MinY, double MaxY) GetBoundingBox()
     {
@@ -129,6 +127,11 @@ public abstract class FigureViewModel: ViewModelBase, IGraphicFigure, IFigure
             vertices.Min(p => p.Y),
             vertices.Max(p => p.Y)
         );
+    }
+
+    public void NotifyPropertyChanged()
+    {
+        this.RaisePropertyChanged(nameof(Vertices));
     }
 
 	protected Point2D ReflectPoint(Point2D p, Point2D a, Point2D b) => p.Reflect(a, b);

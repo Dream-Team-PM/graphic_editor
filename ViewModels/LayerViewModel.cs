@@ -1,5 +1,6 @@
 ﻿// ViewModels/LayerViewModel.cs
 
+using System;
 using System.Collections.ObjectModel;
 
 using ReactiveUI;
@@ -11,6 +12,7 @@ namespace graphic_editor.ViewModels;
 /// </summary>
 public class LayerViewModel : ViewModelBase
 {
+    private Guid _id;
     private string _name; /// <summary>Название слоя.</summary>
     private bool _isVisible = true; /// <summary>Флаг видимости слоя.</summary>
     private bool _isLocked; /// <summary>Флаг для проверки, заблокирован слой или нет.</summary>
@@ -21,6 +23,7 @@ public class LayerViewModel : ViewModelBase
  	/// <summary>Конструктор LayerViewModel по названию.</summary>
     public LayerViewModel(string name)
     {
+        _id = Guid.NewGuid();
         _name = name;
         _figures = new ObservableCollection<FigureViewModel>();
     }
@@ -48,6 +51,8 @@ public class LayerViewModel : ViewModelBase
 
 	/// <summary>Публичная коллекция фигур на одном слое.</summary>
     public ObservableCollection<FigureViewModel> Figures => _figures;
+    
+    public Guid Id => _id;
 
 	/// <summary>Публичное сввойство подсчёта числа фигур на слое.</summary>
     public int FigureCount => _figures.Count;

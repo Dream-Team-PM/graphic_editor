@@ -66,8 +66,8 @@
                         <MenuItem Header="Выход" InputGesture="Alt+F4"/>
                     </MenuItem>
                     <MenuItem Header="_Правка">
-                        <MenuItem Header="Отменить" InputGesture="Ctrl+Z"/>
-                        <MenuItem Header="Повторить" InputGesture="Ctrl+Y"/>
+                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="Отменить" InputGesture="Ctrl+Z" Command="{Binding History.Undo}" IsEnabled="{Binding History.CanUndo}"/>
+                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="Повторить" InputGesture="Ctrl+Y"  Command="{Binding History.Redo}" IsEnabled="{Binding History.CanRedo}"/>
                         <Separator/>
                         <MenuItem Header="Вырезать" InputGesture="Ctrl+X"/>
                         <MenuItem Header="Копировать" InputGesture="Ctrl+C"/>

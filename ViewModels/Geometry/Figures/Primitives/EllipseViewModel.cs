@@ -87,7 +87,7 @@ public class EllipseViewModel: FigureViewModel
         return Vertices.Select(v => v.ToPoint());
     }
     
-    private void NotifyPropertyChanged()
+    public void NotifyPropertyChanged()
     {
         this.RaisePropertyChanged(nameof(X));
         this.RaisePropertyChanged(nameof(Y));

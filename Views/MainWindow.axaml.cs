@@ -11,6 +11,9 @@ using Avalonia.Input;
 
 using graphic_editor.ViewModels;
 using graphic_editor.Helpers;
+using graphic_editor.Tools;
+using graphic_editor.State;
+using graphic_editor.Services;
 
 namespace graphic_editor;
 
@@ -24,7 +27,15 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-		_viewModel = new MainWindowViewModel();
+        var defaultStyle = new StyleSettings(
+            System.Drawing.Color.Black,
+            System.Drawing.Color.Transparent,
+            2.0);
+        
+        var strategyFactory = new ToolStrategyFactory(defaultStyle);
+		var fileService = new FileService();
+		var history = new HistoryViewModel();
+		_viewModel = new MainWindowViewModel(strategyFactory, fileService, history);
 		DataContext = _viewModel;
         // Начальные значения
         SelectedToolText.Text = "Выделение";

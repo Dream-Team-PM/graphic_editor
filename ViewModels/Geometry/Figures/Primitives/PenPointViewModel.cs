@@ -58,7 +58,7 @@ public class PenPointViewModel : FigureViewModel
         yield return new Point2D(X, Y);
     }
     
-    private void NotifyPropertyChanged()
+    public void NotifyPropertyChanged()
     {
         this.RaisePropertyChanged(nameof(X));
         this.RaisePropertyChanged(nameof(Y));

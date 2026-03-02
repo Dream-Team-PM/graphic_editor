@@ -93,7 +93,7 @@ public class LineViewModel: FigureViewModel
         return clone;
     }
 
-	private void NotifyPropertyChanged()
+    public void NotifyPropertyChanged()
 	{
     	this.RaisePropertyChanged(nameof(X1));
     	this.RaisePropertyChanged(nameof(Y1));

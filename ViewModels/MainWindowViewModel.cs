@@ -23,6 +23,8 @@ using graphic_editor.Models;
 using graphic_editor.Geometry;
 using graphic_editor.Helpers;
 using graphic_editor.Interfaces;
+using graphic_editor.State;
+using graphic_editor.Commands;
 
 namespace graphic_editor.ViewModels;
 
@@ -32,7 +34,12 @@ namespace graphic_editor.ViewModels;
 /// </summary>
 public partial class MainWindowViewModel : ViewModelBase
 {
-	// private readonly IFileService _fileService;
+	private readonly IFileService _fileService;
+	private readonly IToolStrategyFactory _strategyFactory;
+	private readonly DrawingSession _drawingSession;
+	private readonly HistoryViewModel _history;
+	
+	public HistoryViewModel History => _history;
     // ========== ПОЛЯ ==========
     private readonly ObservableAsPropertyHelper<string> _coordinatesText; /// <summary>Приватное свойство - текст координат.</summary>
 	private string _statusMessage = "Готово"; /// <summary>Приватное свойство - статус выполнения.</summary>
@@ -170,10 +177,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // ========== КОНСТРУКТОР ==========
 	public MainWindowViewModel(
-		// IFileService fileService
+		IToolStrategyFactory strategyFactory,
+		IFileService fileService,
+		HistoryViewModel history
 		) 
     {
-	    // _fileService = fileService;
+	    _fileService = fileService;
 	    // Commands.SaveCommand = ReactiveCommand.CreateFromTask(async () =>
 	    // {
 	    //     var path = await ShowSaveDialog();
@@ -183,6 +192,10 @@ public partial class MainWindowViewModel : ViewModelBase
 	    //         StatusMessage = success ? "Сохранено ✓" : "Ошибка ✗";
 	    //     }
 	    // });
+	    _strategyFactory = strategyFactory;
+	    _drawingSession = new DrawingSession();
+	    _history = history;
+	    
         Canvas = new CanvasViewModel();
         SetTool(DrawingTool.Select);
         Commands = new EditorCommands(
@@ -241,7 +254,29 @@ public partial class MainWindowViewModel : ViewModelBase
 	        .Subscribe(thickness => ApplyStyleToSelected(f => f.Thickness = thickness));
         this.WhenAnyValue(x => x.Opacity)
 	        .Subscribe(opacity => ApplyStyleToSelected(f => f.Opacity = opacity / 100.0));
+        _drawingSession.WhenAnyValue(x => x.Preview)
+	        .Subscribe(preview => Canvas.SetPreviewFigure(preview));
     }
+	
+	// В MainWindowViewModel.cs
+	/// <summary>Создаёт модель проекта из текущего состояния редактора.</summary>
+	private Project CreateProject()
+	{
+		return new Project
+		{
+			Name = "Безымянный", // позже: брать из Title окна
+			Layers = Canvas.Layers, // ⚠️ ВНИМАНИЕ: это ссылка, не копия!
+			CanvasZoom = Canvas.Zoom,
+			CanvasOffsetX = Canvas.OffsetX,
+			CanvasOffsetY = Canvas.OffsetY
+		};
+	}
+	
+	private StyleSettings GetCurrentStyle() => new(
+		StrokeColor.Color,
+		FillColor.Color,
+		StrokeWidth,
+		Opacity / 100.0);
 		
 	/// <summary>Публичный метод установки инструмента по имени (из Tag кнопки)</summary>
 	public void SetToolByName(string toolName)
@@ -271,21 +306,19 @@ public partial class MainWindowViewModel : ViewModelBase
 	
 	private void MoveSelected(double dx, double dy)
 	{
-		if (Canvas?.SelectedFigures?.Any() == true)
-		{
-			foreach (var figure in Canvas.SelectedFigures)
-			{
-				figure.Move(dx, dy);
-			}
-			StatusMessage = $"Перемещено на ({dx}, {dy})";
-		}
+		if (Canvas?.SelectedFigures?.Any() != true) return;
+		var cmd = new MoveFigureCommand(
+			Canvas.SelectedFigures.Select(f => f.Id).ToList(), 
+			dx, dy);
+		cmd.Execute(Canvas);
+		_history.AddAction(cmd);
+		StatusMessage = $"Перемещено на ({dx}, {dy})";
 	}
 	
 	/// <summary>Приватная функция для группировки выделенных фигур.</summary>
 	public void GroupSelected()
 	{
 		if (Canvas?.ActiveLayer == null) return;
-		var activeLayer = Canvas.ActiveLayer;
 		DebugLog.Write($"[DEBUG] GroupSelected: SelectedFigures.Count = {Canvas.SelectedFigures.Count}");
 		foreach (var f in Canvas.SelectedFigures)
 		{
@@ -299,16 +332,19 @@ public partial class MainWindowViewModel : ViewModelBase
 			return;
 		}
 		var figuresToGroup = Canvas.SelectedFigures.ToList();
+		var activeLayer = Canvas.ActiveLayer;
+		var removeCmd = new DeleteFigureCommand(figuresToGroup);
 		var group = new GroupViewModel(figuresToGroup);
+		var addCmd = new AddFigureCommand(group, activeLayer.Id);
+		var groupCmd = new CompositeCommand(
+			$"Группировка {figuresToGroup.Count} фигур",
+			removeCmd, addCmd);
     
-		// Удаляем старые фигуры из слоя
-		foreach (var figure in figuresToGroup)
-		{
-			activeLayer.Figures.Remove(figure);
-		}
-		activeLayer.Figures.Add(group);
+		// 5. Выполняем и добавляем в историю
+		groupCmd.Execute(Canvas);
+		_history.AddAction(groupCmd);
     
-		// Добавляем группу
+		// 6. UI-обновления (без изменений)
 		Canvas.SelectedFigures.Clear();
 		Canvas.SelectedFigures.Add(group);
 		Canvas.SelectedFigure = group;
@@ -331,18 +367,33 @@ public partial class MainWindowViewModel : ViewModelBase
 		}
 		var activeLayer = Canvas.ActiveLayer;
 		if (activeLayer == null) return;
-		// Разгруппировываем
-		var children = group.Ungroup();
-		// Удаляем группу
-		activeLayer.Figures.Remove(group);
-		// Добавляем детей
-		foreach (var child in children)
-		{
-			activeLayer.Figures.Add(child);
-		}
+		// 1. Получаем детей ДО разгруппировки
+		var children = group.Ungroup().ToList();
+    
+		// 2. Команда удаления группы
+		var removeGroupCmd = new DeleteFigureCommand(new List<FigureViewModel> { group });
+    
+		// 3. Команды добавления каждого ребёнка
+		var addChildrenCmds = children
+			.Select(c => new AddFigureCommand(c, activeLayer.Id))
+			.ToArray();
+    
+		// 4. Составная команда: сначала удалить группу, потом добавить детей
+		var allCommands = new List<IHistoryAction> { removeGroupCmd };
+		allCommands.AddRange(addChildrenCmds);
+
+		var ungroupCmd = new CompositeCommand(
+			$"Разгруппировка: {children.Count} фигур",
+			allCommands.ToArray());
+    
+		// 5. Выполняем и добавляем в историю
+		ungroupCmd.Execute(Canvas);
+		_history.AddAction(ungroupCmd);
+    
+		// 6. UI-обновления
 		Canvas.SelectedFigures.Clear();
 		Canvas.SelectedFigure = null;
-		StatusMessage = $"Группа разгруппирована на {children.Count()} фигур";
+		StatusMessage = $"Группа разгруппирована на {children.Count} фигур";
 		DebugLog.Write($"Группа разгруппирована на {children.Count()} фигур");
 	}
     
@@ -368,6 +419,20 @@ public partial class MainWindowViewModel : ViewModelBase
 			    apply(f);
 		    }
 	    }
+	    
+	    if (Canvas?.SelectedFigures?.Any() == true)
+	    {
+		    // Определяем, что именно изменилось (упрощённо: сохраняем текущие значения)
+		    var cmd = new StyleChangeCommand(
+			    Canvas.SelectedFigures.Select(f => f.Id).ToList(),
+			    StrokeColor.Color,
+			    FillColor.Color,
+			    StrokeWidth,
+			    Opacity / 100.0);
+        
+		    cmd.Execute(Canvas);
+		    _history.AddAction(cmd);
+	    }
     }
     
     private async Task SaveAsync()
@@ -392,7 +457,9 @@ public partial class MainWindowViewModel : ViewModelBase
 	{
 		var sq = new SquareViewModel(100, 100, 150, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
 		ApplyStyle(sq);
-		Canvas?.AddFigure(sq);
+		var cmd = new AddFigureCommand(sq, Canvas.ActiveLayer?.Id);
+		cmd.Execute(Canvas);
+		_history.AddAction(cmd);
 		StatusMessage = "Добавлен квадрат";
 	}
 	/// <summary>Приватная функция для добавления прямоугольника.</summary>
@@ -400,7 +467,9 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var rect = new RectangleViewModel(100, 100, 150, 100, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
         ApplyStyle(rect);
-        Canvas?.AddFigure(rect);
+        var cmd = new AddFigureCommand(rect, Canvas.ActiveLayer?.Id);
+        cmd.Execute(Canvas);
+        _history.AddAction(cmd);
         StatusMessage = "Добавлен прямоугольник";
     }
 	
@@ -409,7 +478,9 @@ public partial class MainWindowViewModel : ViewModelBase
 	{
 		var circle = new CircleViewModel(100, 100, 150, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
 		ApplyStyle(circle);
-		Canvas?.AddFigure(circle);
+		var cmd = new AddFigureCommand(circle, Canvas.ActiveLayer?.Id);
+		cmd.Execute(Canvas);
+		_history.AddAction(cmd);
 		StatusMessage = "Добавлен круг";
 	}
 	
@@ -418,7 +489,9 @@ public partial class MainWindowViewModel : ViewModelBase
     {
 	    var ellipse = new EllipseViewModel(100, 100, 150, 100, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
 	    ApplyStyle(ellipse);
-        Canvas?.AddFigure(ellipse);
+	    var cmd = new AddFigureCommand(ellipse, Canvas.ActiveLayer?.Id);
+	    cmd.Execute(Canvas);
+	    _history.AddAction(cmd);
         StatusMessage = "Добавлен эллипс";
     }
 	
@@ -426,7 +499,9 @@ public partial class MainWindowViewModel : ViewModelBase
     private void AddLine()
     {
         var line = new LineViewModel(100, 100, 300, 300, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
-        Canvas?.AddFigure(line);
+        var cmd = new AddFigureCommand(line, Canvas.ActiveLayer?.Id);
+        cmd.Execute(Canvas);
+        _history.AddAction(cmd);
         StatusMessage = "Добавлена линия";
     }
 	
@@ -437,7 +512,9 @@ public partial class MainWindowViewModel : ViewModelBase
 			new Point2D(200, 200), 75,
 			StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
 		ApplyStyle(pentagon);
-		Canvas?.AddFigure(pentagon);
+		var cmd = new AddFigureCommand(pentagon, Canvas.ActiveLayer?.Id);
+		cmd.Execute(Canvas);
+		_history.AddAction(cmd);
 		StatusMessage = "Добавлен пятиугольник";
 	}
 
@@ -448,7 +525,9 @@ public partial class MainWindowViewModel : ViewModelBase
 			new Point2D(200, 200), 75,
 			StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
 		ApplyStyle(hexagon);
-		Canvas?.AddFigure(hexagon);
+		var cmd = new AddFigureCommand(hexagon, Canvas.ActiveLayer?.Id);
+		cmd.Execute(Canvas);
+		_history.AddAction(cmd);
 		StatusMessage = "Добавлен шестиугольник";
 	}
 	
@@ -458,7 +537,9 @@ public partial class MainWindowViewModel : ViewModelBase
 			new Point2D(200, 200), 75,
 			StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
 		ApplyStyle(heptagon);
-		Canvas?.AddFigure(heptagon);
+		var cmd = new AddFigureCommand(heptagon, Canvas.ActiveLayer?.Id);
+		cmd.Execute(Canvas);
+		_history.AddAction(cmd);
 		StatusMessage = "Добавлен семиугольник";
 	}
 	
@@ -468,7 +549,9 @@ public partial class MainWindowViewModel : ViewModelBase
 			new Point2D(200, 200), 75,
 			StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
 		ApplyStyle(octagon);
-		Canvas?.AddFigure(octagon);
+		var cmd = new AddFigureCommand(octagon, Canvas.ActiveLayer?.Id);
+		cmd.Execute(Canvas);
+		_history.AddAction(cmd);
 		StatusMessage = "Добавлен восьмиугольник";
 	}
 	
@@ -478,7 +561,9 @@ public partial class MainWindowViewModel : ViewModelBase
 			new Point2D(200, 200), new Point2D(100, 200), new Point2D(200, 100),
 			StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
 		ApplyStyle(triangle);
-		Canvas?.AddFigure(triangle);
+		var cmd = new AddFigureCommand(triangle, Canvas.ActiveLayer?.Id);
+		cmd.Execute(Canvas);
+		_history.AddAction(cmd);
 		StatusMessage = "Добавлен треугольник";
 	}
 	
@@ -488,43 +573,52 @@ public partial class MainWindowViewModel : ViewModelBase
 			new Point2D(200, 200), 50,
 			StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
 		ApplyStyle(pentagram);
-		Canvas?.AddFigure(pentagram);
+		var cmd = new AddFigureCommand(pentagram, Canvas.ActiveLayer?.Id);
+		cmd.Execute(Canvas);
+		_history.AddAction(cmd);
 		StatusMessage = "Добавлена пентаграмма";
 	}
 
 	/// <summary>Приватная функция для удаления выбранных фигур.</summary>	
 	private void DeleteSelected()
     {
-        Canvas?.RemoveSelectedFigure();
+	    if (Canvas?.SelectedFigures?.Any() != true) return;
+	    var figures = Canvas.SelectedFigures.ToList();
+	    var cmd = new DeleteFigureCommand(figures);
+	    cmd.Execute(Canvas);
+	    _history.AddAction(cmd);
         StatusMessage = "Объект удалён";
     }
 
 	/// <summary>Приватная функция для дубликации выбранных фигур.</summary>
     private void DuplicateSelected()
     {
-        Canvas?.DuplicateSelectedFigure();
+	    if (Canvas?.SelectedFigure == null) return;
+	    var original = Canvas.SelectedFigure;
+	    var clone = original.Clone();
+	    clone.Move(10, 10); // Смещение клона
+	    var cmd = new AddFigureCommand(clone, Canvas.ActiveLayer?.Id);
+	    cmd.Execute(Canvas);
+	    _history.AddAction(cmd);
         StatusMessage = "Объект дублирован";
     }
 
 	/// <summary>Приватная функция для вращения фигуры влево.</summary>
-    private void RotateLeft()
-    {
-        Canvas?.RotateSelectedFigure(-90);
-        StatusMessage = "Поворот на -90°";
-    }
-
-	/// <summary>Приватная функция для вращения фигуры вправо.</summary>
-    private void RotateRight()
-    {
-        Canvas?.RotateSelectedFigure(90);
-        StatusMessage = "Поворот на 90°";
-    }
-	
-	/// <summary>Приватная функция для вращения фигуры на 180 градусов.</summary>
-	private void RotateFull()
+	private void RotateLeft() => RotateSelected(-90);
+	private void RotateRight() => RotateSelected(90);
+	private void RotateFull() => RotateSelected(180);
+	private void RotateSelected(double angle)
 	{
-		Canvas?.RotateSelectedFigure(180);
-		StatusMessage = "Поворот на 180°";
+		if (Canvas?.SelectedFigures?.Any() != true) return;
+    
+		var cmd = new RotateFigureCommand(
+			Canvas.SelectedFigures.Select(f => f.Id).ToList(), 
+			angle);
+    
+		cmd.Execute(Canvas);
+		_history.AddAction(cmd);
+    
+		StatusMessage = $"Поворот на {angle}°";
 	}
 	
 	private void RotateFreeClick()
@@ -572,11 +666,23 @@ public partial class MainWindowViewModel : ViewModelBase
 
 	private void FlipVertical()
 	{
+		if (Canvas?.SelectedFigures?.Any() != true) return;
+		var cmd = new ReflectionFigureCommand(
+			Canvas.SelectedFigures.Select(f => f.Id).ToList(),
+			ReflectionType.Vertical);
+		cmd.Execute(Canvas);
+		_history.AddAction(cmd);
 		StatusMessage = "Отражение: по вертикали";
 	}
 	
 	private void FlipHorizontal()
 	{
+		if (Canvas?.SelectedFigures?.Any() != true) return;
+		var cmd = new ReflectionFigureCommand(
+			Canvas.SelectedFigures.Select(f => f.Id).ToList(),
+			ReflectionType.Horizontal);
+		cmd.Execute(Canvas);
+		_history.AddAction(cmd);
 		StatusMessage = "Отражение: по горизонтали";
 	}
 
@@ -678,63 +784,75 @@ public partial class MainWindowViewModel : ViewModelBase
         if (Canvas == null) return;
         var point = GetCanvasPoint(e);
         DebugLog.Write($"[DEBUG] PointerPressed at {point}, Tool={CurrentTool.ToDisplayName()}, IsDrawing={IsDrawing}");
-        if (CurrentTool.IsPrimitive())
-        {
-			if (!IsDrawing || _currentDrawingTool != CurrentTool)
-        	{
-            	// Если были в режиме пера, сначала сбрасываем
-            	if (_currentDrawingTool == DrawingTool.Pen && _previewFigure != null && Canvas.ActiveLayer != null)
-            	{
-                	Canvas.ActiveLayer.Figures.Remove(_previewFigure);
-            	}
-            	StartDrawing(point, CurrentTool);
-        	}
-        	e.Handled = true;
-        }
-        else if (CurrentTool == DrawingTool.Pen)
-        {
-	        if (!IsDrawing)
-	        {
-		        StartPenDrawing(point);
-	        }
-	        else if (_currentDrawingTool == DrawingTool.Pen) // Добавляем точку только если рисуем пером
-	        {
-		        AddPenPoint(point);
-	        }
-	        StatusMessage = "Рисование пером: добавляйте точки (Enter для завершения)";
-	        e.Handled = true;
-        }
-        else if (CurrentTool == DrawingTool.Select)
+        if (CurrentTool == DrawingTool.Select)
         {
 	        if (IsDrawing)
 	        {
-		        if (_currentDrawingTool == DrawingTool.Pen && _previewFigure != null && Canvas.ActiveLayer != null)
+		        if (_drawingSession.Tool == DrawingTool.Pen && _previewFigure != null && Canvas.ActiveLayer != null)
 		        {
 			        Canvas.ActiveLayer.Figures.Remove(_previewFigure);
 		        } 
 		        ResetDrawingState();
-        	}
+	        } // Сброс если были в рисовании
+        
 	        var figure = Canvas.ActiveLayer?.Figures.LastOrDefault(f => f.IsIn(point));
 	        if (figure == null)
 	        {
-		        // Начинаем выделение областью
+		        // Начало выделения областью
 		        _isSelectingArea = true;
 		        _selectionStart = point;
 		        _selectionEnd = point;
 		        this.RaisePropertyChanged(nameof(IsSelectingArea));
 		        this.RaisePropertyChanged(nameof(SelectionStart));
 		        this.RaisePropertyChanged(nameof(SelectionEnd));
-		        DebugLog.Write($"Начато выделение областью");
+		        StatusMessage = "Начато выделение областью";
 	        }
 	        else
 	        {
-		        // Клик на фигуре — обычное выделение
 		        var addToSelection = e.KeyModifiers.HasFlag(KeyModifiers.Control);
 		        Canvas.SelectFigureAt(point, addToSelection);
 		        DebugLog.Write($"Объект {HasSelection} и addToSelection =  {addToSelection}");
 		        StatusMessage = HasSelection ? "Объект выделен" : "Выделение снято";
 	        }
-	        
+	        e.Handled = true;
+	        return;
+        }
+        if (CurrentTool == DrawingTool.Pen)
+        {
+	        if (!_drawingSession.IsActive)
+	        {
+		        StartPenDrawing(point);
+	        }
+	        else if (_drawingSession.Tool == DrawingTool.Pen) // Добавляем точку только если рисуем пером
+	        {
+		        AddPenPoint(point);
+	        }
+	        StatusMessage = "Рисование пером: добавляйте точки (Enter для завершения)";
+	        e.Handled = true;
+	        return;
+        }
+        
+        if (CurrentTool.IsPrimitive() && _strategyFactory.IsSupported(CurrentTool))
+        {
+	        // Сброс предыдущей сессии если сменили инструмент
+	        if (_drawingSession.IsActive && _drawingSession.Tool != CurrentTool)
+	        {
+		        ResetDrawingState();
+	        }
+        
+	        if (!_drawingSession.IsActive)
+	        {
+		        var strategy = _strategyFactory.GetStrategy(CurrentTool);
+		        _drawingSession.Start(point, CurrentTool, strategy);
+            
+		        if (_drawingSession.Preview != null)
+		        {
+			        ApplyStyle(_drawingSession.Preview); // Применяем текущий стиль
+			        Canvas.AddFigure(_drawingSession.Preview);
+			        StatusMessage = $"Рисование {CurrentTool.ToDisplayName()}: отпустите кнопку для завершения";
+		        }
+	        }
+	        e.Handled = true;
         }
     }
 
@@ -745,14 +863,17 @@ public partial class MainWindowViewModel : ViewModelBase
     	_currentDrawingTool = DrawingTool.Pen;
     	_penPoints.Clear();
     	_penPoints.Add(startPoint);
+	    
+	    var strategy = _strategyFactory.GetStrategy(DrawingTool.Pen);
+	    var style = GetCurrentStyle();
     	
     	// Создаем первую точку (она остается на холсте)
-	    var firstPoint = new PenPointViewModel(startPoint.X, startPoint.Y, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
+	    var firstPoint = strategy.CreateFinal(startPoint, startPoint, style);
 	    ApplyStyle(firstPoint, solidFill: true);
     	Canvas?.AddFigure(firstPoint);
     	
     	// Создаем предварительную точку для следующего клика
-	    _previewFigure = new PenPointViewModel(startPoint.X, startPoint.Y, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
+	    _previewFigure = strategy.CreatePreview(startPoint, startPoint, style);
 	    ApplyStyle(_previewFigure, solidFill: true);
     	Canvas?.AddFigure(_previewFigure);
     	_drawingStartPoint = startPoint;
@@ -761,67 +882,50 @@ public partial class MainWindowViewModel : ViewModelBase
 	}
 
 	/// <summary>Приватная функция - перемещение по канвасу.</summary>
-    private void CanvasPointerMoved(PointerEventArgs e)
+	private void CanvasPointerMoved(PointerEventArgs e)
 	{
-    	if (Canvas == null) return;
+		if (Canvas == null) return;
+		var point = GetCanvasPoint(e);
     
-    	var point = GetCanvasPoint(e);
-    	UpdateCoordinates((point.X, point.Y));
-
-    	// Используем HasValue для nullable типа
-    	if (IsDrawing && _hasDrawingStart && _previewFigure != null)
-    	{
-        	if (_currentDrawingTool == DrawingTool.Pen)
-            {
-                // В режиме пера показываем предварительную точку
-                if (_previewFigure is PenPointViewModel previewPoint)
-            	{
-                	previewPoint.Vertices[0].X = point.X;
-               	 	previewPoint.Vertices[0].Y = point.Y;
-                
-                	previewPoint.RaisePropertyChanged(nameof(PenPointViewModel.X));
-                	previewPoint.RaisePropertyChanged(nameof(PenPointViewModel.Y));
-            	}
-            }
-            else
-            {
-                // Для примитивов обновляем предварительную фигуру
-                UpdatePreviewFigure(_previewFigure, _drawingStartPoint, point);
-            }
-            e.Handled = true;
-    	}
-	    if (CurrentTool == DrawingTool.Select && _isSelectingArea)
-	    {
-		    _selectionEnd = point;
-		    this.RaisePropertyChanged(nameof(SelectionEnd));
-		    e.Handled = true;
-	    }
+		UpdateCoordinates((point.X, point.Y));
+    
+		// === ОБНОВЛЕНИЕ ПРЕВЬЮ ПРИМИТИВА ===
+		if (_drawingSession.IsActive && _drawingSession.Strategy?.RequiresDrag == true)
+		{
+			_drawingSession.Update(point);
+			e.Handled = true;
+		}
+    
+		// === ВЫДЕЛЕНИЕ ОБЛАСТЬЮ ===
+		if (CurrentTool == DrawingTool.Select && _isSelectingArea)
+		{
+			_selectionEnd = point;
+			this.RaisePropertyChanged(nameof(SelectionEnd));
+			e.Handled = true;
+		}
 	}
-
-	/// <summary>Реализация действия на канвасе.</summary>
+	
 	private void CanvasPointerReleased(PointerReleasedEventArgs e)
 	{
-    	if (Canvas == null) return;
+		if (Canvas == null) return;
+		var point = GetCanvasPoint(e);
+		DebugLog.Write($"[DEBUG] PointerReleased at {point}, IsDrawing={_drawingSession.IsActive}");
     
-    	var point = GetCanvasPoint(e);
-    	DebugLog.Write($"[DEBUG] PointerReleased at {point}, IsDrawing={IsDrawing}");
-
-    	// Используем HasValue и Value для nullable типа
-    	if (IsDrawing && _hasDrawingStart && CurrentTool.IsPrimitive())
-    	{
-       	 	FinishDrawingPrimitive(point);
-        	e.Handled = true;
-    	}
-	    if (CurrentTool == DrawingTool.Select && _isSelectingArea)
-	    {
-		    _isSelectingArea = false;
-		    this.RaisePropertyChanged(nameof(IsSelectingArea));
+		// === ЗАВЕРШЕНИЕ РИСОВАНИЯ ПРИМИТИВА ===
+		if (_drawingSession.IsActive && _drawingSession.Strategy?.RequiresDrag == true)
+		{
+			FinishDrawingPrimitive(point);
+			e.Handled = true;
+		}
     
-		    // 🔥 Выделяем все фигуры в прямоугольнике
-		    SelectFiguresInArea(_selectionStart, _selectionEnd);
-    
-		    e.Handled = true;
-	    }
+		// === ЗАВЕРШЕНИЕ ВЫДЕЛЕНИЯ ОБЛАСТЬЮ ===
+		if (CurrentTool == DrawingTool.Select && _isSelectingArea)
+		{
+			_isSelectingArea = false;
+			this.RaisePropertyChanged(nameof(IsSelectingArea));
+			SelectFiguresInArea(_selectionStart, _selectionEnd);
+			e.Handled = true;
+		}
 	}
 	
 	private void SelectFiguresInArea(Point2D start, Point2D end)
@@ -859,63 +963,40 @@ public partial class MainWindowViewModel : ViewModelBase
     
 		StatusMessage = $"Выделено {figuresInArea.Count} фигур(ы)";
 	}
-
-	/// <summary>Приватный метод для начала рисования.</summary>
-	private void StartDrawing(Point2D startPoint, DrawingTool tool)
-    {
-		if (IsDrawing && _currentDrawingTool != tool)
-    	{
-        	if (_currentDrawingTool == DrawingTool.Pen && _previewFigure != null && Canvas?.ActiveLayer != null)
-        	{
-            	Canvas.ActiveLayer.Figures.Remove(_previewFigure);
-        	}
-        	ResetDrawingState();
-    	}
-        IsDrawing = true;
-        _drawingStartPoint = startPoint;
-        _hasDrawingStart = true;
-        _currentDrawingTool = tool;
-        
-        _previewFigure = CreatePreviewFigure(startPoint, startPoint, tool);
-        
-        if (_previewFigure != null)
-        {
-            Canvas?.AddFigure(_previewFigure);
-            StatusMessage = $"Рисование {tool}: отпустите кнопку мыши для завершения";
-        }
-    }
+	
 
 	/// <summary>Приватный метод для окончания отрисовки примитива.</summary>
-	private void FinishDrawingPrimitive(Point2D endPoint)
-    {
-        var start = _drawingStartPoint;
-        var end = endPoint;
-
-        // Удаляем предварительную фигуру
-        if (_previewFigure != null && Canvas.ActiveLayer != null)
-        {
-            Canvas.ActiveLayer.Figures.Remove(_previewFigure);
-        }
-        
-        // Проверяем минимальный размер
-        bool isValid = Math.Abs(end.X - start.X) > MinFigureSize || Math.Abs(end.Y - start.Y) > MinFigureSize;
-        
-        if (isValid)
-        {
-            FigureViewModel? finalFigure = CreateFinalFigure(start, end, _currentDrawingTool);
-            if (finalFigure != null)
-            {
-                Canvas.AddFigure(finalFigure);
-                StatusMessage = $"{_currentDrawingTool.ToDisplayName()} создан";
-            }
-        }
-        else
-        {
-            StatusMessage = $"{_currentDrawingTool.ToDisplayName()} слишком маленький, не создан";
-        }
-        
-        ResetDrawingState();
-    }
+ /// <summary>Завершение рисования примитива.</summary>
+	 private void FinishDrawingPrimitive(Point2D endPoint)
+	 {
+		 var finalFigure = _drawingSession.Finish(endPoint);
+		 if (finalFigure != null && IsValidSize(finalFigure))
+		 {
+			 ApplyStyle(finalFigure);
+			 var cmd = new AddFigureCommand(finalFigure, Canvas.ActiveLayer?.Id);
+			 cmd.Execute(Canvas);
+			 _history.AddAction(cmd);
+			 StatusMessage = $"{_drawingSession.Tool.ToDisplayName()} создан";
+		 }
+		 else
+		 {
+			 if (_drawingSession.Preview != null && Canvas.ActiveLayer != null)
+			 {
+				 Canvas.ActiveLayer.Figures.Remove(_drawingSession.Preview);
+			 }
+			 StatusMessage = $"{_drawingSession.Tool.ToDisplayName()} слишком маленький, не создан";
+		 }
+	    
+		 ResetDrawingState();
+	 }
+ 
+	 /// <summary>Проверка минимального размера фигуры.</summary>
+	 private bool IsValidSize(FigureViewModel figure)
+	 {
+		 var bbox = figure.GetBoundingBox();
+		 return (bbox.MaxX - bbox.MinX) > MinFigureSize || 
+		        (bbox.MaxY - bbox.MinY) > MinFigureSize;
+	 }
 
 	/// <summary>Приватный метод для добавления точки.</summary>
 	private void AddPenPoint(Point2D point)
@@ -927,18 +1008,21 @@ public partial class MainWindowViewModel : ViewModelBase
         	Canvas.ActiveLayer.Figures.Remove(_previewFigure);
     	}
         
-        // Создаем и добавляем точку на канвас
-        var penPoint = new PenPointViewModel(point.X, point.Y, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
-        ApplyStyle(penPoint, solidFill: true);
-        
-        Canvas?.AddFigure(penPoint);
-        _previewFigure = new PenPointViewModel(point.X, point.Y, StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0);
-        ApplyStyle(_previewFigure, solidFill: true);
-    	Canvas?.AddFigure(_previewFigure);
-        StatusMessage = $"Точка {_penPoints.Count}: ({point.X:F0}, {point.Y:F0})";
-        
-        // Обновляем предварительный просмотр
-        _drawingStartPoint = point; // Для предварительного просмотра следующей точки
+	    var strategy = _strategyFactory.GetStrategy(DrawingTool.Pen);
+	    var style = GetCurrentStyle();
+    
+	    // Добавляем точку на холст
+	    var penPoint = strategy.CreateFinal(point, point, style);
+	    ApplyStyle(penPoint, solidFill: true);
+	    Canvas?.AddFigure(penPoint);
+    
+	    // Новая preview для следующего клика
+	    _previewFigure = strategy.CreatePreview(point, point, style);
+	    ApplyStyle(_previewFigure, solidFill: true);
+	    Canvas?.AddFigure(_previewFigure);
+    
+	    StatusMessage = $"Точка {_penPoints.Count}: ({point.X:F0}, {point.Y:F0})";
+	    _drawingStartPoint = point;
     }
 
 	/// <summary>Приватный метод обновления для новой точки.</summary>
@@ -966,284 +1050,23 @@ public partial class MainWindowViewModel : ViewModelBase
         ResetDrawingState();
     }
 
-	/// <summary>Приватный метод создания финальной фигуры.</summary>
-	private FigureViewModel? CreateFinalFigure(Point2D start, Point2D end, DrawingTool tool)
-    {
-	    var size = Math.Max(Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
-	    var center = new Point2D((start.X + end.X) / 2, (start.Y + end.Y) / 2);
-	    var radius = size / 2;
-	    FigureViewModel? figure = tool switch
-	    {
-		    DrawingTool.Line => new LineViewModel(
-			    start.X, start.Y, end.X, end.Y,
-			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-		    
-		    DrawingTool.Square => new SquareViewModel(
-			    Math.Min(start.X, end.X),
-			    Math.Min(start.Y, end.Y),
-			    size,  // ← ширина = size
-			    size,  // ← высота = size (такая же!) 
-			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-		    
-		    DrawingTool.Circle => new CircleViewModel(
-			    Math.Min(start.X, end.X),  // левый-верхний угол
-			    Math.Min(start.Y, end.Y),
-			    size,  // ← ширина = size
-			    size,  // ← высота = size (такая же!)
-			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-        
-		    DrawingTool.Rectangle => new RectangleViewModel(
-			    Math.Min(start.X, end.X),
-			    Math.Min(start.Y, end.Y),
-			    Math.Abs(end.X - start.X),
-			    Math.Abs(end.Y - start.Y),
-			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-        
-		    DrawingTool.Ellipse => new EllipseViewModel(
-			    Math.Min(start.X, end.X),
-			    Math.Min(start.Y, end.Y),
-			    Math.Abs(end.X - start.X),
-			    Math.Abs(end.Y - start.Y),
-			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-		    
-		    DrawingTool.Pentagon => new PentagonViewModel(
-			    center, radius,
-			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-        
-		    DrawingTool.Hexagon => new HexagonViewModel(
-			    center, radius,
-			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-		    
-		    DrawingTool.Octagon => new OctagonViewModel(
-			    center, radius,
-			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-		    
-		    DrawingTool.Heptagon => new HeptagonViewModel(
-			    center, radius,
-			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-        
-		    DrawingTool.Pentagram => new PentagramViewModel(
-			    center, radius,
-			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-		    
-		    DrawingTool.Triangle => new TriangleViewModel(
-			    new Point2D(center.X, center.Y - radius),           // Верх
-			    new Point2D(center.X - radius, center.Y + radius),  // Лево-низ
-			    new Point2D(center.X + radius, center.Y + radius),  // Право-низ
-			    StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-        
-		    _ => null
-	    };
-	    if (figure != null)
-		    ApplyStyle(figure);
-    
-	    return figure;
-    }
+	
 
 	/// <summary>Приватный метод сброса состояния рисования.</summary>
     private void ResetDrawingState()
     {
+	    _drawingSession.Cancel();
         IsDrawing = false;
         _hasDrawingStart = false;
         _previewFigure = null;
-        _currentDrawingTool = default;
 		_penPoints.Clear();
     }
 
 	/// <summary>Приватный метод создания отображаемой фигуры.</summary>
-	private FigureViewModel? CreatePreviewFigure(Point2D start, Point2D end, DrawingTool tool)
-	{
-		var size = Math.Max(Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
-		var center = new Point2D((start.X + end.X) / 2, (start.Y + end.Y) / 2);
-		var radius = size / 2;
-		FigureViewModel? figure = tool switch
-		{
-			DrawingTool.Line => new LineViewModel(
-				start.X, start.Y, end.X, end.Y,
-				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-			
-			DrawingTool.Square => new SquareViewModel(
-				Math.Min(start.X, end.X),
-				Math.Min(start.Y, end.Y),
-				size, size,
-				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-		    
-			DrawingTool.Circle => new CircleViewModel(
-				Math.Min(start.X, end.X),
-				Math.Min(start.Y, end.Y),
-				size, size,
-				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-        
-			DrawingTool.Rectangle => new RectangleViewModel(
-				Math.Min(start.X, end.X),
-				Math.Min(start.Y, end.Y),
-				Math.Abs(end.X - start.X),
-				Math.Abs(end.Y - start.Y),
-				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-        
-			DrawingTool.Ellipse => new EllipseViewModel(
-				Math.Min(start.X, end.X),
-				Math.Min(start.Y, end.Y),
-				Math.Abs(end.X - start.X),
-				Math.Abs(end.Y - start.Y),
-				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-			
-			DrawingTool.Pen => new PenPointViewModel(start.X, start.Y,
-				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-			
-			DrawingTool.Pentagon => new PentagonViewModel(
-				center, radius,
-				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-        
-			DrawingTool.Hexagon => new HexagonViewModel(
-				center, radius,
-				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-		    
-			DrawingTool.Octagon => new OctagonViewModel(
-				center, radius,
-				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-		    
-			DrawingTool.Heptagon => new HeptagonViewModel(
-				center, radius,
-				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-        
-			DrawingTool.Pentagram => new PentagramViewModel(
-				center, radius,
-				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-		    
-			DrawingTool.Triangle => new TriangleViewModel(
-				new Point2D(center.X, center.Y - Math.Max(1, radius)),           
-				new Point2D(center.X - Math.Max(1, radius), center.Y + Math.Max(1, radius)),  
-				new Point2D(center.X + Math.Max(1, radius), center.Y + Math.Max(1, radius)),  
-				StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
-        
-			_ => null
-		};
-    
-		// Применяем стиль, если фигура создана
-		if (figure != null)
-		{
-			if (tool == DrawingTool.Pen)
-			{
-				ApplyStyle(figure, solidFill: true);
-			}
-			else
-			{
-				// Для остальных фигур: стандартный стиль
-				ApplyStyle(figure);
-			}
-		}
-    
-		return figure;
-	}
+	
 
 	/// <summary>Приватный метод обновления отображаемой фигуры.</summary>
-    private void UpdatePreviewFigure(FigureViewModel preview, Point2D start, Point2D end)
-    {
-	    var size = Math.Max(Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
-	    var center = new Point2D((start.X + end.X) / 2, (start.Y + end.Y) / 2);
-	    var radius = size / 2;
-        switch (preview)
-        {
-            case LineViewModel line:
-                line.Vertices[1].X = end.X;
-                line.Vertices[1].Y = end.Y;
-                line.RaisePropertyChanged(nameof(LineViewModel.X1));
-                line.RaisePropertyChanged(nameof(LineViewModel.Y1));
-                line.RaisePropertyChanged(nameof(LineViewModel.X2));
-                line.RaisePropertyChanged(nameof(LineViewModel.Y2));
-                break;
-            
-            case RectangleViewModel rect when rect.Name == "Квадрат":
-	            rect.Vertices[0].X = Math.Min(start.X, end.X);
-	            rect.Vertices[0].Y = Math.Min(start.Y, end.Y);
-	            rect.Vertices[1].X = rect.Vertices[0].X + size;
-	            rect.Vertices[1].Y = rect.Vertices[0].Y;
-	            rect.Vertices[2].X = rect.Vertices[0].X + size;
-	            rect.Vertices[2].Y = rect.Vertices[0].Y + size;  // ← size, не height!
-	            rect.Vertices[3].X = rect.Vertices[0].X;
-	            rect.Vertices[3].Y = rect.Vertices[0].Y + size;
-	            rect.RaisePropertyChanged(nameof(RectangleViewModel.X));
-	            rect.RaisePropertyChanged(nameof(RectangleViewModel.Y));
-	            rect.RaisePropertyChanged(nameof(RectangleViewModel.Width));
-	            rect.RaisePropertyChanged(nameof(RectangleViewModel.Height));
-	            break;
-                
-            case RectangleViewModel rect:
-                // Обновляем вершины прямоугольника
-                double rectX = Math.Min(start.X, end.X);
-                double rectY = Math.Min(start.Y, end.Y);
-                double rectWidth = Math.Abs(end.X - start.X);
-                double rectHeight = Math.Abs(end.Y - start.Y);
-                
-                rect.Vertices[0].X = rectX;
-                rect.Vertices[0].Y = rectY;
-                rect.Vertices[1].X = rectX + rectWidth;
-                rect.Vertices[1].Y = rectY;
-                rect.Vertices[2].X = rectX + rectWidth;
-                rect.Vertices[2].Y = rectY + rectHeight;
-                rect.Vertices[3].X = rectX;
-                rect.Vertices[3].Y = rectY + rectHeight;
-                
-                rect.RaisePropertyChanged(nameof(RectangleViewModel.X));
-                rect.RaisePropertyChanged(nameof(RectangleViewModel.Y));
-                rect.RaisePropertyChanged(nameof(RectangleViewModel.Width));
-                rect.RaisePropertyChanged(nameof(RectangleViewModel.Height));
-                break;
-            
-            case EllipseViewModel ellipse when ellipse.Name == "Круг":
-	            ellipse.Vertices[0].X = Math.Min(start.X, end.X);
-	            ellipse.Vertices[0].Y = Math.Min(start.Y, end.Y);
-	            ellipse.Vertices[1].X = ellipse.Vertices[0].X + size;
-	            ellipse.Vertices[1].Y = ellipse.Vertices[0].Y;
-	            ellipse.Vertices[2].X = ellipse.Vertices[0].X + size;
-	            ellipse.Vertices[2].Y = ellipse.Vertices[0].Y + size;  // ← size, не height!
-	            ellipse.Vertices[3].X = ellipse.Vertices[0].X;
-	            ellipse.Vertices[3].Y = ellipse.Vertices[0].Y + size;
-	            ellipse.RaisePropertyChanged(nameof(EllipseViewModel.X));
-	            ellipse.RaisePropertyChanged(nameof(EllipseViewModel.Y));
-	            ellipse.RaisePropertyChanged(nameof(EllipseViewModel.Width));
-	            ellipse.RaisePropertyChanged(nameof(EllipseViewModel.Height));
-	            break;
-                
-            case EllipseViewModel ellipse:
-                // Обновляем ограничивающий прямоугольник эллипса
-                double ellipseX = Math.Min(start.X, end.X);
-                double ellipseY = Math.Min(start.Y, end.Y);
-                double ellipseWidth = Math.Abs(end.X - start.X);
-                double ellipseHeight = Math.Abs(end.Y - start.Y);
-                
-                ellipse.Vertices[0].X = ellipseX;
-                ellipse.Vertices[0].Y = ellipseY;
-                ellipse.Vertices[1].X = ellipseX + ellipseWidth;
-                ellipse.Vertices[1].Y = ellipseY;
-                ellipse.Vertices[2].X = ellipseX + ellipseWidth;
-                ellipse.Vertices[2].Y = ellipseY + ellipseHeight;
-                ellipse.Vertices[3].X = ellipseX;
-                ellipse.Vertices[3].Y = ellipseY + ellipseHeight;
-                
-                ellipse.RaisePropertyChanged(nameof(EllipseViewModel.X));
-                ellipse.RaisePropertyChanged(nameof(EllipseViewModel.Y));
-                ellipse.RaisePropertyChanged(nameof(EllipseViewModel.Width));
-                ellipse.RaisePropertyChanged(nameof(EllipseViewModel.Height));
-                break;
-            
-            // ✅ Правильные многоугольники (пяти-, шести-, семи-, восьмиугольник)
-            case RegularPolygonViewModel polygon:
-	            polygon.UpdateVertices(center, radius);
-	            break;
-        
-            // ✅ Пентаграмма (звезда)
-            case PentagramViewModel star:
-	            star.UpdateVertices(center, radius);
-	            break;
-        
-            // ✅ Произвольный треугольник — масштабируем bounding box
-            case TriangleViewModel triangle:
-	            UpdatePolygonBoundingBox(triangle, start, end);
-	            break;
-        }
-    }
+
 	
 	/// <summary>Вспомогательный метод для масштабирования bounding box полигона</summary>
 	/// <summary>Вспомогательный метод для масштабирования bounding box полигона</summary>
