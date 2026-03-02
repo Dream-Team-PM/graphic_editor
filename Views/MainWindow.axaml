@@ -250,31 +250,31 @@
                             <Border.ContextMenu>
                                 <ContextMenu>
                                     <MenuItem Header="Поворот">
-                                        <MenuItem x:Name="MenuRotateLeft" Header="↶ Влево (90°)" Click="RotateLeft_Click"/>
-                                        <MenuItem x:Name="MenuRotateRight" Header="↷ Вправо (90°)" Click="RotateRight_Click"/>
-                                        <MenuItem x:Name="MenuRotate180" Header="↻ На 180°" Click="Rotate180_Click"/>
-                                        <MenuItem x:Name="MenuRotateFree" Header="Произвольно…" Click="RotateFree_Click"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuRotateLeft" Header="↶ Влево (90°)" Command="{Binding Commands.RotateLeft}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuRotateRight" Header="↷ Вправо (90°)" Command="{Binding Commands.RotateRight}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuRotate180" Header="↻ На 180°" Command="{Binding Commands.RotateFull}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuRotateFree" Header="Произвольно…" Command="{Binding Commands.SetStrokeColorCommand}"/>
                                     </MenuItem>
                                     
                                     <MenuItem Header="Масштаб">
-                                        <MenuItem x:Name="MenuScaleUp" Header="🔍 Увеличить (150%)" Click="ScaleUp_Click"/>
-                                        <MenuItem x:Name="MenuScaleDown" Header="🔎 Уменьшить (50%)" Click="ScaleDown_Click"/>
-                                        <MenuItem x:Name="MenuScaleFit" Header="По размеру окна" Click="ScaleFit_Click"/>
-                                        <MenuItem x:Name="MenuScaleOriginal" Header="Оригинальный размер" Click="ScaleOriginal_Click"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuScaleUp" Header="🔍 Увеличить (150%)" Command="{Binding Commands.ZoomIn}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuScaleDown" Header="🔎 Уменьшить (50%)" Command="{Binding Commands.ZoomOut}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuScaleFit" Header="По размеру окна" Command="{Binding Commands.ZoomFit}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuScaleOriginal" Header="Оригинальный размер" Command="{Binding Commands.ZoomFit}"/>
                                     </MenuItem>
                                     
                                     <MenuItem Header="Отражение">
-                                        <MenuItem x:Name="MenuFlipHorizontal" Header="↔ По горизонтали" Click="FlipHorizontal_Click"/>
-                                        <MenuItem x:Name="MenuFlipVertical" Header="↕ По вертикали" Click="FlipVertical_Click"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuFlipHorizontal" Header="↔ По горизонтали" Command="{Binding Commands.FlipHorizontal}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuFlipVertical" Header="↕ По вертикали" Command="{Binding Commands.FlipVertical}"/>
                                     </MenuItem>
                                     
                                     <Separator/>
                                     
                                     <MenuItem Header="Перемещение">
-                                        <MenuItem x:Name="MenuMoveUp" Header="↑ Вверх (10px)" Click="MoveUp_Click"/>
-                                        <MenuItem x:Name="MenuMoveDown" Header="↓ Вниз (10px)" Click="MoveDown_Click"/>
-                                        <MenuItem x:Name="MenuMoveLeft" Header="← Влево (10px)" Click="MoveLeft_Click"/>
-                                        <MenuItem x:Name="MenuMoveRight" Header="→ Вправо (10px)" Click="MoveRight_Click"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuMoveUp" Header="↑ Вверх (10px)" Command="{Binding Commands.MoveUp}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel"  x:Name="MenuMoveDown" Header="↓ Вниз (10px)" Command="{Binding Commands.MoveDown}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel"  x:Name="MenuMoveLeft" Header="← Влево (10px)" Command="{Binding Commands.MoveLeft}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel"  x:Name="MenuMoveRight" Header="→ Вправо (10px)" Command="{Binding Commands.MoveRight}"/>
                                     </MenuItem>
 
                                     <MenuItem Header="Группа">
@@ -424,8 +424,8 @@
                                             </MenuItem>
                                      </MenuItem>
                                     <Separator/>
-                                    <MenuItem x:Name="MenuDelete" Header="🗑️ Удалить объект" Click="DeleteObject_Click"/>
-                                    <MenuItem x:Name="MenuDuplicate" Header="📋 Дублировать" Click="DuplicateObject_Click"/>
+                                    <MenuItem x:DataType="vm:MainWindowViewModel"  x:Name="MenuDelete" Header="🗑️ Удалить объект" Command="{Binding Commands.DeleteSelected}"/>
+                                    <MenuItem x:DataType="vm:MainWindowViewModel"  x:Name="MenuDuplicate" Header="📋 Дублировать" Command="{Binding Commands.DuplicateSelected}"/>
                                 </ContextMenu>
                             </Border.ContextMenu>
 

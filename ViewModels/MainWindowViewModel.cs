@@ -22,6 +22,7 @@ using ReactiveUI;
 using graphic_editor.Models;
 using graphic_editor.Geometry;
 using graphic_editor.Helpers;
+using graphic_editor.Interfaces;
 
 namespace graphic_editor.ViewModels;
 
@@ -31,6 +32,7 @@ namespace graphic_editor.ViewModels;
 /// </summary>
 public partial class MainWindowViewModel : ViewModelBase
 {
+	// private readonly IFileService _fileService;
     // ========== ПОЛЯ ==========
     private readonly ObservableAsPropertyHelper<string> _coordinatesText; /// <summary>Приватное свойство - текст координат.</summary>
 	private string _statusMessage = "Готово"; /// <summary>Приватное свойство - статус выполнения.</summary>
@@ -167,8 +169,20 @@ public partial class MainWindowViewModel : ViewModelBase
 	}
 
     // ========== КОНСТРУКТОР ==========
-	public MainWindowViewModel() 
+	public MainWindowViewModel(
+		// IFileService fileService
+		) 
     {
+	    // _fileService = fileService;
+	    // Commands.SaveCommand = ReactiveCommand.CreateFromTask(async () =>
+	    // {
+	    //     var path = await ShowSaveDialog();
+	    //     if (path != null)
+	    //     {
+	    //         var success = await _fileService.SaveProjectAsync(CreateProject(), path);
+	    //         StatusMessage = success ? "Сохранено ✓" : "Ошибка ✗";
+	    //     }
+	    // });
         Canvas = new CanvasViewModel();
         SetTool(DrawingTool.Select);
         Commands = new EditorCommands(
@@ -187,9 +201,13 @@ public partial class MainWindowViewModel : ViewModelBase
 	        DuplicateSelected: ReactiveCommand.Create(DuplicateSelected),
 	        RotateLeft: ReactiveCommand.Create(RotateLeft),
 	        RotateRight: ReactiveCommand.Create(RotateRight),
+	        RotateFull: ReactiveCommand.Create(RotateFull),
+	        RotateFreeClick: ReactiveCommand.Create(RotateFreeClick),
 	        ZoomIn: ReactiveCommand.Create(ZoomIn),
 	        ZoomOut: ReactiveCommand.Create(ZoomOut),
 	        ZoomFit: ReactiveCommand.Create(ZoomFit),
+	        FlipHorizontal: ReactiveCommand.Create(FlipHorizontal),
+	        FlipVertical: ReactiveCommand.Create(FlipVertical),
 	        ToggleTheme: ReactiveCommand.Create(ToggleTheme),
 	        Save: ReactiveCommand.Create(Save),
 	        Open: ReactiveCommand.Create(Open),
@@ -508,6 +526,11 @@ public partial class MainWindowViewModel : ViewModelBase
 		Canvas?.RotateSelectedFigure(180);
 		StatusMessage = "Поворот на 180°";
 	}
+	
+	private void RotateFreeClick()
+	{
+		StatusMessage = "Открытие диалога поворота...";
+	}
 
 	/// <summary>Приватная функция для приближения на холсте.</summary>
     private void ZoomIn()
@@ -546,6 +569,16 @@ public partial class MainWindowViewModel : ViewModelBase
             : ThemeVariant.Dark;
         StatusMessage = $"Тема: {(CurrentTheme == ThemeVariant.Light ? "Светлая ☀️" : "Тёмная 🌙")}";
     }
+
+	private void FlipVertical()
+	{
+		StatusMessage = "Отражение: по вертикали";
+	}
+	
+	private void FlipHorizontal()
+	{
+		StatusMessage = "Отражение: по горизонтали";
+	}
 
 	/// <summary>Приватная функция для обновления координат курсора.</summary>
 	/// <param name="coords">Кортеж с координатами (X, Y).</param>

@@ -19,12 +19,6 @@ namespace graphic_editor;
 /// </summary> 
 public partial class MainWindow : Window
 {
-    // Параметры выделенного объекта (для демонстрации)
-    private double _objectX = 120;
-    private double _objectY = 240;
-    private double _objectScale = 1.0;
-    private double _objectRotation = 0;
-
 	private MainWindowViewModel? _viewModel;
 
     public MainWindow()
@@ -89,113 +83,6 @@ public partial class MainWindow : Window
     private void StrokeSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
 		StrokePercentText.Text = $"{(int)e.NewValue}%";
-    }
-
-    // ========== КОНТЕКСТНОЕ МЕНЮ - ПОВОРОТ ==========
-    private void RotateLeft_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectRotation -= 90;
-        ShowStatus($"Поворот: {_objectRotation}°");
-    }
-
-    private void RotateRight_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectRotation += 90;
-        ShowStatus($"Поворот: {_objectRotation}°");
-    }
-
-    private void Rotate180_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectRotation += 180;
-        ShowStatus($"Поворот: {_objectRotation}°");
-    }
-
-    private void RotateFree_Click(object? sender, RoutedEventArgs e)
-    {
-        ShowStatus("Открытие диалога поворота...");
-    }
-
-    // ========== КОНТЕКСТНОЕ МЕНЮ - МАСШТАБ ==========
-    private void ScaleUp_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectScale *= 1.5;
-        ShowStatus($"Масштаб: {_objectScale:P0}");
-    }
-
-    private void ScaleDown_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectScale *= 0.5;
-        ShowStatus($"Масштаб: {_objectScale:P0}");
-    }
-
-    private void ScaleFit_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectScale = 1.0;
-        ShowStatus("Масштаб: по размеру окна");
-    }
-
-    private void ScaleOriginal_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectScale = 1.0;
-        ShowStatus("Масштаб: оригинальный размер");
-    }
-
-    // ========== КОНТЕКСТНОЕ МЕНЮ - ОТРАЖЕНИЕ ==========
-    private void FlipHorizontal_Click(object? sender, RoutedEventArgs e)
-    {
-        ShowStatus("Отражение: по горизонтали");
-    }
-
-    private void FlipVertical_Click(object? sender, RoutedEventArgs e)
-    {
-        ShowStatus("Отражение: по вертикали");
-    }
-
-    // ========== КОНТЕКСТНОЕ МЕНЮ - ПЕРЕМЕЩЕНИЕ ==========
-    private void MoveUp_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectY -= 10;
-        ShowStatus($"Перемещение: Y = {_objectY}");
-    }
-
-    private void MoveDown_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectY += 10;
-        ShowStatus($"Перемещение: Y = {_objectY}");
-    }
-
-    private void MoveLeft_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectX -= 10;
-        ShowStatus($"Перемещение: X = {_objectX}");
-    }
-
-    private void MoveRight_Click(object? sender, RoutedEventArgs e)
-    {
-        _objectX += 10;
-        ShowStatus($"Перемещение: X = {_objectX}");
-    }
-
-    private void ColorPicker_Click(object? sender, RoutedEventArgs e)
-    {
-        ShowStatus("Открытие выбора цвета...");
-    }
-
-    // ========== КОНТЕКСТНОЕ МЕНЮ - ДРУГОЕ ==========
-    private void DeleteObject_Click(object? sender, RoutedEventArgs e)
-    {
-        ShowStatus("Объект удалён");
-    }
-
-    private void DuplicateObject_Click(object? sender, RoutedEventArgs e)
-    {
-        ShowStatus("Объект дублирован");
-    }
-
-    // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
-    private void ShowStatus(string message)
-    {
-        //StatusText.Text = message;
     }
 
 	private void ThemeSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
