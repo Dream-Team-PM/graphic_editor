@@ -1,6 +1,7 @@
 ﻿// Commands/AddFigureCommand.cs
 using graphic_editor.ViewModels;
 using graphic_editor.Interfaces;
+using graphic_editor.Helpers;
 
 namespace graphic_editor.Commands;
 
@@ -22,14 +23,15 @@ public class AddFigureCommand : FigureCommandBase  // ← Наследуемся
     public override void Execute(CanvasViewModel canvas)  // ← override
     {
         if (_wasAdded) return;
-        
         var layer = FindLayer(canvas, _layerId);
-        if (layer != null && _figure != null)
+        if (layer != null && _figure != null && !layer.Figures.Contains(_figure))
         {
+            CaptureBefore(_figure);
             layer.Figures.Add(_figure);
-            _addedToLayerId = layer.Id;
-            _wasAdded = true;
-            this.canvas = canvas;  // ← Сохраняем в базовом классе
+			_addedToLayerId = layer.Id;
+            _wasAdded = true;         
+            this.canvas = canvas;
+            CaptureAfter(_figure);
         }
     }
     
@@ -41,7 +43,7 @@ public class AddFigureCommand : FigureCommandBase  // ← Наследуемся
         if (layer != null && layer.Figures.Contains(_figure))
         {
             layer.Figures.Remove(_figure);
-            _wasAdded = false;
+			_wasAdded = false;
         }
     }
     

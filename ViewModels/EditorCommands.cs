@@ -24,16 +24,14 @@ public record EditorCommands(
     // Выделение
     ReactiveCommand<Unit, Unit> DeleteSelected, /// <summary>Reactive UI удаление выбранной фигуры.</summary>
     ReactiveCommand<Unit, Unit> DuplicateSelected, /// <summary>Reactive UI дубликация выбранной фигуры.</summary>
-
-    
     
     // Трансформации
     ReactiveCommand<Unit, Unit> RotateLeft, /// <summary>Reactive UI вращение фигуры влево.</summary>
     ReactiveCommand<Unit, Unit> RotateRight, /// <summary>Reactive UI вращение фигуры вправо.</summary>
-    ReactiveCommand<Unit, Unit> RotateFull,
-    ReactiveCommand<Unit, Unit> RotateFreeClick,
-    ReactiveCommand<Unit, Unit> FlipHorizontal,
-    ReactiveCommand<Unit, Unit> FlipVertical,
+    ReactiveCommand<Unit, Unit> RotateFull, /// <summary>Reactive UI полное вращение фигуры.</summary>
+    ReactiveCommand<Unit, Unit> RotateFreeClick, /// <summary>Reactive UI полное вращение фигуры.</summary>
+    ReactiveCommand<Unit, Unit> FlipHorizontal, /// <summary>Reactive UI отражение фигуры по горизонтали.</summary>
+    ReactiveCommand<Unit, Unit> FlipVertical, /// <summary>Reactive UI отражение фигуры по вертикали.</summary>
 
     // Zoom
     ReactiveCommand<Unit, Unit> ZoomIn, /// <summary>Reactive UI приближение зума.</summary>

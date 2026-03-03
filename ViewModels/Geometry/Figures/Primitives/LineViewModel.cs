@@ -101,5 +101,6 @@ public class LineViewModel: FigureViewModel
     	this.RaisePropertyChanged(nameof(Y2));
     	this.RaisePropertyChanged(nameof(Angle));
     	this.RaisePropertyChanged(nameof(Length));
+        this.RaisePropertyChanged(nameof(Vertices));
 	}
 }

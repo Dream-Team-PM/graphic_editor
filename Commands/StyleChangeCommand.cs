@@ -1,6 +1,7 @@
 ﻿// Commands/StyleChangeCommand.cs
 using graphic_editor.Interfaces;
 using graphic_editor.ViewModels;
+using graphic_editor.Geometry;
 using System.Drawing;
 
 namespace graphic_editor.Commands;
@@ -35,12 +36,27 @@ public class StyleChangeCommand : FigureCommandBase
             {
                 CaptureBefore(figure);
                 
-                if (NewLineColor.HasValue) figure.LineColor = NewLineColor.Value;
-                if (NewFillColor.HasValue) figure.FillColor = NewFillColor.Value;
-                if (NewThickness.HasValue) figure.Thickness = NewThickness.Value;
-                if (NewOpacity.HasValue) figure.Opacity = NewOpacity.Value;
+                if (figure is GroupViewModel group)
+                {
+                    group.ApplyToAllChildren(child =>
+                    {
+                        if (NewLineColor.HasValue) child.LineColor = NewLineColor.Value;
+                        if (NewFillColor.HasValue) child.FillColor = NewFillColor.Value;
+                        if (NewThickness.HasValue) child.Thickness = NewThickness.Value;
+                        if (NewOpacity.HasValue) child.Opacity = NewOpacity.Value;
+                    });
+                }
+                else
+                {
+                    // Обычная фигура
+                    if (NewLineColor.HasValue) figure.LineColor = NewLineColor.Value;
+                    if (NewFillColor.HasValue) figure.FillColor = NewFillColor.Value;
+                    if (NewThickness.HasValue) figure.Thickness = NewThickness.Value;
+                    if (NewOpacity.HasValue) figure.Opacity = NewOpacity.Value;
+                }
                 
                 CaptureAfter(figure);
+                figure.NotifyPropertyChanged();
             }
         }
     }

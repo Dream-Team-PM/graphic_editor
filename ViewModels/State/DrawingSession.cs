@@ -77,7 +77,7 @@ public class DrawingSession : ReactiveObject
     {
         if (!IsActive || Strategy == null || Preview == null) return null;
     
-        // ✅ Обновляем preview до финального состояния
+        // Обновляем preview до финального состояния
         if (Strategy.RequiresMultiClick)
         {
             Strategy.UpdatePreview(Preview, _points.First(), endPoint);
@@ -87,10 +87,10 @@ public class DrawingSession : ReactiveObject
             Strategy.UpdatePreview(Preview, StartPoint, endPoint);
         }
     
-        // ✅ Сбрасываем имя "Preview" на нормальное
+        // Сбрасываем имя "Preview" на нормальное
         Preview.Name = Preview.GetType().Name.Replace("ViewModel", "");
     
-        // ✅ Сохраняем ссылку и сбрасываем сессию
+        // Сохраняем ссылку и сбрасываем сессию
         var result = Preview;
         Reset();
         return result;

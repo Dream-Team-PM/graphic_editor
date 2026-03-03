@@ -132,9 +132,10 @@ public abstract class PolygonViewModel : FigureViewModel
     }
 
     /// <summary>Уведомление об изменении геометрии</summary>
-    public void NotifyPropertyChanged()
+    public new void NotifyPropertyChanged()
     {
         this.RaisePropertyChanged(nameof(Center));
+        
         // Уведомляем об изменении каждой вершины
         foreach (var vertex in Vertices)
         {
@@ -142,7 +143,6 @@ public abstract class PolygonViewModel : FigureViewModel
             vertex.RaisePropertyChanged(nameof(PointViewModel.Y));
         }
         this.RaisePropertyChanged(nameof(Vertices));
-    
         // 🔥 Триггерим событие для перерисовки
         VerticesChanged?.Invoke(this, EventArgs.Empty);
     }

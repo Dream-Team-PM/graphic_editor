@@ -35,6 +35,52 @@ public class GroupViewModel : FigureViewModel
         Children.CollectionChanged += OnChildrenChanged;
     }
 
+	public List<Guid> GetAllFigureIds()
+    {
+        var ids = new List<Guid>();
+        foreach (var child in Children)
+        {
+            if (child is GroupViewModel group)
+            {
+                ids.AddRange(group.GetAllFigureIds());
+            }
+            else
+            {
+                ids.Add(child.Id);
+            }
+        }
+        return ids;
+    }
+
+	/// <summary>Применяет действие ко всем фигурам в группе</summary>
+    public void ApplyToAllChildren(Action<FigureViewModel> action)
+    {
+        foreach (var child in Children)
+        {
+            if (child is GroupViewModel group)
+            {
+                group.ApplyToAllChildren(action);
+            }
+            else
+            {
+                action(child);
+            }
+        }
+    }
+
+	public override FigureViewModel Clone()
+    {
+        var clonedChildren = Children.Select(c => c.Clone()).ToList();
+        var clone = new GroupViewModel(clonedChildren)
+        {
+            LineColor = LineColor,
+            FillColor = FillColor,
+            Opacity = Opacity,
+            Thickness = Thickness
+        };
+        return clone;
+    }
+
     /// <summary>Обновление ограничивающего прямоугольника группы</summary>
     private void UpdateBoundingBox()
     {

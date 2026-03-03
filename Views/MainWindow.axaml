@@ -77,9 +77,9 @@
                         <MenuItem Header="Показать линейки" IsChecked="True"/>
                         <MenuItem Header="Показать сетку" IsChecked="True"/>
                         <Separator/>
-                        <MenuItem Header="Приблизить" InputGesture="Ctrl+OemPlus"/>
-                        <MenuItem Header="Отдалить" InputGesture="Ctrl+OemMinus"/>
-                        <MenuItem Header="Масштаб 100%" InputGesture="Ctrl+0"/>
+                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="Приблизить" InputGesture="Ctrl+OemPlus" Command="{Binding Commands.ZoomIn}"/>
+                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="Отдалить" InputGesture="Ctrl+OemMinus" Command="{Binding Commands.ZoomOut}"/>
+                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="Масштаб 100%" InputGesture="Ctrl+0" Command="{Binding Commands.ZoomFit}"/>
                     </MenuItem>
                     <MenuItem Header="_Слой"/>
                     <MenuItem Header="_Объект"/>
@@ -91,13 +91,13 @@
                             VerticalAlignment="Center" Margin="0,0,14,0" Spacing="4">
                     
                     <!-- Кнопки с центрированием содержимого -->
-                    <Button Classes="ToolActionBtn" Content="↶" Width="32" Height="24" 
+                    <Button x:DataType="vm:MainWindowViewModel" Classes="ToolActionBtn" Content="↶" Width="32" Height="24" 
                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
-                            ToolTip.Tip="Отменить (Ctrl+Z)"/>
+                            ToolTip.Tip="Отменить (Ctrl+Z)" Command="{Binding History.Undo}" IsEnabled="{Binding History.CanUndo}"/>
                     
-                    <Button Classes="ToolActionBtn" Content="↷" Width="32" Height="24"
+                    <Button x:DataType="vm:MainWindowViewModel" Classes="ToolActionBtn" Content="↷" Width="32" Height="24"
                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
-                            ToolTip.Tip="Повторить (Ctrl+Y)"/>
+                            ToolTip.Tip="Повторить (Ctrl+Y)" Command="{Binding History.Redo}" IsEnabled="{Binding History.CanRedo}"/>
                     
                     <Button Content="Экспорт" Background="#0078D4" Foreground="White" 
                             Padding="12,4" Height="28"

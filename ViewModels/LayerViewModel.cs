@@ -12,7 +12,7 @@ namespace graphic_editor.ViewModels;
 /// </summary>
 public class LayerViewModel : ViewModelBase
 {
-    private Guid _id;
+    private Guid _id; /// <summary>ID слоя.</summary>
     private string _name; /// <summary>Название слоя.</summary>
     private bool _isVisible = true; /// <summary>Флаг видимости слоя.</summary>
     private bool _isLocked; /// <summary>Флаг для проверки, заблокирован слой или нет.</summary>

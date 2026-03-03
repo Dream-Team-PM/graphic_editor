@@ -139,6 +139,7 @@ public abstract class FigureViewModel: ViewModelBase, ITransformable, ISelectabl
     public void NotifyPropertyChanged()
     {
         this.RaisePropertyChanged(nameof(Vertices));
+        this.RaisePropertyChanged(nameof(Center));
     }
 
 	protected Point2D ReflectPoint(Point2D p, Point2D a, Point2D b) => p.Reflect(a, b);

@@ -34,12 +34,11 @@ namespace graphic_editor.ViewModels;
 /// </summary>
 public partial class MainWindowViewModel : ViewModelBase
 {
-	private readonly IFileService _fileService;
-	private readonly IToolStrategyFactory _strategyFactory;
-	private readonly DrawingSession _drawingSession;
-	private readonly HistoryViewModel _history;
-	
-	public HistoryViewModel History => _history;
+	private readonly IFileService _fileService; /// <summary>Объявление сервиса IO для работы с файлами и форматами.</summary>
+	private readonly IToolStrategyFactory _strategyFactory; /// <summary>Объявление паттерна-стратегии (пока не интегрирован).</summary>
+	private readonly DrawingSession _drawingSession; /// <summary>Объявление отдельного состояния для рисования.</summary>
+	private readonly HistoryViewModel _history; /// <summary>Объявление сервиса History для работы с Undo/Redo.</summary>
+	public HistoryViewModel History => _history; /// <summary>Объявление сервиса History для работы с Undo/Redo.</summary>
     // ========== ПОЛЯ ==========
     private readonly ObservableAsPropertyHelper<string> _coordinatesText; /// <summary>Приватное свойство - текст координат.</summary>
 	private string _statusMessage = "Готово"; /// <summary>Приватное свойство - статус выполнения.</summary>
@@ -65,8 +64,8 @@ public partial class MainWindowViewModel : ViewModelBase
 	public CanvasViewModel Canvas { get; } /// <summary>Публичный канвас.</summary>
 	public string CoordinatesText => _coordinatesText.Value; /// <summary>Публичное свойство - значения координат.</summary>
 	public bool HasSelection => Canvas?.HasSelection ?? false; /// <summary>Публичное свойство - проверка выбранности канваса.</summary>
-	private bool _isColorPickerOpen;
-	private bool _isStrokeColorPickerOpen;
+	private bool _isColorPickerOpen; /// <summary>Приватное свойство - флаг открытия окна заливки (проблема со встроенным ColorPicker).</summary>
+	private bool _isStrokeColorPickerOpen; /// <summary>Приватное свойство - флаг открытия окна выбора цвета линии (проблема со встроенным ColorPicker).</summary>
     // ========== СВОЙСТВА ==========
 	/// <summary>Публичное свойство - текст статуса.</summary>
 	public string StatusMessage
@@ -167,12 +166,13 @@ public partial class MainWindowViewModel : ViewModelBase
 		get => _isStrokeColorPickerOpen;
 		set => this.RaiseAndSetIfChanged(ref _isStrokeColorPickerOpen, value);
 	}
-	
+	/// <summary>Приватное свойство установки стилей.</summary>
 	private void ApplyStyle<T>(T figure, bool solidFill = false) where T : FigureViewModel
 	{
 		figure.LineColor = StrokeColor.Color;
 		figure.FillColor = solidFill ? StrokeColor.Color : FillColor.Color;
 		figure.Thickness = StrokeWidth;
+		figure.Opacity = Opacity;
 	}
 
     // ========== КОНСТРУКТОР ==========
@@ -297,8 +297,20 @@ public partial class MainWindowViewModel : ViewModelBase
 	private void MoveSelected(double dx, double dy)
 	{
 		if (Canvas?.SelectedFigures?.Any() != true) return;
+		var allFigureIds = new List<Guid>();
+		foreach (var figure in Canvas.SelectedFigures)
+		{
+			if (figure is GroupViewModel group)
+			{
+				allFigureIds.AddRange(group.GetAllFigureIds());
+			}
+			else
+			{
+				allFigureIds.Add(figure.Id);
+			}
+		}
 		var cmd = new MoveFigureCommand(
-			Canvas.SelectedFigures.Select(f => f.Id).ToList(), 
+			allFigureIds, 
 			dx, dy);
 		cmd.Execute(Canvas);
 		_history.AddAction(cmd);
@@ -583,10 +595,21 @@ public partial class MainWindowViewModel : ViewModelBase
 	private void RotateFull() => RotateSelected(180);
 	private void RotateSelected(double angle)
 	{
+		var allFigureIds = new List<Guid>();
 		if (Canvas?.SelectedFigures?.Any() != true) return;
-    
+		foreach (var figure in Canvas.SelectedFigures)
+		{
+			if (figure is GroupViewModel group)
+			{
+				allFigureIds.AddRange(group.GetAllFigureIds());
+			}
+			else
+			{
+				allFigureIds.Add(figure.Id);
+			}
+		}
 		var cmd = new RotateFigureCommand(
-			Canvas.SelectedFigures.Select(f => f.Id).ToList(), 
+			allFigureIds, 
 			angle);
     
 		cmd.Execute(Canvas);
@@ -999,13 +1022,18 @@ public partial class MainWindowViewModel : ViewModelBase
             FigureViewModel? finalFigure = CreateFinalFigure(start, end, _currentDrawingTool);
             if (finalFigure != null)
             {
-                Canvas.AddFigure(finalFigure);
+	            ApplyStyle(finalFigure);
+	            var cmd = new AddFigureCommand(finalFigure, Canvas.ActiveLayer?.Id);
+	            cmd.Execute(Canvas);
+	            _history.AddAction(cmd);
+	            StatusMessage = $"{_currentDrawingTool.ToDisplayName()} создан";
                 StatusMessage = $"{_currentDrawingTool.ToDisplayName()} создан";
             }
         }
         else
         {
             StatusMessage = $"{_currentDrawingTool.ToDisplayName()} слишком маленький, не создан";
+            DebugLog.Write($"[DEBUG] Figure too small, not created");
         }
         
         ResetDrawingState();

@@ -436,6 +436,48 @@ public partial class VectorCanvasControl : UserControl
         EndPoint = new Avalonia.Point(line.X2, line.Y2),
         Tag = line
     };
+
+	private Avalonia.Controls.Shapes.Path CreateShapeFromVertices(FigureViewModel figure, bool isEllipse = false)
+{
+    var geometry = new StreamGeometry();
+    using (var ctx = geometry.Open())
+    {
+        if (figure.Vertices.Count < 4) return null;
+        
+        // Для эллипса используем Arc, для прямоугольника - LineTo
+        if (isEllipse)
+        {
+            var center = figure.Center;
+            var rx = Math.Abs(figure.Vertices[2].X - figure.Vertices[0].X) / 2;
+            var ry = Math.Abs(figure.Vertices[2].Y - figure.Vertices[0].Y) / 2;
+            
+            ctx.BeginFigure(new Avalonia.Point(center.X - rx, center.Y), isFilled: true);
+            // Верхняя дуга
+            ctx.ArcTo(new Avalonia.Point(center.X + rx, center.Y), 
+                     new Avalonia.Size(rx, ry), 0, false, SweepDirection.Clockwise);
+            // Нижняя дуга
+            ctx.ArcTo(new Avalonia.Point(center.X - rx, center.Y), 
+                     new Avalonia.Size(rx, ry), 0, false, SweepDirection.Clockwise);
+            ctx.EndFigure(isClosed: true);
+        }
+        else
+        {
+            // Прямоугольник через 4 вершины
+            ctx.BeginFigure(new Avalonia.Point(figure.Vertices[0].X, figure.Vertices[0].Y), isFilled: true);
+            for (int i = 1; i < 4; i++)
+                ctx.LineTo(new Avalonia.Point(figure.Vertices[i].X, figure.Vertices[i].Y));
+            ctx.EndFigure(isClosed: true);
+        }
+    }
+    
+    return new Avalonia.Controls.Shapes.Path
+    {
+        Data = geometry,
+        Tag = figure,
+        [Canvas.LeftProperty] = 0,
+        [Canvas.TopProperty] = 0
+    };
+}
     
     private Avalonia.Controls.Shapes.Rectangle CreateRectangle(RectangleViewModel r) => new()
     {
@@ -503,7 +545,6 @@ public partial class VectorCanvasControl : UserControl
                 {
                     if (e.PropertyName is nameof(PointViewModel.X) or nameof(PointViewModel.Y))
                     {
-                        // Перерисовываем рамку группы при изменении детей
                         Dispatcher.UIThread.Post(() => 
                             UpdateSelectionVisual(group, panel)
                         );
@@ -686,7 +727,7 @@ public partial class VectorCanvasControl : UserControl
         if (control.Parent is not Panel parent)
     	{
         	DebugLog.Write($"[WARN] UpdateSelectionVisual: control.Parent is null or not Panel, skipping");
-        	return;  // ← Выходим, не пытаемся добавить adorner
+        	return;
     	}
 		var adorner = control.Parent is Panel groupPanel ? groupPanel.Children.OfType<Border>().FirstOrDefault(b => b.Tag as string == "SelectionAdorner") : null;
     
@@ -723,7 +764,7 @@ public partial class VectorCanvasControl : UserControl
             return;
         }
     
-        // ✅ Для обычных фигур (Rectangle, Ellipse, Path, Line)
+        // Для обычных фигур (Rectangle, Ellipse, Path, Line)
         if (figure.IsSelected)
         {
             if (adorner == null && control is Shape shape)
@@ -751,7 +792,6 @@ public partial class VectorCanvasControl : UserControl
                 }
                 else if (shape is Avalonia.Controls.Shapes.Path path)
                 {
-                    // Для полигонов — используем bounding box фигуры
                     var bbox = figure.GetBoundingBox();
                     border.Width = bbox.MaxX - bbox.MinX;
                     border.Height = bbox.MaxY - bbox.MinY;
@@ -760,7 +800,6 @@ public partial class VectorCanvasControl : UserControl
                 }
                 else if (shape is Avalonia.Controls.Shapes.Line line)
                 {
-                    // Для линии — используем StartPoint и EndPoint
                     border.Width = Math.Abs(line.EndPoint.X - line.StartPoint.X);
                     border.Height = Math.Abs(line.EndPoint.Y - line.StartPoint.Y);
                     Canvas.SetLeft(border, Math.Min(line.StartPoint.X, line.EndPoint.X));
@@ -813,41 +852,33 @@ public partial class VectorCanvasControl : UserControl
     }
 
     private void RemoveFigure(FigureViewModel figure)
-{
-    if (_renderedFigures.TryGetValue(figure.Id, out var control))
-    {
-        // ✅ Отписываемся от событий
-        control.PointerPressed -= OnFigurePointerPressed;
-        
-        // ✅ Удаляем adorner если есть
-        if (control.Parent is Panel parent)
-        {
-            var adorner = parent.Children.OfType<Border>()
+	{
+    	if (_renderedFigures.TryGetValue(figure.Id, out var control))
+    	{
+        	control.PointerPressed -= OnFigurePointerPressed;
+        	if (control.Parent is Panel parent)
+        	{
+            	var adorner = parent.Children.OfType<Border>()
                 .FirstOrDefault(b => b.Tag as string == "SelectionAdorner");
-            if (adorner != null)
-            {
-                parent.Children.Remove(adorner);
-                DebugLog.Write($"[DEBUG] RemoveFigure: Removed adorner for {figure.Name}");
-            }
-        }
-        
-        // ✅ Удаляем из Canvas
-        if (DrawingCanvas != null && DrawingCanvas.Children.Contains(control))
-        {
-            DrawingCanvas.Children.Remove(control);
-            DebugLog.Write($"[DEBUG] RemoveFigure: Removed control from DrawingCanvas for {figure.Name}");
-        }
-        
-        // ✅ Удаляем из словаря
-        _renderedFigures.Remove(figure.Id);
-        
-        DebugLog.Write($"[DEBUG] RemoveFigure: {figure.Name}, Id={figure.Id}, Remaining={_renderedFigures.Count}");
-    }
-    else
-    {
-        DebugLog.Write($"[WARN] RemoveFigure: Figure {figure.Name} not found in _renderedFigures");
-    }
-}
+            	if (adorner != null)
+            	{
+                	parent.Children.Remove(adorner);
+                	DebugLog.Write($"[DEBUG] RemoveFigure: Removed adorner for {figure.Name}");
+            	}
+        	}
+        	if (DrawingCanvas != null && DrawingCanvas.Children.Contains(control))
+        	{
+            	DrawingCanvas.Children.Remove(control);
+            	DebugLog.Write($"[DEBUG] RemoveFigure: Removed control from DrawingCanvas for {figure.Name}");
+        	}
+        	_renderedFigures.Remove(figure.Id);
+        	DebugLog.Write($"[DEBUG] RemoveFigure: {figure.Name}, Id={figure.Id}, Remaining={_renderedFigures.Count}");
+    	}
+    	else
+    	{
+        	DebugLog.Write($"[WARN] RemoveFigure: Figure {figure.Name} not found in _renderedFigures");
+    	}
+	}
     
     private void ClearAllFigures()
     {

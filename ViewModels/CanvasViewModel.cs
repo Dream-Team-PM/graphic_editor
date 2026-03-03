@@ -69,9 +69,7 @@ public class CanvasViewModel: ViewModelBase
         {
             if (_selectedFigure != null)
                 _selectedFigure.IsSelected = false;
-            // Меняем выбранную фигуру
             this.RaiseAndSetIfChanged(ref _selectedFigure, value);
-            // Выделяем новую фигуру
             if (_selectedFigure != null)
             {
                 _selectedFigure.IsSelected = true;

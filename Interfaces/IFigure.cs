@@ -44,8 +44,8 @@ public interface ICloneableFigure
 public interface IRenderable
 {
     IEnumerable<Point2D> GetRenderVertices();
-    Color LineColor { get; }
-    Color FillColor { get; }
+    System.Drawing.Color LineColor { get; }
+    System.Drawing.Color FillColor { get; }
     double Thickness { get; }
     double Opacity { get; }
 }
