@@ -1,6 +1,4 @@
-﻿// ViewModels/HistoryViewModel.cs
-
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using graphic_editor.Interfaces;
 using graphic_editor.Commands;
@@ -11,37 +9,65 @@ using ReactiveUI;
 namespace graphic_editor.ViewModels;
 
 /// <summary>
-/// Класс истории, основывается на ViewModelBase (Находится в разработке).
+/// ViewModel для управления историей действий (Undo/Redo).
+/// Хранит стек команд и обеспечивает навигацию по истории изменений.
 /// </summary>
 public class HistoryViewModel : ViewModelBase
 {
-    private int _currentIndex = -1; /// <summary>Приватное свойство для индекса действия.</summary>
-    private readonly ObservableCollection<IHistoryAction> _actions = new(); /// <summary>Инимциализация коллекции действий.</summary>
-	private CanvasViewModel? _canvas; /// <summary>Инициализация канваса для обратной совместимости Undo/Redo.</summary>
+    private int _currentIndex = -1; 
+    /// <summary>Индекс текущего действия в истории для навигации Undo/Redo.</summary>
+    
+    private readonly ObservableCollection<IHistoryAction> _actions = new(); 
+    /// <summary>Коллекция всех выполненных действий, поддерживающих отмену.</summary>
+    
+    private CanvasViewModel? _canvas; 
+    /// <summary>Ссылка на CanvasViewModel для инъекции в команды, требующие контекст канваса.</summary>
 
-    public ObservableCollection<IHistoryAction> Actions => _actions; /// <summary>Публичная коллекция действий.</summary>
-    public bool CanUndo => _currentIndex >= 0; /// <summary>Флаг проверки возможности отмены.</summary>
-    public bool CanRedo => _currentIndex < _actions.Count - 1; /// <summary>Флаг проверки возможности повторения.</summary>
-	public void SetCanvas(CanvasViewModel canvas) => _canvas = canvas; /// <summary>Функция установки канваса для обратной совместимости Undo/Redo.</summary>
+    /// <summary>
+    /// Публичная коллекция действий для привязки в UI (список истории).
+    /// </summary>
+    public ObservableCollection<IHistoryAction> Actions => _actions;
+    
+    /// <summary>
+    /// Проверяет, доступна ли операция отмены (есть действия для Undo).
+    /// </summary>
+    public bool CanUndo => _currentIndex >= 0;
+    
+    /// <summary>
+    /// Проверяет, доступна ли операция повтора (есть отменённые действия для Redo).
+    /// </summary>
+    public bool CanRedo => _currentIndex < _actions.Count - 1;
+    
+    /// <summary>
+    /// Устанавливает ссылку на CanvasViewModel для команд, требующих контекст канваса.
+    /// </summary>
+    /// <param name="canvas">Экземпляр CanvasViewModel для инъекции.</param>
+    public void SetCanvas(CanvasViewModel canvas) => _canvas = canvas;
 
-	private string _currentActionDescription = "";
+    private string _currentActionDescription = "";
+    
+    /// <summary>
+    /// Описание последнего выполненного действия для отображения в UI.
+    /// </summary>
     public string CurrentActionDescription
     {
         get => _currentActionDescription;
         private set => this.RaiseAndSetIfChanged(ref _currentActionDescription, value);
     }
 
-	/// <summary>Публичная функция добавления действия.</summary>
+    /// <summary>
+    /// Добавляет новое действие в историю, обрезая ветку Redo при необходимости.
+    /// </summary>
+    /// <param name="action">Экземпляр IHistoryAction для добавления.</param>
     public void AddAction(IHistoryAction action)
     {
-        // Удаляем все действия после текущего
         while (_actions.Count > _currentIndex + 1)
             _actions.RemoveAt(_actions.Count - 1);
-		if (action is ZoomCommand zoomCmd && _canvas != null)
+        if (action is ZoomCommand zoomCmd && _canvas != null)
         {
             zoomCmd.SetCanvas(_canvas);
         }
-		if (action is IHistoryActionWithCanvas actionWithCanvas && _canvas != null)
+        if (action is IHistoryActionWithCanvas actionWithCanvas && _canvas != null)
         {
             actionWithCanvas.SetCanvas(_canvas);
         }
@@ -50,23 +76,22 @@ public class HistoryViewModel : ViewModelBase
         this.RaisePropertyChanged(nameof(CanUndo));
         this.RaisePropertyChanged(nameof(CanRedo));
         this.RaisePropertyChanged(nameof(Actions));
-		_currentActionDescription = action.Description;
+        _currentActionDescription = action.Description;
         this.RaisePropertyChanged(nameof(CurrentActionDescription));
-        
         DebugLog.Write($"[DEBUG] History: Added '{action.Description}', CanUndo={CanUndo}, CanRedo={CanRedo}");
     }
 
-	/// <summary>Публичная функция отмены.</summary>
+    /// <summary>
+    /// Выполняет отмену последнего действия, перемещая указатель истории назад.
+    /// </summary>
     public void Undo()
     {
         if (CanUndo)
         {
             var action = _actions[_currentIndex];
             DebugLog.Write($"[DEBUG] History: Undo '{action.Description}'");
-            
             action.Undo();
             _currentIndex--;
-            
             _currentActionDescription = CanUndo ? _actions[_currentIndex].Description : "";
             this.RaisePropertyChanged(nameof(CanUndo));
             this.RaisePropertyChanged(nameof(CanRedo));
@@ -74,7 +99,9 @@ public class HistoryViewModel : ViewModelBase
         }
     }
 
-	/// <summary>Публичная функция повторения.</summary>
+    /// <summary>
+    /// Выполняет повтор ранее отменённого действия, перемещая указатель истории вперёд.
+    /// </summary>
     public void Redo()
     {
         if (CanRedo)
@@ -82,9 +109,7 @@ public class HistoryViewModel : ViewModelBase
             _currentIndex++;
             var action = _actions[_currentIndex];
             DebugLog.Write($"[DEBUG] History: Redo '{action.Description}'");
-            
             action.Redo();
-            
             _currentActionDescription = action.Description;
             this.RaisePropertyChanged(nameof(CanUndo));
             this.RaisePropertyChanged(nameof(CanRedo));
@@ -92,7 +117,9 @@ public class HistoryViewModel : ViewModelBase
         }
     }
 
-	/// <summary>Публичная функция очистки слоя.</summary>
+    /// <summary>
+    /// Очищает всю историю действий, сбрасывая указатель в начальное состояние.
+    /// </summary>
     public void Clear()
     {
         _actions.Clear();

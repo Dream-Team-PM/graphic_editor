@@ -8,21 +8,33 @@ using graphic_editor.Helpers;
 
 namespace graphic_editor.Commands;
 
-public class DeleteFigureCommand : FigureCommandBase  // ← Наследуемся от FigureCommandBase
+/// <summary>
+/// Команда удаления одной или нескольких фигур с поддержкой Undo/Redo.
+/// </summary>
+public class DeleteFigureCommand : FigureCommandBase
 {
-    private readonly List<FigureViewModel> _figures;
-    private readonly List<(FigureViewModel Figure, Guid LayerId)> _deleted = new();
+    private readonly List<FigureViewModel> _figures; /// <summary>Приватное свойство - массив фигур.</summary>
+    private readonly List<(FigureViewModel Figure, Guid LayerId)> _deleted = new(); /// <summary>Приватное свойство - коллекция удалённых фигур.</summary>
     
+	/// <summary>
+    /// Инициализирует новый экземпляр команды удаления фигур.
+    /// </summary>
+    /// <param name="figures">Список фигур для удаления.</param>
     public DeleteFigureCommand(List<FigureViewModel> figures)
     {
         _figures = new List<FigureViewModel>(figures);
     }
     
+	/// <inheritdoc/>
     public override string Description => $"Удаление {_figures.Count} фигур(ы)";
     
-    public override void Execute(CanvasViewModel canvas)  // ← Обязательно: override
+	/// <summary>
+    /// Выполняет команду: удаляет фигуры из их слоёв.
+    /// </summary>
+    /// <param name="canvas">Экземпляр CanvasViewModel для выполнения операции.</param>
+    public override void Execute(CanvasViewModel canvas)
     {
-        this.canvas = canvas;  // ← Сохраняем canvas для Undo/Redo
+        this.canvas = canvas;
         
         if (canvas == null || canvas.Layers == null)
         {
@@ -46,7 +58,10 @@ public class DeleteFigureCommand : FigureCommandBase  // ← Наследуем�
         }
     }
     
-    public override void Undo()  // ← override
+	/// <summary>
+    /// Отменяет команду: восстанавливает удалённые фигуры в исходные слои.
+    /// </summary>
+    public override void Undo()
     {
         if (canvas == null || canvas.Layers == null) return;
         
@@ -62,5 +77,8 @@ public class DeleteFigureCommand : FigureCommandBase  // ← Наследуем�
         }
     }
     
-    public override void Redo() => Execute(canvas);  // ← override
+	/// <summary>
+    /// Повторяет команду: вызывает Execute для повторного удаления фигур.
+    /// </summary>
+    public override void Redo() => Execute(canvas);
 }

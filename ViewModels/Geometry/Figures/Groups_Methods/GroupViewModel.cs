@@ -11,14 +11,20 @@ using graphic_editor.ViewModels;
 namespace graphic_editor.Geometry;
 
 /// <summary>
-/// Группа фигур — позволяет объединять несколько примитивов в один объект.
+/// Группа фигур — контейнер, позволяющий объединять несколько примитивов 
+/// в один логический объект для совместного перемещения, масштабирования и т.д.
 /// </summary>
 public class GroupViewModel : FigureViewModel
 {
-    /// <summary>Коллекция фигур в группе</summary>
+    /// <summary>
+    /// Коллекция дочерних фигур в группе.
+    /// </summary>
     public ObservableCollection<FigureViewModel> Children { get; }
 
-    /// <summary>Конструктор группы</summary>
+    /// <summary>
+    /// Инициализирует новый экземпляр группы фигур.
+    /// </summary>
+    /// <param name="figures">Коллекция фигур для добавления в группу.</param>
     public GroupViewModel(IEnumerable<FigureViewModel> figures)
     {
         Name = "Группа";
@@ -35,6 +41,10 @@ public class GroupViewModel : FigureViewModel
         Children.CollectionChanged += OnChildrenChanged;
     }
 
+	/// <summary>
+    /// Рекурсивно собирает все идентификаторы фигур в группе и вложенных группах.
+    /// </summary>
+    /// <returns>Список GUID всех фигур в иерархии группы.</returns>
 	public List<Guid> GetAllFigureIds()
     {
         var ids = new List<Guid>();
@@ -52,7 +62,10 @@ public class GroupViewModel : FigureViewModel
         return ids;
     }
 
-	/// <summary>Применяет действие ко всем фигурам в группе</summary>
+	/// <summary>
+    /// Применяет указанное действие ко всем фигурам в группе рекурсивно.
+    /// </summary>
+    /// <param name="action">Действие, применяемое к каждой фигуре.</param>
     public void ApplyToAllChildren(Action<FigureViewModel> action)
     {
         foreach (var child in Children)
@@ -68,6 +81,10 @@ public class GroupViewModel : FigureViewModel
         }
     }
 
+	/// <summary>
+    /// Создаёт глубокую копию группы и всех её дочерних фигур.
+    /// </summary>
+    /// <returns>Новый экземпляр <see cref="GroupViewModel"/> с клонированными детьми.</returns>
 	public override FigureViewModel Clone()
     {
         var clonedChildren = Children.Select(c => c.Clone()).ToList();
@@ -81,7 +98,9 @@ public class GroupViewModel : FigureViewModel
         return clone;
     }
 
-    /// <summary>Обновление ограничивающего прямоугольника группы</summary>
+    /// <summary>
+    /// Обновляет ограничивающий прямоугольник группы на основе позиций дочерних фигур.
+    /// </summary>
     private void UpdateBoundingBox()
     {
         if (!Children.Any()) return;
@@ -101,7 +120,11 @@ public class GroupViewModel : FigureViewModel
         this.RaisePropertyChanged(nameof(Center));
     }
 
-    /// <summary>Обработчик изменения свойств детей</summary>
+    /// <summary>
+    /// Обработчик изменения свойств дочерних фигур.
+    /// </summary>
+    /// <param name="sender">Источник события.</param>
+    /// <param name="e">Аргументы события изменения свойства.</param>
     private void OnChildPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(PointViewModel.X) or nameof(PointViewModel.Y))
@@ -111,7 +134,11 @@ public class GroupViewModel : FigureViewModel
         }
     }
 
-    /// <summary>Обработчик изменения состава группы</summary>
+    /// <summary>
+    /// Обработчик изменения состава коллекции дочерних фигур.
+    /// </summary>
+    /// <param name="sender">Источник события.</param>
+    /// <param name="e">Аргументы события изменения коллекции.</param>
     private void OnChildrenChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
         UpdateBoundingBox();
@@ -178,7 +205,10 @@ public class GroupViewModel : FigureViewModel
         return Children.SelectMany(f => f.GetVertexPoint());
     }
 
-    /// <summary>Разгруппировка</summary>
+    /// <summary>
+    /// Разгруппировывает группу, возвращая список дочерних фигур.
+    /// </summary>
+    /// <returns>Коллекция фигур, ранее входивших в группу.</returns>
     public IEnumerable<FigureViewModel> Ungroup()
     {
         foreach (var child in Children)
@@ -189,7 +219,10 @@ public class GroupViewModel : FigureViewModel
         return Children.ToList();
     }
     
-    /// <summary>Получить ограничивающий прямоугольник группы</summary>
+    /// <summary>
+    /// Возвращает координаты ограничивающего прямоугольника группы.
+    /// </summary>
+    /// <returns>Кортеж (MinX, MaxX, MinY, MaxY) с границами bbox.</returns>
     public (double MinX, double MaxX, double MinY, double MaxY) GetBoundingBox()
     {
         if (!Children.Any()) return (0, 0, 0, 0);

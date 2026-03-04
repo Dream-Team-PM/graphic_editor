@@ -2,7 +2,9 @@
 
 namespace graphic_editor.Models;
 
-/// <summary>Типы инструментов рисования</summary>
+/// <summary>
+/// Перечисление типов инструментов рисования в графическом редакторе.
+/// </summary>
 public enum DrawingTool
 {
     Select,        // "Выделение"
@@ -24,9 +26,14 @@ public enum DrawingTool
     Zoom           // "Масштаб"
 }
 
-/// <summary>Extension-методы для DrawingTool</summary>
+/// <summary>
+/// Extension-методы для работы с перечислением <see cref="DrawingTool"/>.
+/// </summary>
 public static class DrawingToolExtensions
 {
+    /// <summary>
+    /// Словарь для отображения инструментов в человеко-читаемые имена.
+    /// </summary>
     private static readonly Dictionary<DrawingTool, string> _displayNames = new()
     {
         { DrawingTool.Select, "Выделение" },
@@ -48,23 +55,51 @@ public static class DrawingToolExtensions
         { DrawingTool.Zoom, "Масштаб" }
     };
 
+    /// <summary>
+    /// Обратный словарь для парсинга строковых имён в <see cref="DrawingTool"/>.
+    /// </summary>
     private static readonly Dictionary<string, DrawingTool> _parseMap = 
         _displayNames.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
 
-    /// <summary>Получить отображаемое имя инструмента</summary>
+    /// <summary>
+    /// Возвращает отображаемое (локализованное) имя инструмента.
+    /// </summary>
+    /// <param name="tool">Экземпляр <see cref="DrawingTool"/>.</param>
+    /// <returns>Человекочитаемое имя инструмента на русском языке.</returns>
     public static string ToDisplayName(this DrawingTool tool) => 
         _displayNames.TryGetValue(tool, out var name) ? name : tool.ToString();
 
-    /// <summary>Распарсить строку в DrawingTool (case-insensitive)</summary>
+    /// <summary>
+    /// Пытается распарсить строковое имя инструмента в значение <see cref="DrawingTool"/>.
+    /// </summary>
+    /// <param name="displayName">Отображаемое имя инструмента (case-insensitive).</param>
+    /// <param name="tool">Выходной параметр: найденное значение <see cref="DrawingTool"/>.</param>
+    /// <returns>
+    /// <see langword="true"/>, если парсинг успешен; иначе <see langword="false"/>.
+    /// </returns>
     public static bool TryParse(string displayName, out DrawingTool tool) => 
         _parseMap.TryGetValue(displayName, out tool);
 
-    /// <summary>Является ли инструмент примитивом для рисования мышью</summary>
+    /// <summary>
+    /// Определяет, является ли инструмент геометрическим примитивом, рисуемым мышью.
+    /// </summary>
+    /// <param name="tool">Экземпляр <see cref="DrawingTool"/>.</param>
+    /// <returns>
+    /// <see langword="true"/>, если инструмент является примитивом (прямоугольник, эллипс, линия и т.д.);
+    /// иначе <see langword="false"/>.
+    /// </returns>
     public static bool IsPrimitive(this DrawingTool tool) => 
         tool is DrawingTool.Rectangle or DrawingTool.Ellipse or DrawingTool.Line or DrawingTool.Square or DrawingTool.Circle or DrawingTool.Pentagon or DrawingTool.Hexagon 
         or DrawingTool.Heptagon or DrawingTool.Octagon or DrawingTool.Pentagram or DrawingTool.Triangle;
 
-    /// <summary>Требует ли инструмент режима рисования (drag-to-create)</summary>
+    /// <summary>
+    /// Определяет, требует ли инструмент режима рисования "перетаскиванием" (drag-to-create).
+    /// </summary>
+    /// <param name="tool">Экземпляр <see cref="DrawingTool"/>.</param>
+    /// <returns>
+    /// <see langword="true"/>, если инструмент требует режима рисования (примитивы или перо);
+    /// иначе <see langword="false"/>.
+    /// </returns>
     public static bool RequiresDrawingMode(this DrawingTool tool) => 
         tool.IsPrimitive() || tool == DrawingTool.Pen;
 }

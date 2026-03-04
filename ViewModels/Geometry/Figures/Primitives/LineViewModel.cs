@@ -36,6 +36,10 @@ public class LineViewModel: FigureViewModel
     public double Angle => Math.Atan2(Y2 - Y1, X2 - X1) * 180 / Math.PI;
     public override Point2D Center => new Point2D((X1 + X2) / 2, (Y1 + Y2)  / 2);
 
+    /// <summary>
+    /// Поворачивает фигуру на заданный угол вокруг центра.
+    /// </summary>
+    /// <param name="angle">Угол поворота в градусах (положительный = по часовой стрелке).</param>
     public override void Rotate(double angle)
     {
         var center = Center;

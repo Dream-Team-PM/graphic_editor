@@ -6,16 +6,50 @@ using System.Drawing;
 
 namespace graphic_editor.Commands;
 
-
+/// <summary>
+/// Команда изменения стиля одной или нескольких фигур (цвет, толщина, непрозрачность).
+/// </summary>
 public class StyleChangeCommand : FigureCommandBase
 {
+    /// <summary>
+    /// Список идентификаторов фигур для изменения стиля.
+    /// </summary>
     public List<Guid> FigureIds { get; }
+    
+    /// <summary>
+    /// Новый цвет обводки (null = не изменять).
+    /// </summary>
     public Color? NewLineColor { get; }
+    
+    /// <summary>
+    /// Новый цвет заливки (null = не изменять).
+    /// </summary>
     public Color? NewFillColor { get; }
+    
+    /// <summary>
+    /// Новая толщина обводки (null = не изменять).
+    /// </summary>
     public double? NewThickness { get; }
+    
+    /// <summary>
+    /// Новая непрозрачность (null = не изменять).
+    /// </summary>
     public double? NewOpacity { get; }
     
-    public StyleChangeCommand(List<Guid> figureIds, Color? newLineColor, Color? newFillColor, double? newThickness, double? newOpacity)
+    /// <summary>
+    /// Инициализирует новый экземпляр команды изменения стиля.
+    /// </summary>
+    /// <param name="figureIds">Список идентификаторов фигур.</param>
+    /// <param name="newLineColor">Новый цвет обводки или null.</param>
+    /// <param name="newFillColor">Новый цвет заливки или null.</param>
+    /// <param name="newThickness">Новая толщина обводки или null.</param>
+    /// <param name="newOpacity">Новая непрозрачность или null.</param>
+    public StyleChangeCommand(
+        List<Guid> figureIds, 
+        Color? newLineColor, 
+        Color? newFillColor, 
+        double? newThickness, 
+        double? newOpacity)
     {
         FigureIds = figureIds;
         NewLineColor = newLineColor;
@@ -23,9 +57,13 @@ public class StyleChangeCommand : FigureCommandBase
         NewThickness = newThickness;
         NewOpacity = newOpacity;
     }
-    
+    /// <inheritdoc/>
     public override string Description => "Изменение стиля";
     
+    /// <summary>
+    /// Выполняет команду: применяет изменения стиля к указанным фигурам.
+    /// </summary>
+    /// <param name="canvas">Экземпляр CanvasViewModel для выполнения операции.</param>
     public override void Execute(CanvasViewModel canvas)
     {
         this.canvas = canvas;
@@ -54,7 +92,6 @@ public class StyleChangeCommand : FigureCommandBase
                     if (NewThickness.HasValue) figure.Thickness = NewThickness.Value;
                     if (NewOpacity.HasValue) figure.Opacity = NewOpacity.Value;
                 }
-                
                 CaptureAfter(figure);
                 figure.NotifyPropertyChanged();
             }

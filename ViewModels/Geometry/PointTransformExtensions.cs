@@ -5,11 +5,19 @@ using ReactiveUI;
 namespace graphic_editor.Geometry;
 
 /// <summary>
-/// Общий класс трансформаций для фигур из Geometry (до конца не внедрен - пример есть в LineViewModel).
+/// Статический класс с методами расширения для геометрических трансформаций точек.
+/// Предоставляет утилиты для вращения, масштабирования и отражения Point2D.
+/// Используется в реализациях интерфейса ITransformable для фигур.
 /// </summary>
 public static class PointTransformExtensions
 {
-    /// <summary>Публичный статический метод для вращения точки.</summary>
+    /// <summary>
+    /// Вращает точку вокруг заданного центра на указанный угол.
+    /// </summary>
+    /// <param name="point">Исходная точка для вращения.</param>
+    /// <param name="center">Центр вращения.</param>
+    /// <param name="angleDegrees">Угол вращения в градусах (положительный — по часовой стрелке).</param>
+    /// <returns>Новая точка Point2D с применённым вращением.</returns>
     public static Point2D Rotate(this Point2D point, Point2D center, double angleDegrees)
     {
         double rad = angleDegrees * Math.PI / 180.0;
@@ -22,7 +30,14 @@ public static class PointTransformExtensions
         );
     }
     
-    /// <summary>Публичный статический метод для масштабирования точки.</summary>
+    /// <summary>
+    /// Масштабирует точку относительно центра с заданными коэффициентами по осям.
+    /// </summary>
+    /// <param name="point">Исходная точка для масштабирования.</param>
+    /// <param name="center">Центр масштабирования.</param>
+    /// <param name="sx">Коэффициент масштабирования по оси X.</param>
+    /// <param name="sy">Коэффициент масштабирования по оси Y.</param>
+    /// <returns>Новая точка Point2D с применённым масштабированием.</returns>
     public static Point2D Scale(this Point2D point, Point2D center, double sx, double sy)
     {
         return new Point2D(
@@ -31,6 +46,14 @@ public static class PointTransformExtensions
         );
     }
 
+    /// <summary>
+    /// Выполняет отражение точки относительно прямой, заданной двумя точками.
+    /// Использует формулу проекции точки на прямую для вычисления отражения.
+    /// </summary>
+    /// <param name="p">Отражаемая точка.</param>
+    /// <param name="a">Первая точка, определяющая ось отражения.</param>
+    /// <param name="b">Вторая точка, определяющая ось отражения.</param>
+    /// <returns>Отражённая точка Point2D.</returns>
     public static Point2D Reflect(this Point2D p, Point2D a, Point2D b)
     {
         var d = b - a;

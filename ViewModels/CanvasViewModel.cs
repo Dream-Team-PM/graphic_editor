@@ -1,6 +1,4 @@
-﻿// ViewModels/ColorViewModel.cs
-
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Drawing;
 using System.Linq;
@@ -16,18 +14,38 @@ using graphic_editor.Geometry;
 namespace graphic_editor.ViewModels;
 
 /// <summary>
-/// Модель слоя холста/канваса, основывается на ViewModelBase.
+/// ViewModel для управления состоянием канваса: слои, фигуры, выделение, масштабирование.
+/// Реализует реактивные свойства для привязки к UI через ReactiveUI.
 /// </summary>
 public class CanvasViewModel: ViewModelBase
 {
-	public ObservableCollection<LayerViewModel> Layers { get; } /// <summary>Публичная коллекция - рабочие слои.</summary>
-	private static readonly ObservableCollection<FigureViewModel> _emptyFigures = new(); /// <summary>Инициализация приватной статичной коллекции пустых фигур.</summary>
+    /// <summary>
+    /// Коллекция слоёв проекта, доступная для привязки в UI.
+    /// </summary>
+    public ObservableCollection<LayerViewModel> Layers { get; }
+    
+    private static readonly ObservableCollection<FigureViewModel> _emptyFigures = new(); 
+    /// <summary>Статическая пустая коллекция фигур для fallback-значений.</summary>
+    
+    /// <summary>
+    /// Коллекция выделенных фигур для мульти-выделения (Ctrl+Click).
+    /// </summary>
     public ObservableCollection<FigureViewModel> SelectedFigures = new ObservableCollection<FigureViewModel>();
-    private FigureViewModel? _selectedFigure; /// <summary>Приватное свойство - выбранная фигура.</summary>
-    private double _zoom = 1.0; /// <summary>Приватное свойство - коэффициент приближения.</summary>
-	public bool HasSelection => SelectedFigures.Any(); /// <summary>Публичный флаг - проверка выбора фигуры.</summary>
+    
+    private FigureViewModel? _selectedFigure; 
+    /// <summary>Единственная выбранная фигура для операций редактирования.</summary>
+    
+    private double _zoom = 1.0; 
+    /// <summary>Текущий коэффициент масштабирования канваса (диапазон: 0.1–10.0).</summary>
+    
+    /// <summary>
+    /// Проверяет, есть ли выделенные фигуры на канвасе.
+    /// </summary>
+    public bool HasSelection => SelectedFigures.Any();
 
-	/// <summary>Конструктор CanvasViewModel.</summary>
+    /// <summary>
+    /// Инициализирует новый экземпляр CanvasViewModel с пустой коллекцией слоёв.
+    /// </summary>
     public CanvasViewModel()
     {
         DebugLog.Write("[DEBUG] CanvasViewModel constructor");
@@ -36,14 +54,18 @@ public class CanvasViewModel: ViewModelBase
         DebugLog.Write($"[DEBUG] CanvasViewModel created: GetHashCode={this.GetHashCode()}");
     }
    
-	/// <summary>Публичное свойство для отображения фигуры.</summary>
+    /// <summary>
+    /// Предварительная фигура для визуализации в процессе рисования.
+    /// </summary>
     public FigureViewModel? PreviewFigure
     {
         get => field;
         set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
-	/// <summary>Публичное свойство - активный слой.</summary>
+    /// <summary>
+    /// Активный слой, на котором выполняются операции добавления/удаления фигур.
+    /// </summary>
     public LayerViewModel? ActiveLayer
     {
         get => field;
@@ -54,14 +76,18 @@ public class CanvasViewModel: ViewModelBase
         }
     }
 
-	/// <summary>Публичное свойство - проверка активности канваса.</summary>
+    /// <summary>
+    /// Флаг, указывающий, активен ли канвас для рисования (есть активный слой).
+    /// </summary>
     public bool IsCanvasActive
     {
         get => field;
         set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
-	/// <summary>Публичное свойство - выбор фигуры на холсте.</summary>
+    /// <summary>
+    /// Выбранная фигура для редактирования. При смене автоматически обновляет коллекцию SelectedFigures.
+    /// </summary>
     public FigureViewModel? SelectedFigure
     {
         get => _selectedFigure;
@@ -86,28 +112,36 @@ public class CanvasViewModel: ViewModelBase
         }
     }
     
-	/// <summary>Публичное свойство - Zoom.</summary>
-	public double Zoom 
+    /// <summary>
+    /// Коэффициент масштабирования канваса с ограничением диапазона [0.1, 10.0].
+    /// </summary>
+    public double Zoom 
     {
         get => _zoom;
         set => this.RaiseAndSetIfChanged(ref _zoom, Math.Max(0.1, Math.Min(10.0, value)));
     }
 
-	/// <summary>Публичное свойство - OffsetX.</summary>
+    /// <summary>
+    /// Смещение канваса по горизонтальной оси для реализации панорамирования.
+    /// </summary>
     public double OffsetX
     {
         get => field;
         set => this.RaiseAndSetIfChanged(ref field, value);
     }
     
-	/// <summary>Публичное свойство - OffsetY.</summary>
+    /// <summary>
+    /// Смещение канваса по вертикальной оси для реализации панорамирования.
+    /// </summary>
     public double OffsetY
     {
         get => field;
         set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
-	/// <summary>Публичная функция - проверка активности канваса.</summary>
+    /// <summary>
+    /// Активирует канвас: создаёт новый слой, если активный отсутствует.
+    /// </summary>
     public void ActivateCanvas()
     {
         DebugLog.Write($"[DEBUG] ActivateCanvas: ActiveLayer={ActiveLayer?.Name ?? "null"}, IsCanvasActive={IsCanvasActive}");
@@ -124,8 +158,10 @@ public class CanvasViewModel: ViewModelBase
         DebugLog.Write($"[DEBUG] After ActivateCanvas: IsCanvasActive={IsCanvasActive}");
     }
 
-	/// <summary>Публичный метод для добавления фигуры на активный слой.</summary>
-    /// <param name="figure">Фигура для добавления на слой.</param>
+    /// <summary>
+    /// Добавляет фигуру на активный слой, создавая слой при необходимости.
+    /// </summary>
+    /// <param name="figure">Экземпляр FigureViewModel для добавления.</param>
     public void AddFigure(FigureViewModel figure)
     {
         DebugLog.Write($"[DEBUG] AddFigure: ActiveLayer={ActiveLayer?.Name ?? "null"}, Figure={figure?.Name}");
@@ -140,7 +176,9 @@ public class CanvasViewModel: ViewModelBase
         DebugLog.Write($"[DEBUG] AddFigure: ActiveLayer.Figures.Count={ActiveLayer?.Figures.Count}");
     }
 
-	/// <summary>Публичная функция - удаление выбранной фигуры.</summary>
+    /// <summary>
+    /// Удаляет выбранную фигуру с активного слоя.
+    /// </summary>
     public void RemoveSelectedFigure()
     {
         if (SelectedFigure != null && ActiveLayer != null)
@@ -150,7 +188,9 @@ public class CanvasViewModel: ViewModelBase
         }
     }
 
-	/// <summary>Публичная функция - дублирование выбранной фигуры.</summary>
+    /// <summary>
+    /// Дублирует выбранную фигуру со смещением (10, 10) и добавляет на активный слой.
+    /// </summary>
     public void DuplicateSelectedFigure()
     {
         if (SelectedFigure != null)
@@ -161,24 +201,27 @@ public class CanvasViewModel: ViewModelBase
         }
     }
 
-	/// <summary>Публичный метод для установки предварительной фигуры.</summary>
+    /// <summary>
+    /// Устанавливает предварительную фигуру для визуализации в процессе рисования.
+    /// </summary>
+    /// <param name="figure">Фигура для отображения или null для скрытия.</param>
     public void SetPreviewFigure(FigureViewModel? figure)
     {
         PreviewFigure = figure;
         this.RaisePropertyChanged(nameof(PreviewFigure));
     }
 
-	/// <summary>Публичный метод для выбора фигуры в точке.</summary>
-    /// <param name="point">Точка на канвасе, в которой происходит выбор.</param>
-    /// <param name="addToSelection">Флаг: добавить к текущему выделению (Ctrl+Click).</param>
+    /// <summary>
+    /// Выбирает фигуру в заданной точке канваса с поддержкой мульти-выделения.
+    /// </summary>
+    /// <param name="point">Точка выбора в координатах канваса.</param>
+    /// <param name="addToSelection">Если true, добавляет фигуру к текущему выделению (Ctrl+Click).</param>
     public void SelectFigureAt(Point2D point, bool addToSelection = false)
     {
         if (ActiveLayer == null) return;
-        var figure = ActiveLayer.Figures
-            .LastOrDefault(f => f.IsIn(point));
+        var figure = ActiveLayer.Figures.LastOrDefault(f => f.IsIn(point));
         if (addToSelection)
         {
-            // Добавляем/удаляем из мульти-выделения (Ctrl+Click)
             if (figure != null)
             {
                 if (SelectedFigures.Contains(figure))
@@ -196,7 +239,6 @@ public class CanvasViewModel: ViewModelBase
         }
         else
         {
-            // Обычное выделение одной фигуры (снимает остальные)
             foreach (var f in SelectedFigures)
                 f.IsSelected = false;
             SelectedFigures.Clear();
@@ -217,13 +259,17 @@ public class CanvasViewModel: ViewModelBase
         this.RaisePropertyChanged(nameof(HasSelection));
     }
 
-	/// <summary>Публичный метод очистки выбранной фигуры.</summary>
+    /// <summary>
+    /// Снимает выделение с текущей фигуры.
+    /// </summary>
     public void ClearFigure()
     {
         SelectedFigure = null;
     }
 
-	/// <summary>Публичный метод для перемещения выбранной фигуры.</summary>
+    /// <summary>
+    /// Перемещает выбранную фигуру на заданный вектор.
+    /// </summary>
     /// <param name="dx">Смещение по оси X.</param>
     /// <param name="dy">Смещение по оси Y.</param>
     public void MoveSelectedFigure(double dx, double dy)
@@ -235,8 +281,10 @@ public class CanvasViewModel: ViewModelBase
         }
     }
 
-	/// <summary>Публичный метод для поворота выбранной фигуры.</summary>
-    /// <param name="angle">Угол поворота в градусах.</param>
+    /// <summary>
+    /// Вращает выбранную фигуру на заданный угол относительно центра.
+    /// </summary>
+    /// <param name="angle">Угол вращения в градусах.</param>
     public void RotateSelectedFigure(double angle)
     {
         if (SelectedFigure != null)
@@ -246,7 +294,9 @@ public class CanvasViewModel: ViewModelBase
         }
     }
     
-	/// <summary>Публичный метод для масштабирования выбранной фигуры.</summary>
+    /// <summary>
+    /// Масштабирует выбранную фигуру относительно центра с заданными коэффициентами.
+    /// </summary>
     /// <param name="sx">Коэффициент масштабирования по оси X.</param>
     /// <param name="sy">Коэффициент масштабирования по оси Y.</param>
     public void ScaleSelectedFigure(double sx, double sy)
@@ -258,7 +308,9 @@ public class CanvasViewModel: ViewModelBase
         }
     }
 
-	/// <summary>Публичный метод - перенос фигуры на передний фон.</summary>
+    /// <summary>
+    /// Перемещает выбранную фигуру на передний план (в конец коллекции отрисовки).
+    /// </summary>
     public void BringToFront()
     {
         if (SelectedFigure != null)
@@ -268,7 +320,9 @@ public class CanvasViewModel: ViewModelBase
         }
     }
     
-	/// <summary>Публичный метод - перенос фигуры на задний фон.</summary>
+    /// <summary>
+    /// Перемещает выбранную фигуру на задний план (в начало коллекции отрисовки).
+    /// </summary>
     public void SendToBack()
     {
         if (SelectedFigure != null)

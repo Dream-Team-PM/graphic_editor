@@ -11,12 +11,26 @@ using graphic_editor.ViewModels;
 namespace graphic_editor.Geometry;
 
 /// <summary>
-/// Класс прямоугольника (наследуется от FigureViewModel).
+/// Класс прямоугольника, заданного ограничивающим прямоугольником.
 /// </summary>
 public class RectangleViewModel: FigureViewModel
 {
+    /// <summary>
+    /// Конструктор по умолчанию (прямоугольник 100×100 в начале координат).
+    /// </summary>
     public RectangleViewModel(): this(0, 0, 100, 100, Color.Black, 1, Color.Green, 1.0) {}
 
+    /// <summary>
+    /// Инициализирует новый экземпляр прямоугольника.
+    /// </summary>
+    /// <param name="x">Координата X левого верхнего угла.</param>
+    /// <param name="y">Координата Y левого верхнего угла.</param>
+    /// <param name="width">Ширина прямоугольника.</param>
+    /// <param name="height">Высота прямоугольника.</param>
+    /// <param name="lineColor">Цвет обводки.</param>
+    /// <param name="thickness">Толщина обводки.</param>
+    /// <param name="fillColor">Цвет заливки.</param>
+    /// <param name="opacity">Непрозрачность (0.0–1.0).</param>
     public RectangleViewModel(double x, double y, double width, double height, Color lineColor, double thickness, Color fillColor, double opacity)
     {
         Name = "Прямоугольник";
@@ -30,9 +44,24 @@ public class RectangleViewModel: FigureViewModel
         Opacity = opacity;
     }
 
+    /// <summary>
+    /// Координата X левого верхнего угла.
+    /// </summary>
     public double X => Vertices[0].X;
+    
+    /// <summary>
+    /// Координата Y левого верхнего угла.
+    /// </summary>
     public double Y => Vertices[0].Y;
+    
+    /// <summary>
+    /// Ширина прямоугольника.
+    /// </summary>
     public double Width => Math.Abs(Vertices[2].X - Vertices[0].X);
+    
+    /// <summary>
+    /// Высота прямоугольника.
+    /// </summary>
     public double Height => Math.Abs(Vertices[2].Y - Vertices[0].Y);
 
     public override Point2D Center => new Point2D(X + Width / 2, Y + Height  / 2);
@@ -87,6 +116,9 @@ public class RectangleViewModel: FigureViewModel
         return Vertices.Select(v => v.ToPoint());
     }
     
+    /// <summary>
+    /// Уведомляет об изменении геометрических свойств прямоугольника.
+    /// </summary>
     public void NotifyPropertyChanged()
     {
         this.RaisePropertyChanged(nameof(X));

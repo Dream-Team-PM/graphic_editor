@@ -1,6 +1,5 @@
 ﻿// Models/StyleSettings.cs (DTO для передачи стиля)
 using graphic_editor.Geometry;
-using graphic_editor.Tools;
 using graphic_editor.ViewModels;
 namespace graphic_editor.State;
 

@@ -10,12 +10,24 @@ using graphic_editor.ViewModels;
 namespace graphic_editor.Geometry;
 
 /// <summary>
-/// Базовый класс для многоугольников.
+/// Абстрактный базовый класс для произвольных многоугольников.
+/// Реализует общую логику трансформаций и проверки попадания.
 /// </summary>
 public abstract class PolygonViewModel : FigureViewModel
 {
+    /// <summary>
+    /// Событие, возникающее при изменении геометрии многоугольника.
+    /// </summary>
     public event EventHandler VerticesChanged;
-    /// <summary>Конструктор с набором вершин</summary>
+    
+    /// <summary>
+    /// Инициализирует новый экземпляр многоугольника.
+    /// </summary>
+    /// <param name="points">Коллекция точек вершин многоугольника.</param>
+    /// <param name="lineColor">Цвет обводки.</param>
+    /// <param name="thickness">Толщина обводки.</param>
+    /// <param name="fillColor">Цвет заливки.</param>
+    /// <param name="opacity">Непрозрачность (0.0–1.0).</param>
     protected PolygonViewModel(IEnumerable<Point2D> points, 
         Color lineColor, double thickness, Color fillColor, double opacity)
     {
@@ -77,6 +89,7 @@ public abstract class PolygonViewModel : FigureViewModel
     /// <summary>Проверка попадания точки в многоугольник (алгоритм ray casting)</summary>
     public override bool IsIn(Point2D point, double eps = 0.001)
     {
+        // Алгоритм ray casting для проверки попадания точки в многоугольник
         int count = 0;
         var vertices = Vertices.Select(v => v.ToPoint()).ToList();
         
@@ -92,7 +105,17 @@ public abstract class PolygonViewModel : FigureViewModel
         return (count & 1) == 1;
     }
     
-    /// <summary>Проверка пересечения луча с отрезком (для IsIn)</summary>
+    /// <summary>
+    /// Проверяет пересечение горизонтального луча (из точки вправо) с отрезком.
+    /// Используется в алгоритме ray casting для <see cref="IsIn"/>.
+    /// </summary>
+    /// <param name="p">Проверяемая точка.</param>
+    /// <param name="a">Первая точка отрезка.</param>
+    /// <param name="b">Вторая точка отрезка.</param>
+    /// <param name="eps">Допуск для пограничных случаев.</param>
+    /// <returns>
+    /// <see langword="true"/>, если луч пересекает отрезок; иначе <see langword="false"/>.
+    /// </returns>
     private bool RayIntersectsSegment(Point2D p, Point2D a, Point2D b, double eps)
     {
         // Упорядочиваем по Y
@@ -105,7 +128,7 @@ public abstract class PolygonViewModel : FigureViewModel
         if (p.Y < a.Y || p.Y > b.Y) return false;
         if (p.X > Math.Max(a.X, b.X)) return false;
         
-        // Вычисляем X пересечения луча с отрезком
+        // Вычисляем X-координату пересечения луча с отрезком
         if (Math.Abs(b.Y - a.Y) < eps) return p.X <= Math.Max(a.X, b.X);
         
         double intersectionX = (p.Y - a.Y) * (b.X - a.X) / (b.Y - a.Y) + a.X;
@@ -113,7 +136,11 @@ public abstract class PolygonViewModel : FigureViewModel
         return p.X < intersectionX;
     }
 
-    /// <summary>Масштабирование вершин относительно центра</summary>
+    /// <summary>
+    /// Масштабирует вершины многоугольника относительно центра.
+    /// </summary>
+    /// <param name="center">Центр масштабирования.</param>
+    /// <param name="scale">Коэффициент масштабирования.</param>
     protected void UpdateVerticesScale(Point2D center, double scale)
     {
         foreach (var vertex in Vertices)
@@ -131,7 +158,9 @@ public abstract class PolygonViewModel : FigureViewModel
         return Vertices.Select(v => v.ToPoint());
     }
 
-    /// <summary>Уведомление об изменении геометрии</summary>
+    /// <summary>
+    /// Уведомляет подписчиков об изменении геометрических свойств многоугольника.
+    /// </summary>
     public new void NotifyPropertyChanged()
     {
         this.RaisePropertyChanged(nameof(Center));
@@ -143,7 +172,7 @@ public abstract class PolygonViewModel : FigureViewModel
             vertex.RaisePropertyChanged(nameof(PointViewModel.Y));
         }
         this.RaisePropertyChanged(nameof(Vertices));
-        // 🔥 Триггерим событие для перерисовки
+        // Триггерим событие для перерисовки
         VerticesChanged?.Invoke(this, EventArgs.Empty);
     }
 }

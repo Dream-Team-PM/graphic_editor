@@ -4,15 +4,27 @@ using Avalonia.Media;
 namespace graphic_editor.Interfaces;
 
 /// <summary>
-/// Публичный интерфейс отрисовки фигуры (не реализован и пока не используется).
+/// Интерфейс для отрисовки фигуры на холсте.
+/// Определяет методы для рендеринга контура и заливки фигуры с использованием DrawingContext.
 /// </summary>
 public interface IDrawFigure {
-	/// <summary>Отрисовка контура</summary>
+	/// <summary>
+    /// Отрисовывает контур фигуры с заданным пером.
+    /// </summary>
+    /// <param name="context">Контекст отрисовки Avalonia.</param>
+    /// <param name="pen">Перо для отрисовки контура.</param>
     void DrawStroke(DrawingContext context, Pen pen);
     
-    /// <summary>Отрисовка заливки</summary>
+    /// <summary>
+    /// Отрисовывает заливку фигуры с заданной кистью.
+    /// </summary>
+    /// <param name="context">Контекст отрисовки Avalonia.</param>
+    /// <param name="brush">Кисть для заливки фигуры.</param>
     void DrawFill(DrawingContext context, IBrush brush);
     
-    /// <summary>Получение геометрии для хит-тестинга</summary>
-    //Geometry? GetHitTestGeometry();
+    /// <summary>
+    /// Получает геометрию фигуры для обработки событий попадания указателя (hit-testing).
+    /// </summary>
+    /// <returns>Геометрия для хит-тестинга или null, если не поддерживается.</returns>
+    // Geometry? GetHitTestGeometry();
 }

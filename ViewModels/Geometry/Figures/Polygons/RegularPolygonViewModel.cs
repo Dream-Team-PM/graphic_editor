@@ -10,13 +10,34 @@ using ReactiveUI;
 namespace graphic_editor.Geometry;
 
 /// <summary>
-/// Базовый класс для правильных многоугольников.
+/// Абстрактный базовый класс для правильных многоугольников 
+/// (все стороны и углы равны).
 /// </summary>
 public abstract class RegularPolygonViewModel : PolygonViewModel
 {
+    /// <summary>
+    /// Количество сторон многоугольника.
+    /// </summary>
     public int Sides { get; }
+    
+    /// <summary>
+    /// Радиус описанной окружности многоугольника.
+    /// </summary>
     public double Radius { get; }
 
+    /// <summary>
+    /// Инициализирует новый экземпляр правильного многоугольника.
+    /// </summary>
+    /// <param name="center">Центр многоугольника.</param>
+    /// <param name="sides">Количество сторон (минимум 3).</param>
+    /// <param name="radius">Радиус описанной окружности.</param>
+    /// <param name="lineColor">Цвет обводки.</param>
+    /// <param name="thickness">Толщина обводки.</param>
+    /// <param name="fillColor">Цвет заливки.</param>
+    /// <param name="opacity">Непрозрачность (0.0–1.0).</param>
+    /// <exception cref="ArgumentException">
+    /// Выбрасывается, если <paramref name="sides"/> &lt; 3.
+    /// </exception>
     protected RegularPolygonViewModel(Point2D center, int sides, double radius,
         Color lineColor, double thickness, Color fillColor, double opacity)
         : base(CreateVertices(center, sides, radius), 
@@ -29,7 +50,14 @@ public abstract class RegularPolygonViewModel : PolygonViewModel
         Radius = radius;
     }
 
-    /// <summary>Создание вершин правильного многоугольника</summary>
+    /// <summary>
+    /// Создаёт коллекцию вершин правильного многоугольника, 
+    /// равномерно распределённых по окружности.
+    /// </summary>
+    /// <param name="center">Центр многоугольника.</param>
+    /// <param name="sides">Количество сторон.</param>
+    /// <param name="radius">Радиус описанной окружности.</param>
+    /// <returns>Перечислимая коллекция точек вершин.</returns>
     private static IEnumerable<Point2D> CreateVertices(Point2D center, int sides, double radius)
     {
         var points = new List<Point2D>();
@@ -48,14 +76,15 @@ public abstract class RegularPolygonViewModel : PolygonViewModel
         return points;
     }
     
-    /// <summary>Пересчёт вершин правильного многоугольника по новому радиусу</summary>
-    // ViewModels/Geometry/Figures/RegularPolygonViewModel.cs
-
-    /// <summary>Пересчёт вершин правильного многоугольника по новому радиусу</summary>
+    /// <summary>
+    /// Пересчитывает координаты вершин многоугольника при изменении радиуса.
+    /// </summary>
+    /// <param name="center">Новый центр многоугольника.</param>
+    /// <param name="newRadius">Новый радиус описанной окружности.</param>
     public void UpdateVertices(Point2D center, double newRadius)
     {
         double angleStep = 2 * Math.PI / Sides;
-        double startAngle = -Math.PI / 2; // Начинаем с верха
+        double startAngle = -Math.PI / 2;
 
         for (int i = 0; i < Vertices.Count && i < Sides; i++)
         {
