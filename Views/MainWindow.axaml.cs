@@ -158,32 +158,68 @@ public partial class MainWindow : Window
     {
         if (ColorPickerControl == null) return;
         
-        // Очищаем старую подписку перед новой
         ColorPickerControl.ColorSelected -= OnFillColorSelected;
         ColorPickerControl.ColorSelected += OnFillColorSelected;
         ColorPickerControl.Cancelled += OnColorPickerCancelled;
+        
+        // Инициализируем текущим цветом заливки
+        if (DataContext is MainWindowViewModel vm)
+        {
+            var currentColor = Color.FromArgb(
+                vm.FillColor.Color.A,
+                vm.FillColor.Color.R,
+                vm.FillColor.Color.G,
+                vm.FillColor.Color.B
+            );
+        }
         
         ColorPopup.IsOpen = true;
     }
 
     private void OnFillColorSelected(Avalonia.Media.Color color)
     {
-        // Надёжное получение ViewModel
         if (DataContext is MainWindowViewModel vm)
         {
-            // Конвертируем Avalonia.Color в System.Drawing.Color
-            var drawingColor = System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B);
-            vm.FillColor.Color = drawingColor;
-            
-            // Обновляем статус
-            vm.StatusMessage = $"Цвет заливки изменён: #{color.ToString()}";
+            vm.FillColor.Color = System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B);
+            vm.StatusMessage = $"Цвет заливки: #{color.ToString()}";
         }
-        
         ColorPopup.IsOpen = false;
+    }
+
+    private void StrokeColorButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (StrokeColorPickerControl == null) return;
+        
+        StrokeColorPickerControl.ColorSelected -= OnStrokeColorSelected;
+        StrokeColorPickerControl.ColorSelected += OnStrokeColorSelected;
+        StrokeColorPickerControl.Cancelled += OnColorPickerCancelled;
+        
+        // Инициализируем текущим цветом обводки
+        var currentColor = Avalonia.Media.Color.FromArgb(
+            _viewModel.StrokeColor.Color.A,
+            _viewModel.StrokeColor.Color.R,
+            _viewModel.StrokeColor.Color.G,
+            _viewModel.StrokeColor.Color.B
+        );
+        StrokeColorPickerControl.SetColor(currentColor);
+        
+        StrokeColorPopup.IsOpen = true;
+    }
+
+    private void OnStrokeColorSelected(Avalonia.Media.Color color)
+    {
+        if (_viewModel != null)
+        {
+            var drawingColor = System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B);
+            _viewModel.StrokeColor.Color = drawingColor;
+            _viewModel.StatusMessage = $"Цвет обводки изменён: #{color.ToString()}";
+        }
+        StrokeColorPopup.IsOpen = false;
     }
 
     private void OnColorPickerCancelled()
     {
         ColorPopup.IsOpen = false;
+        StrokeColorPopup.IsOpen = false;
     }
 }
