@@ -153,4 +153,37 @@ public partial class MainWindow : Window
         this.RequestedThemeVariant = _viewModel.CurrentTheme;
         _viewModel.ToggleTheme();
     }
+
+    private void FillColorButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (ColorPickerControl == null) return;
+        
+        // Очищаем старую подписку перед новой
+        ColorPickerControl.ColorSelected -= OnFillColorSelected;
+        ColorPickerControl.ColorSelected += OnFillColorSelected;
+        ColorPickerControl.Cancelled += OnColorPickerCancelled;
+        
+        ColorPopup.IsOpen = true;
+    }
+
+    private void OnFillColorSelected(Avalonia.Media.Color color)
+    {
+        // Надёжное получение ViewModel
+        if (DataContext is MainWindowViewModel vm)
+        {
+            // Конвертируем Avalonia.Color в System.Drawing.Color
+            var drawingColor = System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B);
+            vm.FillColor.Color = drawingColor;
+            
+            // Обновляем статус
+            vm.StatusMessage = $"Цвет заливки изменён: #{color.ToString()}";
+        }
+        
+        ColorPopup.IsOpen = false;
+    }
+
+    private void OnColorPickerCancelled()
+    {
+        ColorPopup.IsOpen = false;
+    }
 }

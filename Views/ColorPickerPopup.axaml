@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="graphic_editor.ColorPickerPopup">
+    <Border Background="#2C2C2E" BorderBrush="#3F3F46" BorderThickness="1"
+            CornerRadius="8" Padding="12" Width="220"
+            BoxShadow="0 8 24 0 #000000AA">
+        <StackPanel Spacing="10">
+
+            <!-- Превью -->
+            <Border x:Name="PreviewBorder" Height="28" CornerRadius="4"
+                    Background="#FF4A90" BorderBrush="#555" BorderThickness="1"/>
+
+            <!-- Hex ввод -->
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Text="#" VerticalAlignment="Center" Foreground="#999" Margin="0,0,4,0"/>
+                <TextBox Grid.Column="1" x:Name="HexInput" Text="FF4A90"
+                         Background="#3C3C3E" MaxLength="6"
+                         TextChanged="HexInput_TextChanged"/>
+            </Grid>
+
+            <!-- Палитра быстрых цветов -->
+            <WrapPanel x:Name="SwatchPanel" ItemWidth="24" ItemHeight="24"/>
+
+            <!-- Кнопки -->
+            <Grid ColumnDefinitions="*,*">
+                <Button Grid.Column="0" Content="Отмена" Click="Cancel_Click"
+                        Background="Transparent" HorizontalAlignment="Stretch"/>
+                <Button Grid.Column="1" Content="ОК" Click="Ok_Click"
+                        Background="#0078D4" Foreground="White"
+                        HorizontalAlignment="Stretch" Margin="6,0,0,0"/>
+            </Grid>
+        </StackPanel>
+    </Border>
+</UserControl>
