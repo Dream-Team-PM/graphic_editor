@@ -1,10 +1,5 @@
 ﻿// Controls/VectorCanvasControl.axaml.cs
 
-using System;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.Linq;
-
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
@@ -12,10 +7,16 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
 using System.Windows.Input;
+using DynamicData.Experimental;
 
-using graphic_editor.ViewModels;
 using graphic_editor.Geometry;
 using graphic_editor.Helpers;
+using graphic_editor.ViewModels;
+using System;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.Linq;
+using System.Windows.Input;
 
 namespace graphic_editor.Controls;
 
