@@ -72,6 +72,7 @@ public abstract class PolygonViewModel : FigureViewModel
             Console.WriteLine(vertex);
             vertex.X = rotated.X;
             vertex.Y = rotated.Y;
+            
         }
         NotifyPropertyChanged();
     }
