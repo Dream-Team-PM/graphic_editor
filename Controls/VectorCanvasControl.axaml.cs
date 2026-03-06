@@ -6,9 +6,7 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
-using System.Windows.Input;
 using DynamicData.Experimental;
-
 using graphic_editor.Geometry;
 using graphic_editor.Helpers;
 using graphic_editor.ViewModels;
@@ -428,7 +426,7 @@ public partial class VectorCanvasControl : UserControl
                 DrawingCanvas.Children.Add(control);
                 _renderedFigures[figure.Id] = control;
                 control.Tag = figure;
-                control.PointerPressed += OnFigurePointerPressed;
+                //control.PointerPressed += OnFigurePointerPressed;
                 DebugLog.Write($"[DEBUG] Figure added to canvas");
             }
             else
@@ -533,13 +531,13 @@ public partial class VectorCanvasControl : UserControl
         Tag = line
     };
 
-	/// <summary>
+    /// <summary>
     /// Создаёт элемент Path для отрисовки фигуры по вершинам (прямоугольник или эллипс).
     /// </summary>
     /// <param name="figure">Модель фигуры.</param>
     /// <param name="isEllipse">Флаг, указывающий, что фигура является эллипсом.</param>
     /// <returns>Элемент Path с соответствующей геометрией.</returns>
-	private Avalonia.Controls.Shapes.Path CreateShapeFromVertices(FigureViewModel figure, bool isEllipse = false)
+    private Avalonia.Controls.Shapes.Path CreateShapeFromVertices(FigureViewModel figure, bool isEllipse = false)
     {
         var geometry = BuildGeometry(figure);
         return new Avalonia.Controls.Shapes.Path
@@ -550,8 +548,8 @@ public partial class VectorCanvasControl : UserControl
             [Canvas.TopProperty] = 0
         };
     }
-    
-	/// <summary>
+
+    /// <summary>
     /// Создаёт элемент Rectangle для отрисовки прямоугольника.
     /// </summary>
     /// <param name="r">Модель прямоугольника.</param>
@@ -742,8 +740,19 @@ public partial class VectorCanvasControl : UserControl
             }
         };
     }
-    
-	/// <summary>
+
+
+
+
+    private void UpdatePathGeometry(Avalonia.Controls.Shapes.Path path, FigureViewModel figure)
+    {
+        path.Data = BuildGeometry(figure);
+    }
+
+
+
+
+    /// <summary>
     /// Обновляет геометрию элемента Shape при изменении свойств фигуры.
     /// </summary>
     /// <param name="shape">Элемент управления Shape.</param>
@@ -824,11 +833,6 @@ public partial class VectorCanvasControl : UserControl
         }
         path.Data = geometry;
     }
-
-    private void UpdatePathGeometry(Avalonia.Controls.Shapes.Path path, FigureViewModel figure)
-    {
-        path.Data = BuildGeometry(figure);
-    }
     
     /// <summary>
     /// Обновляет визуальное выделение фигуры (добавляет или удаляет рамку).
@@ -857,7 +861,7 @@ public partial class VectorCanvasControl : UserControl
                     var border = new Border
                     {
                         BorderBrush = Brushes.Cyan,
-                        BorderThickness = new Thickness(2),
+                        BorderThickness = new Thickness(1),
                         IsHitTestVisible = false,
                         Tag = "GroupSelectionAdorner"
                     };
@@ -886,7 +890,7 @@ public partial class VectorCanvasControl : UserControl
                 var border = new Border
                 {
                     BorderBrush = Brushes.Blue,
-                    BorderThickness = new Thickness(1),
+                    BorderThickness = new Thickness(2),
                     IsHitTestVisible = false,
                     Tag = "SelectionAdorner"
                 };
@@ -982,7 +986,7 @@ public partial class VectorCanvasControl : UserControl
 	{
     	if (_renderedFigures.TryGetValue(figure.Id, out var control))
     	{
-        	control.PointerPressed -= OnFigurePointerPressed;
+        	//control.PointerPressed -= OnFigurePointerPressed;
         	if (control.Parent is Panel parent)
         	{
             	var adorner = parent.Children.OfType<Border>()
@@ -1012,10 +1016,10 @@ public partial class VectorCanvasControl : UserControl
     /// </summary>
     private void ClearAllFigures()
     {
-        foreach (var control in _renderedFigures.Values)
+       /* foreach (var control in _renderedFigures.Values)
         {
             control.PointerPressed -= OnFigurePointerPressed;
-        }
+        }*/
         _renderedFigures.Clear();
         DrawingCanvas.Children.Clear();
     }
@@ -1060,6 +1064,7 @@ public partial class VectorCanvasControl : UserControl
     private static Avalonia.Media.Color ToAvaloniaColor(System.Drawing.Color c) => 
         Avalonia.Media.Color.FromArgb(c.A, c.R, c.G, c.B);
 
+
     private StreamGeometry BuildGeometry(FigureViewModel figure)
     {
         var geometry = new StreamGeometry();
@@ -1103,3 +1108,7 @@ public partial class VectorCanvasControl : UserControl
         return geometry;
     }
 }
+
+
+
+
