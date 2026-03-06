@@ -32,6 +32,9 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly IFileService _fileService; /// <summary>Сервис для работы с файлами проекта (сохранение/загрузка).</summary>
     private readonly HistoryViewModel _history; /// <summary>Менеджер истории действий для поддержки Undo/Redo.</summary>
+    private bool _isDragging;
+    private Point2D _dragStart;
+    private Dictionary<Guid, List<(double X, double Y)>> _originalVertices; // для каждой фигуры список исходных координат вершин
     
     /// <summary>
     /// Публичный доступ к ViewModel истории для привязки в UI.
@@ -781,6 +784,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 allFigureIds.Add(figure.Id);
             }
         }
+        Point2D p = null;
         var cmd = new RotateFigureCommand(
             Canvas.SelectedFigures.Select(f => f.Id).ToList(),
             angle);
@@ -1020,6 +1024,9 @@ public partial class MainWindowViewModel : ViewModelBase
         CanvasPointerReleased(e);
     }
 
+    private bool s_area = false;
+    private Point2D s_start = null;
+    private Point2D s_end = null;
     /// <summary>
     /// Обрабатывает нажатие кнопки мыши: начинает рисование, выделение или выбор фигуры.
     /// </summary>
@@ -1056,7 +1063,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         else if (CurrentTool == DrawingTool.Select)
         {
-            if (IsDrawing)
+			if (IsDrawing)
             {
                 if (_currentDrawingTool == DrawingTool.Pen && _previewFigure != null && Canvas.ActiveLayer != null)
                 {
@@ -1065,23 +1072,72 @@ public partial class MainWindowViewModel : ViewModelBase
                 ResetDrawingState();
             }
             var figure = Canvas.ActiveLayer?.Figures.LastOrDefault(f => f.IsIn(point));
-            if (figure == null)
+
+            double xMax = 0, xMin = 0, yMax = 0, yMin = 0;
+            bool p_in_s_area = false;
+            if (s_area)
             {
+                xMax = Math.Max(s_start.X, s_end.X);
+                xMin = Math.Min(s_start.X, s_end.X);
+                yMax = Math.Max(s_start.Y, s_end.Y);
+                yMin = Math.Min(s_start.Y, s_end.Y);
+                if ( point.X > xMin && point.X < xMax && point.Y > yMin && point.Y < yMax)
+                {
+
+                    p_in_s_area = true;
+                }
+
+            }
+            
+            if (figure != null || (Canvas.SelectedFigures.Any() && p_in_s_area))
+            {
+                var addToSelection = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+
+                
+                if (p_in_s_area)
+                {
+
+                    Console.WriteLine(" in selcted area");
+                }
+                else
+                {
+                    s_area = false;
+
+                    Canvas.SelectFigureAt(point, addToSelection);
+                }
+                // Начинаем перетаскивание, если не мультивыделение (или можно всегда начинать, если кликнули на фигуру)
+                if (!addToSelection) // начинаем драг только при обычном клике
+                {
+                    _isDragging = true;
+                    _dragStart = point;
+                    
+                    _originalVertices = new Dictionary<Guid, List<(double X, double Y)>>();
+                    foreach (var f in Canvas.SelectedFigures)
+                    {
+                        // Сохраняем текущие координаты всех вершин
+                        _originalVertices[f.Id] = f.Vertices.Select(v => (v.X, v.Y)).ToList();
+                    }
+                }
+				DebugLog.Write($"Объект {HasSelection} и addToSelection =  {addToSelection}");
+                StatusMessage = HasSelection ? "Объект выделен" : "Выделение снято";
+            }
+            else
+            {
+                // начало выделения областью
                 _isSelectingArea = true;
-                _selectionStart = point;
+				_selectionStart = point;
                 _selectionEnd = point;
+                s_area = true;
+                _selectionStart = new Point2D(point.X, point.Y);
+                s_start = new Point2D(point.X,point.Y);
+                s_end = new Point2D(point.X, point.Y);
+                _selectionEnd = new Point2D(point.X, point.Y);
                 this.RaisePropertyChanged(nameof(IsSelectingArea));
                 this.RaisePropertyChanged(nameof(SelectionStart));
                 this.RaisePropertyChanged(nameof(SelectionEnd));
                 DebugLog.Write($"Начато выделение областью");
             }
-            else
-            {
-                var addToSelection = e.KeyModifiers.HasFlag(KeyModifiers.Control);
-                Canvas.SelectFigureAt(point, addToSelection);
-                DebugLog.Write($"Объект {HasSelection} и addToSelection =  {addToSelection}");
-                StatusMessage = HasSelection ? "Объект выделен" : "Выделение снято";
-            }
+            e.Handled = true;
         }
     }
 
@@ -1115,6 +1171,30 @@ public partial class MainWindowViewModel : ViewModelBase
         if (Canvas == null) return;
         var point = GetCanvasPoint(e);
         UpdateCoordinates((point.X, point.Y));
+        if (_isDragging )
+        {
+            var delta = point - _dragStart;
+            foreach (var f in Canvas.SelectedFigures)
+            {
+                if (_originalVertices.TryGetValue(f.Id, out var originalVerts))
+                {
+                    // Восстанавливаем исходные координаты и применяем смещение
+                    for (int i = 0; i < f.Vertices.Count; i++)
+                    {
+                        f.Vertices[i].X = originalVerts[i].X + delta.X;
+                        f.Vertices[i].Y = originalVerts[i].Y + delta.Y;
+                    }
+                }
+            }
+            e.Handled = true;
+        }
+        else if (_isSelectingArea)
+        {
+            _selectionEnd = point;
+            s_end = point;
+            this.RaisePropertyChanged(nameof(SelectionEnd));
+            e.Handled = true;
+        }
         if (IsDrawing && _hasDrawingStart && _previewFigure != null)
         {
             if (_currentDrawingTool == DrawingTool.Pen)
@@ -1149,6 +1229,30 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (Canvas == null) return;
         var point = GetCanvasPoint(e);
+        if (_isDragging && _originalVertices != null)
+        {
+            _isDragging = false;
+            var delta = point - _dragStart;
+            if (delta.X != 0 || delta.Y != 0)
+            {
+                // Создаём команду перемещения
+                var figureIds = Canvas.SelectedFigures.Select(f => f.Id).ToList();
+                var cmd = new DragMoveCommand(figureIds, _originalVertices, delta);
+              
+          
+                cmd.SetCanvas(Canvas);
+                _history.AddAction(cmd);
+            }
+            _originalVertices = null;
+            e.Handled = true;
+        }
+        else if (_isSelectingArea)
+        {
+            // завершение выделения областью
+            _isSelectingArea = false;
+            SelectFiguresInArea(_selectionStart, _selectionEnd);
+            e.Handled = true;
+        }
         DebugLog.Write($"[DEBUG] PointerReleased at {point}, IsDrawing={IsDrawing}");
         if (IsDrawing && _hasDrawingStart && CurrentTool.IsPrimitive())
         {
@@ -1162,6 +1266,61 @@ public partial class MainWindowViewModel : ViewModelBase
             SelectFiguresInArea(_selectionStart, _selectionEnd);
             e.Handled = true;
         }
+    }
+    
+    public class DragMoveCommand : IHistoryAction
+    {
+        private readonly List<Guid> _figureIds;
+        private readonly Dictionary<Guid, List<(double X, double Y)>> _originalVertices;
+        private readonly Point2D _delta;
+        private CanvasViewModel? _canvas;
+
+        public string Description => "Перемещение";
+
+        public DragMoveCommand(List<Guid> figureIds, Dictionary<Guid, List<(double X, double Y)>> originalVertices, Point2D delta)
+        {
+            _figureIds = figureIds;
+            _originalVertices = originalVertices;
+            _delta = delta;
+        }
+
+        public void SetCanvas(CanvasViewModel canvas) => _canvas = canvas;
+
+        public void Undo()
+        {
+            if (_canvas == null) return;
+            foreach (var id in _figureIds)
+            {
+                var figure = FindFigure(id);
+                if (figure != null && _originalVertices.TryGetValue(id, out var verts))
+                {
+                    for (int i = 0; i < figure.Vertices.Count && i < verts.Count; i++)
+                    {
+                        figure.Vertices[i].X = verts[i].X;
+                        figure.Vertices[i].Y = verts[i].Y;
+                    }
+                }
+            }
+        }
+        public void Redo()
+        {
+            if (_canvas == null) return;
+            foreach (var id in _figureIds)
+            {
+                var figure = FindFigure(id);
+                if (figure != null && _originalVertices.TryGetValue(id, out var verts))
+                {
+                    for (int i = 0; i < figure.Vertices.Count && i < verts.Count; i++)
+                    {
+                        figure.Vertices[i].X = verts[i].X + _delta.X;
+                        figure.Vertices[i].Y = verts[i].Y + _delta.Y;
+                    }
+                }
+            }
+        }
+
+        private FigureViewModel? FindFigure(Guid id) =>
+            _canvas?.Layers.SelectMany(l => l.Figures).FirstOrDefault(f => f.Id == id);
     }
 
     /// <summary>

@@ -3,16 +3,18 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Styling;
-using Avalonia.Input;
+using graphic_editor.Controls;
 
-using graphic_editor.ViewModels;
+
 using graphic_editor.Helpers;
-using graphic_editor.State;
 using graphic_editor.Services;
+using graphic_editor.State;
+using graphic_editor.ViewModels;
 
 namespace graphic_editor;
 
@@ -48,11 +50,13 @@ public partial class MainWindow : Window
         StrokePercentText.Text = "50%";
 
 		// Подписка на события указателя для канваса
-		if (this.FindControl<Canvas>("MainCanvas") is Canvas canvas) 
-		{
-			canvas.AddHandler(PointerMovedEvent, OnCanvasPointerMoved);
-			canvas.AddHandler(PointerPressedEvent, OnCanvasPointerPressed);
-		}
+		var vectorCanvas = this.FindControl<VectorCanvasControl>("VectorCanvas");
+        if (vectorCanvas != null)
+        {
+            vectorCanvas.AddHandler(PointerPressedEvent, OnCanvasPointerPressed, handledEventsToo: true);
+            vectorCanvas.AddHandler(PointerMovedEvent, OnCanvasPointerMoved, handledEventsToo: true);
+            vectorCanvas.AddHandler(PointerReleasedEvent, OnCanvasPointerReleased, handledEventsToo: true);
+        }
 
 		// Инициализация слайдера темы
         if (ThemeSlider != null)
@@ -154,7 +158,6 @@ public partial class MainWindow : Window
         _viewModel.ToggleTheme();
     }
 
-	
     private void FillColorButton_Click(object? sender, RoutedEventArgs e)
     {
         if (ColorPickerControl == null) return;
@@ -162,7 +165,7 @@ public partial class MainWindow : Window
         // Очищаем старую подписку перед новой
         ColorPickerControl.ColorSelected -= OnFillColorSelected;
         ColorPickerControl.ColorSelected += OnFillColorSelected;
-        ColorPickerControl.Cancelled += OnColorPickerCancelled;
+        ColorPickerControl.Cancelled += OnFillColorPickerCancelled;
         // Инициализируем текущим цветом заливки
         if (DataContext is MainWindowViewModel vm)
         {
@@ -176,9 +179,30 @@ public partial class MainWindow : Window
         ColorPopup.IsOpen = true;
     }
 
+    private void StrokeColorButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (StrokeColorPickerControl == null) return;
+        
+        StrokeColorPickerControl.ColorSelected -= OnStrokeColorSelected;
+        StrokeColorPickerControl.ColorSelected += OnStrokeColorSelected;
+        StrokeColorPickerControl.Cancelled += OnStrokeColorPickerCancelled;
+        
+        // Инициализируем текущим цветом обводки
+        if (DataContext is MainWindowViewModel vm)
+        {
+            var currentColor = Avalonia.Media.Color.FromArgb(
+                _viewModel.StrokeColor.Color.A,
+                _viewModel.StrokeColor.Color.R,
+                _viewModel.StrokeColor.Color.G,
+                _viewModel.StrokeColor.Color.B
+            );
+            StrokeColorPickerControl.SetColor(currentColor);
+        }
+        StrokeColorPopup.IsOpen = true;
+    }
+
     private void OnFillColorSelected(Avalonia.Media.Color color)
     {
-        // Надёжное получение ViewModel
         if (DataContext is MainWindowViewModel vm)
         {
             vm.FillColor.Color = System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B);
@@ -189,6 +213,17 @@ public partial class MainWindow : Window
         ColorPopup.IsOpen = false;
     }
 
+    private void OnStrokeColorSelected(Avalonia.Media.Color color)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.StrokeColor.Color = System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B);
+            vm.IsStrokeColorPickerOpen = false;
+            vm.StatusMessage = $"Цвет обводки изменён: #{color.ToString()}";
+        }
+        StrokeColorPopup.IsOpen = false;
+    }
+
     private void OnFillColorCancelled()
     {
         if (DataContext is MainWindowViewModel vm)
@@ -197,41 +232,21 @@ public partial class MainWindow : Window
         }
     }
 
-    private void StrokeColorButton_Click(object? sender, RoutedEventArgs e)
+    private void OnStrokeColorCancelled()
     {
-        if (StrokeColorPickerControl == null) return;
-        
-        StrokeColorPickerControl.ColorSelected -= OnStrokeColorSelected;
-        StrokeColorPickerControl.ColorSelected += OnStrokeColorSelected;
-        StrokeColorPickerControl.Cancelled += OnColorPickerCancelled;
-        
-        // Инициализируем текущим цветом обводки
-        var currentColor = Avalonia.Media.Color.FromArgb(
-            _viewModel.StrokeColor.Color.A,
-            _viewModel.StrokeColor.Color.R,
-            _viewModel.StrokeColor.Color.G,
-            _viewModel.StrokeColor.Color.B
-        );
-        StrokeColorPickerControl.SetColor(currentColor);
-        
-        StrokeColorPopup.IsOpen = true;
-    }
-
-    private void OnStrokeColorSelected(Avalonia.Media.Color color)
-    {
-        if (_viewModel != null)
+        if (DataContext is MainWindowViewModel vm)
         {
-            var drawingColor = System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B);
-            _viewModel.StrokeColor.Color = drawingColor;
-            _viewModel.StatusMessage = $"Цвет обводки изменён: #{color.ToString()}";
+            vm.IsStrokeColorPickerOpen = false;
         }
+    }
+    
+    private void OnStrokeColorPickerCancelled()
+    {
         StrokeColorPopup.IsOpen = false;
     }
 
-
-    private void OnColorPickerCancelled()
+    private void OnFillColorPickerCancelled()
     {
         ColorPopup.IsOpen = false;
-        StrokeColorPopup.IsOpen = false;
     }
 }
