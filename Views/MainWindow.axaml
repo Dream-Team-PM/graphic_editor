@@ -61,9 +61,9 @@
                 <Menu Grid.Column="0" Background="Transparent" HorizontalAlignment="Left">
                     <MenuItem Header="_Файл">
                         <MenuItem Header="Новый…" InputGesture="Ctrl+N"/>
-                        <MenuItem Header="Открыть…" InputGesture="Ctrl+O" Click="OpenMenuItem_Click"/>
-                        <MenuItem Header="Сохранить" InputGesture="Ctrl+S" Click="SaveMenuItem_Click"/>
-                        <MenuItem Header="Сохранить как…" InputGesture="Ctrl+Shift+S" Click="SaveAsMenuItem_Click"/>
+                        <MenuItem Header="Открыть…" InputGesture="Ctrl+O"/>
+                        <MenuItem Header="Сохранить" InputGesture="Ctrl+S"/>
+                        <MenuItem Header="Сохранить как…" InputGesture="Ctrl+Shift+S"/>
                         <Separator/>
                         <MenuItem Header="Выход" InputGesture="Alt+F4"/>
                     </MenuItem>
@@ -92,7 +92,7 @@
                 <StackPanel Classes="Switcher" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0" Spacing="4">
                     <Button x:DataType="vm:MainWindowViewModel" Classes="ToolActionBtn" Content="↶" Width="32" Height="24" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip.Tip="Отменить (Ctrl+Z)" Command="{Binding History.Undo}" IsEnabled="{Binding History.CanUndo}"/>
                     <Button x:DataType="vm:MainWindowViewModel" Classes="ToolActionBtn" Content="↷" Width="32" Height="24" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip.Tip="Повторить (Ctrl+Y)" Command="{Binding History.Redo}" IsEnabled="{Binding History.CanRedo}"/>
-                    <Button Content="Экспорт" Background="#0078D4" Foreground="White" Padding="12,4" Height="28" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Click="ExportButton_Click"/>
+                    <Button Content="Экспорт" Background="#0078D4" Foreground="White" Padding="12,4" Height="28" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                     <Border Classes="DarkSeparator" Width="1" Height="20" Margin="4,0" VerticalAlignment="Center"/>
                     
                     <!-- Переключатель темы -->
@@ -523,7 +523,7 @@
                Placement="Bottom"
                PlacementTarget="{Binding ElementName=FillColorButton}"
                IsOpen="{Binding IsColorPickerOpen, Mode=TwoWay}"
-               >
+               >  <!-- 🔥 Закрывается при клике вне -->
             
             <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                     BorderBrush="{DynamicResource SystemControlForegroundChromeHighBrush}"
@@ -533,24 +533,7 @@
                 <views:ColorPickerPopup x:Name="FillColorPickerControl"
                                         Width="220"
                                         ColorSelected="OnFillColorSelected"
-                                        Cancelled="OnFillColorCancelled"/>
-            </Border>
-        </Popup>
-        <Popup x:Name="StrokeColorPopupNew"
-               Placement="Bottom"
-               PlacementTarget="{Binding ElementName=StrokeColorButton}"
-               IsOpen="{Binding IsStrokeColorPickerOpen, Mode=TwoWay}"
-               >
-            
-            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                    BorderBrush="{DynamicResource SystemControlForegroundChromeHighBrush}"
-                    BorderThickness="1"
-                    CornerRadius="4"
-                    Padding="8">
-                <views:ColorPickerPopup x:Name="StrokeColorPickerControlNew"
-                                        Width="220"
-                                        ColorSelected="OnStrokeColorSelected"
-                                        Cancelled="OnStrokeColorCancelled"/>
+                                        />
             </Border>
         </Popup>
     </Grid>
