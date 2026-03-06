@@ -64,7 +64,10 @@ public class RectangleViewModel: FigureViewModel
     /// </summary>
     public double Height => Math.Abs(Vertices[2].Y - Vertices[0].Y);
 
-    public override Point2D Center => new Point2D(X + Width / 2, Y + Height  / 2);
+    public override Point2D Center => new Point2D(
+     Vertices.Average(v => v.X),
+     Vertices.Average(v => v.Y)
+    );
 
     public override void Rotate(double angle)
     {

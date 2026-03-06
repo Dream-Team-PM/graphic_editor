@@ -67,8 +67,12 @@ public abstract class PolygonViewModel : FigureViewModel
         foreach (var vertex in Vertices)
         {
             var rotated = vertex.ToPoint().Rotate(center, angleDegrees);
+            Console.WriteLine("ROOOTAAATEEEE");
+            Console.WriteLine(rotated);
+            Console.WriteLine(vertex);
             vertex.X = rotated.X;
             vertex.Y = rotated.Y;
+            
         }
         NotifyPropertyChanged();
     }

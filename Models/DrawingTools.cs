@@ -1,5 +1,7 @@
 ﻿// Models/DrawingTools.cs
 
+using DynamicData.Diagnostics;
+
 namespace graphic_editor.Models;
 
 /// <summary>
@@ -102,4 +104,6 @@ public static class DrawingToolExtensions
     /// </returns>
     public static bool RequiresDrawingMode(this DrawingTool tool) => 
         tool.IsPrimitive() || tool == DrawingTool.Pen;
+
+
 }
