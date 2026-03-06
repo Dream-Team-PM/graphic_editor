@@ -454,10 +454,10 @@ public partial class VectorCanvasControl : UserControl
         {
             GroupViewModel group => CreateGroup(group),
             PolygonViewModel polygon => CreatePolygon(polygon), // Включает в себя треугольник и многоугольники
-            SquareViewModel square => CreateSquare(square),
-            CircleViewModel circle => CreateCircle(circle),
-            RectangleViewModel rect => CreateRectangle(rect),
-            EllipseViewModel ellipse => CreateEllipse(ellipse),
+            SquareViewModel square => CreateShapeFromVertices(square, isEllipse: false),
+            CircleViewModel circle => CreateShapeFromVertices(circle, isEllipse: true),
+            RectangleViewModel rect => CreateShapeFromVertices(rect, isEllipse: false),
+           EllipseViewModel ellipse => CreateShapeFromVertices(ellipse, isEllipse: true),
             PenPointViewModel pen => CreatePenPoint(pen), 
             LineViewModel lin => CreateLine(lin),
             // BezieCurveViewModel bezie => CreateBezieCurve(bezie),
@@ -545,46 +545,16 @@ public partial class VectorCanvasControl : UserControl
     /// <param name="isEllipse">Флаг, указывающий, что фигура является эллипсом.</param>
     /// <returns>Элемент Path с соответствующей геометрией.</returns>
 	private Avalonia.Controls.Shapes.Path CreateShapeFromVertices(FigureViewModel figure, bool isEllipse = false)
-	{
-    	var geometry = new StreamGeometry();
-    	using (var ctx = geometry.Open())
-    	{
-        	if (figure.Vertices.Count < 4) return null;
-        
-        	// Для эллипса используем Arc, для прямоугольника - LineTo
-        	if (isEllipse)
-        	{
-            	var center = figure.Center;
-            	var rx = Math.Abs(figure.Vertices[2].X - figure.Vertices[0].X) / 2;
-            	var ry = Math.Abs(figure.Vertices[2].Y - figure.Vertices[0].Y) / 2;
-            
-            	ctx.BeginFigure(new Avalonia.Point(center.X - rx, center.Y), isFilled: true);
-            	// Верхняя дуга
-            	ctx.ArcTo(new Avalonia.Point(center.X + rx, center.Y), 
-                     new Avalonia.Size(rx, ry), 0, false, SweepDirection.Clockwise);
-            	// Нижняя дуга
-            	ctx.ArcTo(new Avalonia.Point(center.X - rx, center.Y), 
-                     new Avalonia.Size(rx, ry), 0, false, SweepDirection.Clockwise);
-            	ctx.EndFigure(isClosed: true);
-        	}
-        	else
-        	{
-            	// Прямоугольник через 4 вершины
-            	ctx.BeginFigure(new Avalonia.Point(figure.Vertices[0].X, figure.Vertices[0].Y), isFilled: true);
-            	for (int i = 1; i < 4; i++)
-                	ctx.LineTo(new Avalonia.Point(figure.Vertices[i].X, figure.Vertices[i].Y));
-            	ctx.EndFigure(isClosed: true);
-        	}
-    	}
-    
-    	return new Avalonia.Controls.Shapes.Path
-    	{
-        	Data = geometry,
-        	Tag = figure,
-        	[Canvas.LeftProperty] = 0,
-        	[Canvas.TopProperty] = 0
-    	};
-	}
+    {
+        var geometry = BuildGeometry(figure);
+        return new Avalonia.Controls.Shapes.Path
+        {
+            Data = geometry,
+            Tag = figure,
+            [Canvas.LeftProperty] = 0,
+            [Canvas.TopProperty] = 0
+        };
+    }
     
 	/// <summary>
     /// Создаёт элемент Rectangle для отрисовки прямоугольника.
@@ -705,9 +675,7 @@ public partial class VectorCanvasControl : UserControl
                 {
                     if (control is Avalonia.Controls.Shapes.Path path)
                     {
-                        Dispatcher.UIThread.Post(() => 
-                            UpdatePolygonGeometry(path, figure as PolygonViewModel)
-                        );
+                        Dispatcher.UIThread.Post(() => UpdatePathGeometry(path, figure));
                     }
                     else
                     {
@@ -861,6 +829,11 @@ public partial class VectorCanvasControl : UserControl
         }
         path.Data = geometry;
     }
+
+    private void UpdatePathGeometry(Avalonia.Controls.Shapes.Path path, FigureViewModel figure)
+    {
+        path.Data = BuildGeometry(figure);
+    }
     
     /// <summary>
     /// Обновляет визуальное выделение фигуры (добавляет или удаляет рамку).
@@ -889,7 +862,7 @@ public partial class VectorCanvasControl : UserControl
                     var border = new Border
                     {
                         BorderBrush = Brushes.Cyan,
-                        BorderThickness = new Thickness(1),
+                        BorderThickness = new Thickness(2),
                         IsHitTestVisible = false,
                         Tag = "GroupSelectionAdorner"
                     };
@@ -1091,4 +1064,47 @@ public partial class VectorCanvasControl : UserControl
     /// <returns>Цвет в формате Avalonia.Media.Color.</returns>
     private static Avalonia.Media.Color ToAvaloniaColor(System.Drawing.Color c) => 
         Avalonia.Media.Color.FromArgb(c.A, c.R, c.G, c.B);
+
+    private StreamGeometry BuildGeometry(FigureViewModel figure)
+    {
+        var geometry = new StreamGeometry();
+        using (var ctx = geometry.Open())
+        {
+            bool isEllipse = figure is EllipseViewModel || figure is CircleViewModel;
+            bool isClosed = figure is not LineViewModel && figure is not PenPointViewModel;
+
+            if (figure.Vertices.Count < 2) return geometry;
+
+            if (isEllipse && figure.Vertices.Count >= 4)
+            {
+                // Эллиптическая геометрия
+                var center = figure.Center;
+                var rx = Math.Abs(figure.Vertices[2].X - figure.Vertices[0].X) / 2;
+                var ry = Math.Abs(figure.Vertices[2].Y - figure.Vertices[0].Y) / 2;
+
+                ctx.BeginFigure(new Avalonia.Point(center.X - rx, center.Y), isFilled: figure.FillColor.A > 0);
+                // Верхняя дуга
+                ctx.ArcTo(new Avalonia.Point(center.X + rx, center.Y),
+                    new Avalonia.Size(rx, ry), 0, false, SweepDirection.Clockwise);
+                // Нижняя дуга
+                ctx.ArcTo(new Avalonia.Point(center.X - rx, center.Y),
+                    new Avalonia.Size(rx, ry), 0, false, SweepDirection.Clockwise);
+                ctx.EndFigure(isClosed: true);
+            }
+            else
+            {
+                // Полигональная геометрия
+                ctx.BeginFigure(
+                    new Avalonia.Point(figure.Vertices[0].X, figure.Vertices[0].Y),
+                    isFilled: figure.FillColor.A > 0 && isClosed
+                );
+                for (int i = 1; i < figure.Vertices.Count; i++)
+                {
+                    ctx.LineTo(new Avalonia.Point(figure.Vertices[i].X, figure.Vertices[i].Y));
+                }
+                ctx.EndFigure(isClosed);
+            }
+        }
+        return geometry;
+    }
 }
