@@ -1,4 +1,4 @@
-using System.Drawing;
+﻿using System.Drawing;
 using graphic_editor.Geometry;
 using graphic_editor.IO.Dto;
 using graphic_editor.ViewModels;

@@ -1,4 +1,4 @@
-namespace graphic_editor.IO;
+﻿namespace graphic_editor.IO;
 
 public interface IProjectService
 {

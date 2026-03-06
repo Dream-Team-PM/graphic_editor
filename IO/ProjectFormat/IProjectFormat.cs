@@ -1,4 +1,4 @@
-namespace graphic_editor.IO.ProjectFormat;
+﻿namespace graphic_editor.IO.ProjectFormat;
 
 public interface IProjectFormat
 {
