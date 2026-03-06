@@ -1,4 +1,4 @@
-namespace graphic_editor.IO.Dto;
+﻿namespace graphic_editor.IO.Dto;
 
 public class LayerDto
 {
