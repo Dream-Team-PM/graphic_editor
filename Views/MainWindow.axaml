@@ -523,7 +523,7 @@
                Placement="Bottom"
                PlacementTarget="{Binding ElementName=FillColorButton}"
                IsOpen="{Binding IsColorPickerOpen, Mode=TwoWay}"
-               >  <!-- 🔥 Закрывается при клике вне -->
+               >
             
             <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                     BorderBrush="{DynamicResource SystemControlForegroundChromeHighBrush}"
@@ -533,7 +533,24 @@
                 <views:ColorPickerPopup x:Name="FillColorPickerControl"
                                         Width="220"
                                         ColorSelected="OnFillColorSelected"
-                                        />
+                                        Cancelled="OnFillColorCancelled"/>
+            </Border>
+        </Popup>
+        <Popup x:Name="StrokeColorPopupNew"
+               Placement="Bottom"
+               PlacementTarget="{Binding ElementName=StrokeColorButton}"
+               IsOpen="{Binding IsStrokeColorPickerOpen, Mode=TwoWay}"
+               >
+            
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundChromeHighBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="8">
+                <views:ColorPickerPopup x:Name="StrokeColorPickerControlNew"
+                                        Width="220"
+                                        ColorSelected="OnStrokeColorSelected"
+                                        Cancelled="OnStrokeColorCancelled"/>
             </Border>
         </Popup>
     </Grid>
