@@ -218,7 +218,6 @@ public class CanvasViewModel: ViewModelBase
     /// <param name="addToSelection">Если true, добавляет фигуру к текущему выделению (Ctrl+Click).</param>
     public void SelectFigureAt(Point2D point, bool addToSelection = false)
     {
-        
         if (ActiveLayer == null) return;
         var figure = ActiveLayer.Figures.LastOrDefault(f => f.IsIn(point));
         if (addToSelection)
@@ -246,7 +245,9 @@ public class CanvasViewModel: ViewModelBase
         }
         else
         {
-
+            foreach (var f in SelectedFigures)
+                f.IsSelected = false;
+            SelectedFigures.Clear();
             if (figure != null)
             {
                 figure.IsSelected = true;
@@ -256,6 +257,7 @@ public class CanvasViewModel: ViewModelBase
             }
             else
             {
+				SelectedFigure = null;
                 foreach (var f in SelectedFigures)
                     f.IsSelected = false;
                 SelectedFigures.Clear();
