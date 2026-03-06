@@ -65,8 +65,8 @@ public class RectangleViewModel: FigureViewModel
     public double Height => Math.Abs(Vertices[2].Y - Vertices[0].Y);
 
     public override Point2D Center => new Point2D(
-        Vertices.Average(v => v.X),
-        Vertices.Average(v => v.Y)
+     Vertices.Average(v => v.X),
+     Vertices.Average(v => v.Y)
     );
 
     public override void Rotate(double angle)
@@ -128,14 +128,5 @@ public class RectangleViewModel: FigureViewModel
         this.RaisePropertyChanged(nameof(Y));
         this.RaisePropertyChanged(nameof(Width));
         this.RaisePropertyChanged(nameof(Height));
-    }
-
-    /// <summary>
-    /// Создает клон фигуры.
-    /// </summary>
-    public override FigureViewModel Clone()
-    {
-        var clone = new RectangleViewModel(X, Y, Width, Height, LineColor, Thickness, FillColor, Opacity);
-        return clone;
     }
 }
