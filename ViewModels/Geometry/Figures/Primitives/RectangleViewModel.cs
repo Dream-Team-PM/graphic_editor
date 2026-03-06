@@ -129,13 +129,4 @@ public class RectangleViewModel: FigureViewModel
         this.RaisePropertyChanged(nameof(Width));
         this.RaisePropertyChanged(nameof(Height));
     }
-
-    /// <summary>
-    /// Создает клон фигуры.
-    /// </summary>
-    public override FigureViewModel Clone()
-    {
-        var clone = new RectangleViewModel(X, Y, Width, Height, LineColor, Thickness, FillColor, Opacity);
-        return clone;
-    }
 }
