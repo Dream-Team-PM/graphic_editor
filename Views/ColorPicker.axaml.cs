@@ -11,6 +11,7 @@ public partial class ColorPickerPopup : UserControl
     public event Action<Color>? ColorSelected;
     public event Action? Cancelled;
     
+    
     private static readonly string[] Swatches = {
         "#FF4A90","#FF6B6B","#FF9F43","#FECA57",
         "#48DBFB","#3A86FF","#8338EC","#06D6A0",
