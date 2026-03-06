@@ -76,7 +76,10 @@ public class EllipseViewModel: FigureViewModel
     public double RadiusY => Height / 2;
 
     /// <summary>Публичное абстрактное свойство центрирования фигуры (точка вращения/масштабирования).</summary>
-    public override Point2D Center => new Point2D(X + Width / 2, Y + Height  / 2);
+    public override Point2D Center => new Point2D(
+        Vertices.Average(v => v.X),
+        Vertices.Average(v => v.Y)
+    );
 
     /// <summary>
     /// Поворачивает фигуру на заданный угол вокруг центра.

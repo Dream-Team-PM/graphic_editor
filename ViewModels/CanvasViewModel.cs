@@ -235,7 +235,13 @@ public class CanvasViewModel: ViewModelBase
                     SelectedFigures.Add(figure);
                 }
             }
-            this.RaisePropertyChanged(nameof(SelectedFigures));
+            else
+            {
+                foreach (var f in SelectedFigures)
+                    f.IsSelected = false;
+                SelectedFigures.Clear();
+            }
+                this.RaisePropertyChanged(nameof(SelectedFigures));
         }
         else
         {
@@ -251,7 +257,10 @@ public class CanvasViewModel: ViewModelBase
             }
             else
             {
-                SelectedFigure = null;
+				SelectedFigure = null;
+                foreach (var f in SelectedFigures)
+                    f.IsSelected = false;
+                SelectedFigures.Clear();
                 DebugLog.Write("[DEBUG] I am null");
             }
             this.RaisePropertyChanged(nameof(SelectedFigures));
