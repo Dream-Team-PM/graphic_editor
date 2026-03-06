@@ -3,6 +3,7 @@
 using DynamicData.Diagnostics;
 
 namespace graphic_editor.Models;
+using DynamicData.Diagnostics;
 
 /// <summary>
 /// Перечисление типов инструментов рисования в графическом редакторе.
