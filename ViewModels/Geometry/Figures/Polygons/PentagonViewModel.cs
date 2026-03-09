@@ -2,6 +2,7 @@
 
 using System.Drawing;
 using graphic_editor.Models;
+using graphic_editor.ViewModels;
 
 namespace graphic_editor.Geometry;
 
@@ -24,6 +25,15 @@ public class PentagonViewModel : RegularPolygonViewModel
         : base(center, 5, radius, lineColor, thickness, fillColor, opacity)
     {
         Name = "Пятиугольник";
+    }
+
+    /// <summary>
+    /// Создает клон фигуры.
+    /// </summary>
+    public override FigureViewModel Clone()
+    {
+        var clone = new PentagonViewModel(new Point2D(Center.X, Center.Y), Radius, LineColor, Thickness, FillColor, Opacity);
+        return clone;
     }
 
     public override IEnumerable<Point2D> GetVertexPoint()

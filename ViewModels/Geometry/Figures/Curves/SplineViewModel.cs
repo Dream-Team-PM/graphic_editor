@@ -88,4 +88,10 @@ public class SplineViewModel: FigureViewModel
     {
         return Vertices.Select(v => v.ToPoint());
     }
+
+    // TODO: Реализовать метод Clone
+    public override FigureViewModel Clone()
+    {
+        throw new NotImplementedException();
+    }
 }

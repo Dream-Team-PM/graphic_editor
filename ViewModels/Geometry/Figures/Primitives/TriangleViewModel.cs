@@ -16,7 +16,21 @@ public class TriangleViewModel : PolygonViewModel
     {
         Name = "Треугольник";
     }
-    
+
+    /// <summary>
+    /// Создает клон фигуры.
+    /// </summary>
+    public override FigureViewModel Clone()
+    {
+        var a = new Point2D(Vertices[0].X, Vertices[0].Y);
+        var b = new Point2D(Vertices[1].X, Vertices[1].Y);
+        var c = new Point2D(Vertices[2].X, Vertices[2].Y);
+
+        var clone = new TriangleViewModel(a, b, c, LineColor, Thickness, FillColor, Opacity);
+
+        return clone;
+    }
+
     public override IEnumerable<Point2D> GetVertexPoint()
     {
         return Vertices.Select(v => v.ToPoint());

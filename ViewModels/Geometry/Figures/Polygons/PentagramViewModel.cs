@@ -103,4 +103,20 @@ public class PentagramViewModel : PolygonViewModel
         base.NotifyPropertyChanged();
         this.RaisePropertyChanged(nameof(OuterRadius));
     }
+
+    /// <summary>
+    /// Создает клон фигуры.
+    /// </summary>
+    public override FigureViewModel Clone()
+    {
+        var clone = new PentagramViewModel(
+            new Point2D(Center.X, Center.Y),
+            OuterRadius,
+            LineColor,
+            Thickness,
+            FillColor,
+            Opacity);
+
+        return clone;
+    }
 }
