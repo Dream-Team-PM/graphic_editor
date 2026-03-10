@@ -145,4 +145,13 @@ public class EllipseViewModel: FigureViewModel
         this.RaisePropertyChanged(nameof(RadiusX));
         this.RaisePropertyChanged(nameof(RadiusY));
     }
+
+    /// <summary>
+    /// Создает клон фигуры.
+    /// </summary>
+    public override FigureViewModel Clone()
+    {
+        var clone = new EllipseViewModel(X, Y, Width, Height, LineColor, Thickness, FillColor, Opacity);
+        return clone;
+    }
 }

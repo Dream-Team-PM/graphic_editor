@@ -2,6 +2,7 @@
 
 using System.Drawing;
 using graphic_editor.Models;
+using graphic_editor.ViewModels;
 
 namespace graphic_editor.Geometry;
 
@@ -25,7 +26,16 @@ public class HeptagonViewModel : RegularPolygonViewModel
     {
         Name = "Семиугольник";
     }
-    
+
+    /// <summary>
+    /// Создает клон фигуры.
+    /// </summary>
+    public override FigureViewModel Clone()
+    {
+        var clone = new HeptagonViewModel(new Point2D(Center.X, Center.Y), Radius, LineColor, Thickness, FillColor, Opacity);
+        return clone;
+    }
+
     public override IEnumerable<Point2D> GetVertexPoint()
     {
         return Vertices.Select(v => v.ToPoint());
