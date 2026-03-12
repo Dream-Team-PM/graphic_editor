@@ -1,35 +1,21 @@
-// Views/MainWindow.axaml.cs
-
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Styling;
-using Avalonia.Input;
 
-using graphic_editor.ViewModels;
 using graphic_editor.Helpers;
-using graphic_editor.State;
 using graphic_editor.Services;
+using graphic_editor.State;
+using graphic_editor.ViewModels;
 
 namespace graphic_editor;
 
-/// <summary>
-/// Основное (главное) окно графического редактора.
-/// Отвечает за инициализацию UI, привязку ViewModel и обработку событий ввода с холста.
-/// </summary> 
 public partial class MainWindow : Window
 {
-	/// <summary>Приватное поле для хранения экземпляра ViewModel главного окна.</summary>
-	private MainWindowViewModel? _viewModel;
+    private MainWindowViewModel? _viewModel;
 
-	/// <summary>
-    /// Инициализирует новый экземпляр класса <see cref="MainWindow"/>.
-    /// Выполняет загрузку XAML, создание зависимостей (FileService, HistoryViewModel) 
-    /// и установку DataContext.
-    /// </summary>
     public MainWindow()
     {
         InitializeComponent();
@@ -37,87 +23,63 @@ public partial class MainWindow : Window
             System.Drawing.Color.Black,
             System.Drawing.Color.Transparent,
             2.0);
-        
-		var fileService = new FileService();
-		var history = new HistoryViewModel();
-		_viewModel = new MainWindowViewModel(fileService, history);
-		DataContext = _viewModel;
 
-        // Начальные значения UI-элементов
-        SelectedToolText.Text = "Выделение";
-        StrokePercentText.Text = "50%";
+        var fileService = new FileService();
+        var history = new HistoryViewModel();
+        _viewModel = new MainWindowViewModel(fileService, history);
+        DataContext = _viewModel;
 
-		// Подписка на события указателя для канваса
-		if (this.FindControl<Canvas>("MainCanvas") is Canvas canvas) 
-		{
-			canvas.AddHandler(PointerMovedEvent, OnCanvasPointerMoved);
-			canvas.AddHandler(PointerPressedEvent, OnCanvasPointerPressed);
-		}
+        ToolSettingsBarControl.SelectedToolTextElement.Text = "Выделение";
+        ToolSettingsBarControl.StrokePercentTextElement.Text = "50%";
 
-		// Инициализация слайдера темы
-        if (ThemeSlider != null)
-        {
-            ThemeSlider.Value = _viewModel.CurrentTheme == ThemeVariant.Light ? 1 : 0;
-        }
+        MainMenuBarControl.ThemeToggleChanged += ThemeToggle_Changed;
+        ToolSettingsBarControl.FillColorClicked += FillColorButton_Click;
+        ToolSettingsBarControl.StrokeColorClicked += StrokeColorButton_Click;
+        ToolSettingsBarControl.StrokeSliderValueChanged += StrokeSlider_ValueChanged;
+        ToolsSidebarControl.ToolButtonChecked += ToolButton_Checked;
+
+        EditorWorkspaceControl.VectorCanvasElement.PointerMoved += OnCanvasPointerMoved;
+        EditorWorkspaceControl.VectorCanvasElement.PointerPressed += OnCanvasPointerPressed;
+        EditorWorkspaceControl.VectorCanvasElement.PointerReleased += OnCanvasPointerReleased;
+
+        MainMenuBarControl.ThemeToggleElement.IsChecked = _viewModel.CurrentTheme == ThemeVariant.Light;
     }
 
-	/// <summary>
-    /// Обработчик события перемещения указателя мыши над холстом.
-    /// Преобразует экранные координаты в координаты канваса и обновляет ViewModel.
-    /// </summary>
-    /// <param name="sender">Источник события.</param>
-    /// <param name="e">Аргументы события указателя.</param>
-	private void OnCanvasPointerMoved(object? sender, PointerEventArgs e) 
-	{
-    	if (_viewModel == null) return;
-    	// Обновляем координаты курсора
-    	var screenPos = e.GetPosition(VectorCanvas);
-    	var canvasPoint = VectorCanvas.ScreenToCanvas(screenPos);
-    	_viewModel.Commands.UpdateCoordinates.Execute((canvasPoint.X, canvasPoint.Y));
-    	_viewModel.HandlePointerMoved(e);
-	}
+    private void OnCanvasPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (_viewModel == null) return;
 
-	/// <summary>
-    /// Обработчик события нажатия кнопки мыши на холсте.
-    /// Преобразует координаты и передаёт событие в ViewModel для обработки.
-    /// </summary>
-    /// <param name="sender">Источник события.</param>
-    /// <param name="e">Аргументы события нажатия указателя.</param>
-	private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e) 
-	{
-    	if (_viewModel == null) return;
-    	var screenPos = e.GetPosition(VectorCanvas);
-    	var point = VectorCanvas.ScreenToCanvas(screenPos);
-    	_viewModel.HandlePointerPressed(e);
-	}
+        var screenPos = e.GetPosition(EditorWorkspaceControl.VectorCanvasElement);
+        var canvasPoint = EditorWorkspaceControl.VectorCanvasElement.ScreenToCanvas(screenPos);
+        _viewModel.Commands.UpdateCoordinates.Execute((canvasPoint.X, canvasPoint.Y));
+        _viewModel.HandlePointerMoved(e);
+    }
 
-	/// <summary>
-    /// Обработчик события отпускания кнопки мыши на холсте.
-    /// Завершает операции рисования или выделения и передаёт событие в ViewModel.
-    /// </summary>
-    /// <param name="sender">Источник события.</param>
-    /// <param name="e">Аргументы события отпускания указателя.</param>
-	private void OnCanvasPointerReleased(object? sender, PointerReleasedEventArgs e) 
-	{
-    	if (_viewModel == null) return;
-    	var screenPos = e.GetPosition(VectorCanvas);
-    	var point = VectorCanvas.ScreenToCanvas(screenPos);
-    	_viewModel.HandlePointerReleased(e);
-	}
+    private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (_viewModel == null) return;
 
-	/// <summary>
-    /// Обработчик изменения состояния кнопки выбора инструмента.
-    /// Устанавливает выбранный инструмент в ViewModel по значению Tag кнопки.
-    /// </summary>
-    /// <param name="sender">Источник события (RadioButton).</param>
-    /// <param name="e">Аргументы события.</param>
+        var screenPos = e.GetPosition(EditorWorkspaceControl.VectorCanvasElement);
+        var point = EditorWorkspaceControl.VectorCanvasElement.ScreenToCanvas(screenPos);
+        _viewModel.HandlePointerPressed(e);
+    }
+
+    private void OnCanvasPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_viewModel == null) return;
+
+        var screenPos = e.GetPosition(EditorWorkspaceControl.VectorCanvasElement);
+        var point = EditorWorkspaceControl.VectorCanvasElement.ScreenToCanvas(screenPos);
+        _viewModel.HandlePointerReleased(e);
+    }
+
     private void ToolButton_Checked(object? sender, RoutedEventArgs e)
     {
         if (sender is RadioButton btn && btn.IsChecked == true && btn.Tag is string toolName)
         {
             DebugLog.Write($"[DEBUG] ToolButton_Checked: Setting SelectedTool to '{toolName}' (Tag={btn.Tag})");
-            _viewModel.SetToolByName(toolName);
-            SelectedToolText.Text = toolName;
+            _viewModel?.SetToolByName(toolName);
+            ToolSettingsBarControl.SelectedToolTextElement.Text = toolName;
         }
         else
         {
@@ -125,55 +87,32 @@ public partial class MainWindow : Window
         }
     }
 
-	/// <summary>
-    /// Обработчик изменения значения слайдера толщины обводки.
-    /// Обновляет текстовое отображение процента толщины в UI.
-    /// </summary>
-    /// <param name="sender">Источник события.</param>
-    /// <param name="e">Аргументы события изменения значения.</param>
     private void StrokeSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
-		StrokePercentText.Text = $"{(int)e.NewValue}%";
+        ToolSettingsBarControl.StrokePercentTextElement.Text = $"{(int)e.NewValue}%";
     }
 
-	/// <summary>
-    /// Обработчик изменения значения слайдера темы.
-    /// Переключает тему приложения между светлой и тёмной.
-    /// </summary>
-    /// <param name="sender">Источник события.</param>
-    /// <param name="e">Аргументы события изменения значения.</param>
-	private void ThemeSlider_ValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
+    private void ThemeToggle_Changed(object? sender, bool isLightTheme)
     {
         if (_viewModel == null) return;
-        
-        _viewModel.CurrentTheme = e.NewValue >= 0.5 
-            ? ThemeVariant.Light 
-            : ThemeVariant.Dark;
-        
-        this.RequestedThemeVariant = _viewModel.CurrentTheme;
-        _viewModel.ToggleTheme();
+
+        var targetTheme = isLightTheme ? ThemeVariant.Light : ThemeVariant.Dark;
+        if (_viewModel.CurrentTheme != targetTheme)
+        {
+            _viewModel.ToggleTheme();
+        }
+
+        RequestedThemeVariant = _viewModel.CurrentTheme;
     }
 
     private void FillColorButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (ColorPickerControl == null) return;
-        
-        ColorPickerControl.ColorSelected -= OnFillColorSelected;
-        ColorPickerControl.ColorSelected += OnFillColorSelected;
-        ColorPickerControl.Cancelled += OnColorPickerCancelled;
-        
-        // Инициализируем текущим цветом заливки
-        if (DataContext is MainWindowViewModel vm)
-        {
-            var currentColor = Color.FromArgb(
-                vm.FillColor.Color.A,
-                vm.FillColor.Color.R,
-                vm.FillColor.Color.G,
-                vm.FillColor.Color.B
-            );
-        }
-        
-        ColorPopup.IsOpen = true;
+        var colorPicker = ToolSettingsBarControl.ColorPickerControlElement;
+        colorPicker.ColorSelected -= OnFillColorSelected;
+        colorPicker.ColorSelected += OnFillColorSelected;
+        colorPicker.Cancelled += OnColorPickerCancelled;
+
+        ToolSettingsBarControl.ColorPopupElement.IsOpen = true;
     }
 
     private void OnFillColorSelected(Avalonia.Media.Color color)
@@ -181,29 +120,29 @@ public partial class MainWindow : Window
         if (DataContext is MainWindowViewModel vm)
         {
             vm.FillColor.Color = System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B);
-            vm.StatusMessage = $"Цвет заливки: #{color.ToString()}";
+            vm.StatusMessage = $"Цвет заливки: #{color}";
         }
-        ColorPopup.IsOpen = false;
+
+        ToolSettingsBarControl.ColorPopupElement.IsOpen = false;
     }
 
     private void StrokeColorButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (StrokeColorPickerControl == null) return;
-        
-        StrokeColorPickerControl.ColorSelected -= OnStrokeColorSelected;
-        StrokeColorPickerControl.ColorSelected += OnStrokeColorSelected;
-        StrokeColorPickerControl.Cancelled += OnColorPickerCancelled;
-        
-        // Инициализируем текущим цветом обводки
+        var strokePicker = ToolSettingsBarControl.StrokeColorPickerControlElement;
+        strokePicker.ColorSelected -= OnStrokeColorSelected;
+        strokePicker.ColorSelected += OnStrokeColorSelected;
+        strokePicker.Cancelled += OnColorPickerCancelled;
+
+        if (_viewModel == null) return;
+
         var currentColor = Avalonia.Media.Color.FromArgb(
             _viewModel.StrokeColor.Color.A,
             _viewModel.StrokeColor.Color.R,
             _viewModel.StrokeColor.Color.G,
-            _viewModel.StrokeColor.Color.B
-        );
-        StrokeColorPickerControl.SetColor(currentColor);
-        
-        StrokeColorPopup.IsOpen = true;
+            _viewModel.StrokeColor.Color.B);
+        strokePicker.SetColor(currentColor);
+
+        ToolSettingsBarControl.StrokeColorPopupElement.IsOpen = true;
     }
 
     private void OnStrokeColorSelected(Avalonia.Media.Color color)
@@ -212,14 +151,15 @@ public partial class MainWindow : Window
         {
             var drawingColor = System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B);
             _viewModel.StrokeColor.Color = drawingColor;
-            _viewModel.StatusMessage = $"Цвет обводки изменён: #{color.ToString()}";
+            _viewModel.StatusMessage = $"Цвет обводки изменён: #{color}";
         }
-        StrokeColorPopup.IsOpen = false;
+
+        ToolSettingsBarControl.StrokeColorPopupElement.IsOpen = false;
     }
 
     private void OnColorPickerCancelled()
     {
-        ColorPopup.IsOpen = false;
-        StrokeColorPopup.IsOpen = false;
+        ToolSettingsBarControl.ColorPopupElement.IsOpen = false;
+        ToolSettingsBarControl.StrokeColorPopupElement.IsOpen = false;
     }
 }

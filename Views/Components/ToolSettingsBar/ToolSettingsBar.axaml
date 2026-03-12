@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:components="using:graphic_editor.Views.Components"
+             xmlns:vm="using:graphic_editor.ViewModels"
+             x:Class="graphic_editor.Views.Components.ToolSettingsBar"
+             x:DataType="vm:MainWindowViewModel">
+    <UserControl.Styles>
+        <StyleInclude Source="ToolSettingsBarStyles.axaml"/>
+    </UserControl.Styles>
+
+    <Border Classes="ThemePanel" Height="36" BorderThickness="0,0,0,1">
+        <StackPanel Classes="ParamBackground" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0" Spacing="16">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Classes="subtle" Text="Инструмент:" VerticalAlignment="Center" Foreground="#999"/>
+                <TextBlock x:Name="SelectedToolText" Text="Перо" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            </StackPanel>
+            <Separator Classes="DarkSeparator" Width="1" Height="20"/>
+
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="Заливка:" VerticalAlignment="Center"/>
+                <Button x:Name="FillColorButton" Width="28" Height="20" Padding="0" Background="Transparent" BorderThickness="0">
+                    <Border Width="28" Height="20" CornerRadius="2" BorderBrush="#555" BorderThickness="1" Background="{Binding FillColor.Color, Converter={StaticResource ColorToBrushConverter}}"/>
+                </Button>
+                <Popup x:Name="ColorPopup" Placement="Bottom" PlacementTarget="{Binding ElementName=FillColorButton}">
+                    <components:ColorPickerPopup x:Name="ColorPickerControl"/>
+                </Popup>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="Обводка:" VerticalAlignment="Center"/>
+                <Button x:Name="StrokeColorButton" Width="28" Height="20" Padding="0" Background="Transparent" BorderThickness="0">
+                    <Border Width="28" Height="20" CornerRadius="2" BorderBrush="#555" BorderThickness="1" Background="{Binding StrokeColor.Color, Converter={StaticResource ColorToBrushConverter}}"/>
+                </Button>
+                <Popup x:Name="StrokeColorPopup" Placement="Bottom" PlacementTarget="{Binding ElementName=StrokeColorButton}">
+                    <components:ColorPickerPopup x:Name="StrokeColorPickerControl"/>
+                </Popup>
+                <ComboBox Width="80" SelectedIndex="1">
+                    <ComboBoxItem Content="Нет"/>
+                    <ComboBoxItem Content="1 px"/>
+                    <ComboBoxItem Content="2 px"/>
+                </ComboBox>
+            </StackPanel>
+
+            <Slider x:Name="StrokeSlider" Width="120" Minimum="0" Maximum="100" Value="{Binding StrokeWidth, Mode=TwoWay}" TickFrequency="5" IsSnapToTickEnabled="True"/>
+            <TextBlock x:Name="StrokePercentText" Text="75%" VerticalAlignment="Center" Width="40"/>
+        </StackPanel>
+    </Border>
+</UserControl>
