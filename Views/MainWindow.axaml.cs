@@ -7,11 +7,12 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using graphic_editor.Controls;
-
-
 using graphic_editor.Helpers;
+using graphic_editor.IO.Export;
+using graphic_editor.IO.Services;
 using graphic_editor.Services;
 using graphic_editor.State;
 using graphic_editor.ViewModels;
@@ -21,11 +22,14 @@ namespace graphic_editor;
 /// <summary>
 /// Основное (главное) окно графического редактора.
 /// Отвечает за инициализацию UI, привязку ViewModel и обработку событий ввода с холста.
-/// </summary> 
+/// </summary>
 public partial class MainWindow : Window
 {
 	/// <summary>Приватное поле для хранения экземпляра ViewModel главного окна.</summary>
 	private MainWindowViewModel? _viewModel;
+
+	private readonly ProjectService _projectService = new();
+	private string? _currentFilePath;
 
 	/// <summary>
     /// Инициализирует новый экземпляр класса <see cref="MainWindow"/>.
@@ -248,5 +252,117 @@ public partial class MainWindow : Window
     private void OnFillColorPickerCancelled()
     {
         ColorPopup.IsOpen = false;
+    }
+
+    // ── Сохранение / Открытие / Экспорт ─────────────────────────────────────
+
+    private async void SaveMenuItem_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_currentFilePath == null)
+            await SaveAs();
+        else
+            await DoSave(_currentFilePath);
+    }
+
+    private async void SaveAsMenuItem_Click(object? sender, RoutedEventArgs e)
+    {
+        await SaveAs();
+    }
+
+    private async void OpenMenuItem_Click(object? sender, RoutedEventArgs e)
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Открыть проект",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Поддерживаемые форматы") { Patterns = ["*.vec", "*.json", "*.svg"] },
+                new FilePickerFileType("Проект INKognida (*.vec)") { Patterns = ["*.vec"] },
+                new FilePickerFileType("SVG изображение (*.svg)") { Patterns = ["*.svg"] },
+                new FilePickerFileType("JSON (*.json)") { Patterns = ["*.json"] },
+            }
+        });
+
+        if (files.Count == 0 || _viewModel == null) return;
+
+        var path = files[0].Path.LocalPath;
+        _viewModel.StatusMessage = "Открытие...";
+        var ok = await _projectService.LoadProjectAsync(path, _viewModel.Canvas);
+        if (ok)
+        {
+            _currentFilePath = path;
+            Title = $"INKognida — {Path.GetFileName(path)}";
+            _viewModel.StatusMessage = $"Открыто: {Path.GetFileName(path)} ✓";
+        }
+        else
+        {
+            _viewModel.StatusMessage = "Ошибка открытия ✗";
+        }
+    }
+
+    private async void ExportButton_Click(object? sender, RoutedEventArgs e)
+    {
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Экспорт PNG",
+            DefaultExtension = "png",
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("PNG изображение (*.png)") { Patterns = ["*.png"] },
+            }
+        });
+
+        if (file?.Path?.LocalPath is not string path || _viewModel == null) return;
+
+        var vectorCanvas = this.FindControl<VectorCanvasControl>("VectorCanvas");
+        if (vectorCanvas == null) return;
+
+        _viewModel.StatusMessage = "Экспорт PNG...";
+        try
+        {
+            await PngExporter.ExportAsync(path, vectorCanvas);
+            _viewModel.StatusMessage = $"Экспортировано: {Path.GetFileName(path)} ✓";
+        }
+        catch
+        {
+            _viewModel.StatusMessage = "Ошибка экспорта PNG ✗";
+        }
+    }
+
+    private async Task SaveAs()
+    {
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Сохранить проект",
+            DefaultExtension = "vec",
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("Проект INKognida (*.vec)") { Patterns = ["*.vec"] },
+                new FilePickerFileType("SVG изображение (*.svg)") { Patterns = ["*.svg"] },
+            }
+        });
+
+        if (file?.Path?.LocalPath is string path)
+        {
+            _currentFilePath = path;
+            await DoSave(path);
+        }
+    }
+
+    private async Task DoSave(string path)
+    {
+        if (_viewModel == null) return;
+        _viewModel.StatusMessage = "Сохранение...";
+        var ok = await _projectService.SaveProjectAsync(path, _viewModel.Canvas);
+        if (ok)
+        {
+            Title = $"INKognida — {Path.GetFileName(path)}";
+            _viewModel.StatusMessage = $"Сохранено: {Path.GetFileName(path)} ✓";
+        }
+        else
+        {
+            _viewModel.StatusMessage = "Ошибка сохранения ✗";
+        }
     }
 }
