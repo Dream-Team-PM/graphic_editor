@@ -1,0 +1,121 @@
+﻿// Commands/DeleteFigureCommand.cs
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using graphic_editor.Interfaces;
+using graphic_editor.ViewModels;
+using graphic_editor.Helpers;
+
+namespace graphic_editor.Commands;
+
+public class DeleteFigureCommand : IHistoryAction
+{
+    private readonly List<FigureViewModel> _figures;
+    private readonly List<(FigureViewModel Figure, Guid LayerId)> _deleted = new();
+    private CanvasViewModel? _canvas;  // ← Сохраняем canvas
+    
+    public string Description => $"Удаление {_figures.Count} фигур(ы)";
+    
+    public DeleteFigureCommand(List<FigureViewModel> figures)
+    {
+        _figures = new List<FigureViewModel>(figures);
+    }
+    
+    public void StoreCanvas(CanvasViewModel canvas) => _canvas = canvas;
+    
+    public void Execute(CanvasViewModel canvas)
+    {
+        _canvas = canvas;
+        
+        if (canvas == null || canvas.Layers == null)
+        {
+            DebugLog.Write("[ERROR] DeleteFigureCommand: canvas or Layers is null");
+            return;
+        }
+        
+        foreach (var figure in _figures)
+        {
+            var layer = canvas.Layers.FirstOrDefault(l => l.Figures.Contains(figure));
+            if (layer != null)
+            {
+                layer.Figures.Remove(figure);
+                _deleted.Add((figure, layer.Id));
+                DebugLog.Write($"[DEBUG] DeleteFigureCommand: Removed {figure.Name} from {layer.Name}");
+            }
+            else
+            {
+                DebugLog.Write($"[WARN] DeleteFigureCommand: Figure {figure.Name} not found in any layer");
+            }
+        }
+    }
+    
+    public void Undo()
+    {
+        if (_canvas == null || _canvas.Layers == null) return;
+        
+        for (int i = _deleted.Count - 1; i >= 0; i--)
+        {
+            var (figure, layerId) = _deleted[i];
+            var layer = _canvas.Layers.FirstOrDefault(l => l.Id == layerId);
+            if (layer != null && !layer.Figures.Contains(figure))
+            {
+                layer.Figures.Add(figure);
+                DebugLog.Write($"[DEBUG] DeleteFigureCommand.Undo: Restored {figure.Name}");
+            }
+        }
+    }
+    
+    public void Redo() => Execute(_canvas);
+}
+
+
+// Commands/AddFigureCommand.cs
+using graphic_editor.ViewModels;
+using graphic_editor.Interfaces;
+using graphic_editor.ViewModels;
+
+namespace graphic_editor.Commands;
+
+public class AddFigureCommand : FigureCommandBase
+{
+    public FigureViewModel Figure { get; }
+    public Guid? TargetLayerId { get; }
+    
+    public AddFigureCommand(FigureViewModel figure, Guid? targetLayerId)
+    {
+        Figure = figure;
+        TargetLayerId = targetLayerId;
+    }
+    private bool _wasAdded = false;
+    private Guid _addedToLayerId;
+    
+    public override string Description => $"Добавление: {Figure?.Name ?? "Figure"}";
+    
+    public override void Execute(CanvasViewModel canvas)
+    {
+        if (_wasAdded) return;
+        
+        var layer = TargetLayerId != null 
+            ? canvas.Layers.FirstOrDefault(l => l.Id == TargetLayerId)
+            : canvas.ActiveLayer;
+            
+        if (layer != null && Figure != null)
+        {
+            layer.Figures.Add(Figure);
+            _addedToLayerId = layer.Id;
+            _wasAdded = true;
+        }
+    }
+    
+    public override void Undo()
+    {
+        if (_wasAdded)
+        {
+            var layer = canvas.Layers.FirstOrDefault(l => l.Id == _addedToLayerId);
+            layer?.Figures.Remove(Figure);
+            _wasAdded = false;
+        }
+    }
+    
+    public override void Redo() => Execute(canvas);
+}

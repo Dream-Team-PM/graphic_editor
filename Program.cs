@@ -1,4 +1,6 @@
 ﻿using Avalonia;
+using ReactiveUI;
+using ReactiveUI.Avalonia;
 using System;
 
 namespace graphic_editor;
@@ -15,10 +17,16 @@ sealed class Program
     /// до вызова AppMain: вещи ещё не инициализированы и могут сломаться.
     /// </summary>
     /// <param name="args">Аргументы командной строки.</param>
-    [STAThread]
-    public static void Main(string[] args) => BuildAvaloniaApp()
-        .StartWithClassicDesktopLifetime(args);
-
+    
+    public static void Main(string[] args)
+    {
+        RxApp.MainThreadScheduler = AvaloniaScheduler.Instance;
+        BuildAvaloniaApp()
+            .UseReactiveUI()
+            .StartWithClassicDesktopLifetime(args);
+        Console.ReadLine();
+    }
+    
     /// <summary>
     /// Конфигурация Avalonia приложения. Не удаляйте; также используется визуальным дизайнером.
     /// </summary>

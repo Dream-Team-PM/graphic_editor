@@ -1,10 +1,15 @@
+using System;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
-using System.Linq;
 using Avalonia.Markup.Xaml;
+using Avalonia.Controls;
+using Avalonia.Platform;
 using graphic_editor.ViewModels;
+using System.Threading.Tasks;
+using Avalonia.Threading;
+using graphic_editor.Helpers;
 
 namespace graphic_editor;
 
@@ -20,6 +25,18 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        DebugLog.Write("\n=== ЗАГРУЖЕННЫЕ СБОРКИ ===");
+        // В App.axaml.cs:
+        foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            var name = asm.GetName().Name;
+            if (name?.Contains("ColorPicker") == true || 
+                name?.Contains("Avalonia.Controls") == true)
+            {
+                DebugLog.Write($"📦 {name} v{asm.GetName().Version}");
+            }
+        }
+        DebugLog.Write("=========================\n");
     }
 
     /// <summary>
@@ -33,10 +50,11 @@ public partial class App : Application
             // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
             // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
             DisableAvaloniaDataAnnotationValidation();
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = new MainWindowViewModel(),
-            };
+            desktop.MainWindow = new MainWindow();
+            
+            desktop.MainWindow.Icon = new WindowIcon(
+                AssetLoader.Open(new Uri("avares://graphic_editor/Assets/Calligrakrita-base.png"))
+            );
         }
 
         base.OnFrameworkInitializationCompleted();
