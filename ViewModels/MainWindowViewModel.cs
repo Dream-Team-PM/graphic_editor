@@ -740,14 +740,19 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     private void DuplicateSelected()
     {
-        if (Canvas?.SelectedFigure == null) return;
-        var original = Canvas.SelectedFigure;
-        var clone = original.Clone();
-        clone.Move(10, 10);
-        var cmd = new AddFigureCommand(clone, Canvas.ActiveLayer?.Id);
-        cmd.Execute(Canvas);
-        _history.AddAction(cmd);
-        StatusMessage = "Объект дублирован";
+        var selectedFigures = Canvas?.ActiveLayer?.Figures?.Where(f => f.IsSelected == true)?.ToList();
+        if (selectedFigures == null || !selectedFigures.Any())
+            return;
+        foreach (var selectedFigure in selectedFigures)
+        {
+            var original = selectedFigure;
+            var clone = original.Clone();
+            clone.Move(10, 10);
+            var cmd = new AddFigureCommand(clone, Canvas.ActiveLayer?.Id);
+            cmd.Execute(Canvas);
+            _history.AddAction(cmd);
+        }
+        StatusMessage = "Объекты дублирован";
     }
 
     /// <summary>
