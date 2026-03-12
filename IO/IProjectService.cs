@@ -1,4 +1,6 @@
-﻿namespace graphic_editor.IO;
+using graphic_editor.ViewModels;
+
+namespace graphic_editor.IO;
 
 public interface IProjectService
 {

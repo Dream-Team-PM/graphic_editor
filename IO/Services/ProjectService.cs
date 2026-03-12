@@ -1,4 +1,4 @@
-﻿using graphic_editor.IO.ProjectFormat;
+using graphic_editor.IO.ProjectFormat;
 
 namespace graphic_editor.IO.Services;
 

@@ -1,4 +1,6 @@
-﻿namespace graphic_editor.IO.ProjectFormat;
+using graphic_editor.ViewModels;
+
+namespace graphic_editor.IO.ProjectFormat;
 
 public interface IProjectFormat
 {
