@@ -1,0 +1,29 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style Selector="Button.ToolActionBtn">
+        <Setter Property="Background" Value="#2C2C2E"/>
+        <Setter Property="BorderBrush" Value="#3F3F46"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+    <Style Selector="Button.ToolActionBtn:pointerover">
+        <Setter Property="Background" Value="#3C3C3E"/>
+    </Style>
+    <Style Selector="Window[RequestedThemeVariant=Light] Button.ToolActionBtn">
+        <Setter Property="Background" Value="#E8E8E8"/>
+        <Setter Property="Foreground" Value="#333333"/>
+        <Setter Property="BorderBrush" Value="#D0D0D0"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+    <Style Selector="Window[RequestedThemeVariant=Light] Button.ToolActionBtn:pointerover">
+        <Setter Property="Background" Value="#D0D0D0"/>
+    </Style>
+    <Style Selector="Window[RequestedThemeVariant=Light] Button.ToolActionBtn:pressed">
+        <Setter Property="Background" Value="#C0C0C0"/>
+    </Style>
+    <Style Selector="TextBlock.ThemeIcon">
+        <Setter Property="Foreground" Value="#CCCCCC"/>
+    </Style>
+    <Style Selector="Window[RequestedThemeVariant=Light] TextBlock.ThemeIcon">
+        <Setter Property="Foreground" Value="#333333"/>
+    </Style>
+</Styles>

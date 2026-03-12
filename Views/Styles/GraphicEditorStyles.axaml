@@ -1,537 +1,151 @@
-﻿<Styles xmlns="https://github.com/avaloniaui"
+<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    
     <Style Selector="Window">
-            <Setter Property="FontSize" Value="13"/>
-        </Style>
-
-        <Style Selector="Menu">
-            <Setter Property="Background" Value="#2C2C2E"/>
-        </Style>
-
-        <!-- Tool buttons (RadioButton для взаимоисключения) -->
-        <Style Selector="RadioButton.ToolButton">
-            <Setter Property="Width" Value="50"/>
-            <Setter Property="Height" Value="50"/>
-            <Setter Property="Margin" Value="3"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontSize" Value="22"/>
-        </Style>
-        <Style Selector="RadioButton.ToolButton:pointerover">
-            <Setter Property="Background" Value="#3C3C3E"/>
-        </Style>
-        <Style Selector="RadioButton.ToolButton:checked">
-            <Setter Property="Background" Value="#0078D4"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-
-        <Style Selector="Border.Panel">
-            <Setter Property="Background" Value="#252526"/>
-            <Setter Property="BorderBrush" Value="#3F3F46"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-
-        <!-- Стили для контекстного меню -->
-        <Style Selector="ContextMenu">
-            <Setter Property="Background" Value="#2D2D30"/>
-            <Setter Property="BorderBrush" Value="#3F3F46"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-        <Style Selector="MenuItem">
-            <Setter Property="Background" Value="#2D2D30"/>
-            <Setter Property="Foreground" Value="#CCCCCC"/>
-        </Style>
-        <Style Selector="MenuItem:pointerover">
-            <Setter Property="Background" Value="#0078D4"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-
-
-        <!-- ========== СВЕТЛАЯ ТЕМА (переопределения) ========== -->
-        <Style Selector="Window[RequestedThemeVariant=Light]">
-            <Setter Property="Background" Value="#F5F5F5"/>
-        </Style>
-        
-        <Style Selector="Window[RequestedThemeVariant=Light] Menu">
-            <Setter Property="Background" Value="#FFFFFF"/>
-        </Style>
-        
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.Panel">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#D0D0D0"/>
-        </Style>
-        
-        <Style Selector="Window[RequestedThemeVariant=Light] RadioButton.ToolButton">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-        <Style Selector="Window[RequestedThemeVariant=Light] RadioButton.ToolButton:pointerover">
-            <Setter Property="Background" Value="#E5E5E5"/>
-        </Style>
-        <Style Selector="Window[RequestedThemeVariant=Light] RadioButton.ToolButton:checked">
-            <Setter Property="Background" Value="#0078D4"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-        
-        <Style Selector="Window[RequestedThemeVariant=Light] ContextMenu">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#D0D0D0"/>
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-        <Style Selector="Window[RequestedThemeVariant=Light] MenuItem:pointerover">
-            <Setter Property="Background" Value="#0078D4"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-        
-        <!-- Холст: светлая шахматная подложка -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border#CanvasBorder">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <DrawingBrush TileMode="Tile" DestinationRect="0,0,16,16">
-                        <DrawingBrush.Drawing>
-                            <DrawingGroup>
-                                <GeometryDrawing Brush="#FFFFFF" Geometry="M0,0 L16,0 16,16 0,16 Z"/>
-                                <GeometryDrawing Brush="#F0F0F0" Geometry="M0,0 L8,0 8,8 0,8 Z M8,8 L16,8 16,16 8,16 Z"/>
-                            </DrawingGroup>
-                        </DrawingBrush.Drawing>
-                    </DrawingBrush>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="BorderBrush" Value="#0078D4"/>
-        </Style>
-        
-        <!-- Текст на холсте для светлой темы -->
-        <Style Selector="Window[RequestedThemeVariant=Light] TextBlock">
-
-        </Style>
-
-        <!-- ========== СВЕТЛАЯ ТЕМА - ИСПРАВЛЕННЫЕ СТИЛИ ========== -->
-
-        <!-- Панели (параметры, вкладки) -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemePanel">
-            <Setter Property="Background" Value="#F0F0F0"/>
-            <Setter Property="BorderBrush" Value="#D0D0D0"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Dark] Border.ThemePanel">
-            <Setter Property="Background" Value="#2C2C2E"/>
-            <Setter Property="BorderBrush" Value="#3F3F46"/>
-        </Style>
-
-        <!-- Линейки -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemeRuler">
-            <Setter Property="Background" Value="#F5F5F5"/>
-            <Setter Property="BorderBrush" Value="#D0D0D0"/>
-        </Style>
-
-        <!-- Статус-бар -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemeStatusBar">
-            <Setter Property="Background" Value="#F0F0F0"/>
-            <Setter Property="BorderBrush" Value="#D0D0D0"/>
-        </Style>
-
-
-
-        <!-- Текст в панелях и статус-баре -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemePanel TextBlock[Foreground=#999999]">
-          <Setter Property="Foreground" Value="#666666"/>
-        </Style>
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemeStatusBar TextBlock">
-          <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <!-- Текст на линейках -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemeRuler TextBlock">
-            <Style Selector="^[Foreground=#888]">
-                <Setter Property="Foreground" Value="#777777"/>
-            </Style>
-        </Style>
-
-        <!-- Текст на холсте -->
-        <Style Selector="Window[RequestedThemeVariant=Light] TextBlock[Foreground=#555555]">
-            <Setter Property="Foreground" Value="#AAAAAA"/>
-        </Style>
-
-        <!-- Линия на холсте -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Line[Stroke=#3A3A3C]">
-            <Setter Property="Stroke" Value="#CCCCCC"/>
-        </Style>
-
-        <!-- TextBox в правой панели -->
-        <Style Selector="Window[RequestedThemeVariant=Light] TextBox[Background=#3C3C3E]">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#333333"/>
-            <Setter Property="BorderBrush" Value="#D0D0D0"/>
-        </Style>
-
-        <!-- Border для превью цвета/обводки -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border[BorderBrush=#555]">
-            <Setter Property="BorderBrush" Value="#BBBBBB"/>
-        </Style>
-        <Style Selector="Window[RequestedThemeVariant=Light] Border[BorderBrush=#FFFFFF]">
-            <Setter Property="BorderBrush" Value="#333333"/>
-        </Style>
-        
-        <!-- ScrollViewer -->
-        <Style Selector="Window[RequestedThemeVariant=Light] ScrollViewer">
-            <Setter Property="Background" Value="#FFFFFF"/>
-        </Style>
-
-        <!-- GridSplitter -->
-        <Style Selector="Window[RequestedThemeVariant=Light] GridSplitter">
-            <Setter Property="Background" Value="#E0E0E0"/>
-        </Style>
-
-        <!-- ListBox в слоях -->
-        <Style Selector="Window[RequestedThemeVariant=Light] ListBox">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] ListBoxItem">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <!-- TabControl -->
-        <Style Selector="Window[RequestedThemeVariant=Light] TabControl">
-            <Setter Property="Background" Value="#FFFFFF"/>
-        </Style>
-
-        <!-- Меню в светлой теме -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Menu MenuItem">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] Menu Separator">
-            <Setter Property="Background" Value="#D0D0D0"/>
-        </Style>
-        
-        <!-- ComboBox в панели параметров -->
-        <Style Selector="Window[RequestedThemeVariant=Light] ComboBox">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#333333"/>
-            <Setter Property="BorderBrush" Value="#D0D0D0"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] TabItem">
-            <Setter Property="Background" Value="#F5F5F5"/>
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] TabItem:selected">
-            <Setter Property="Background" Value="#FFFFFF"/>
-        </Style>
-
-        <!-- Разделители -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.DarkSeparator">
-            <Setter Property="Background" Value="#D0D0D0"/>
-        </Style>
-        <Style Selector="Window[RequestedThemeVariant=Light] Separator.DarkSeparator">
-            <Setter Property="Background" Value="#D0D0D0"/>
-        </Style>
-
-        <!-- Иконки темы -->
-        <Style Selector="Window[RequestedThemeVariant=Light] TextBlock.ThemeIcon">
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <!-- Кнопки действий (↶ ↷) -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Button.ToolActionBtn">
-            <Setter Property="Background" Value="#E0E0E0"/>
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <!-- ========== СВЕТЛАЯ ТЕМА - УЛУЧШЕННАЯ ВЕРСИЯ ========== -->
-
-        <!-- Выпадающие меню -->
-        <Style Selector="Window[RequestedThemeVariant=Light] MenuItem">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] Menu Separator">
-            <Setter Property="Background" Value="#D0D0D0"/>
-        </Style>
-
-        <!-- Контекстное меню -->
-        <Style Selector="Window[RequestedThemeVariant=Light] ContextMenu">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#D0D0D0"/>
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <!-- Кнопки отмены/повтора -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Button">
-            <Setter Property="Background" Value="#E8E8E8"/>
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] Button:pointerover">
-            <Setter Property="Background" Value="#D0D0D0"/>
-        </Style>
-
-        <!-- Разделители - используем классы -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Separator">
-            <Setter Property="Background" Value="#D0D0D0"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.MenuSeparator">
-            <Setter Property="Background" Value="#D0D0D0"/>
-        </Style>
-
-        <!-- TextBox в панелях -->
-        <Style Selector="Window[RequestedThemeVariant=Light] TextBox">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#333333"/>
-            <Setter Property="BorderBrush" Value="#D0D0D0"/>
-        </Style>
-
-        <!-- ComboBox -->
-        <Style Selector="Window[RequestedThemeVariant=Light] ComboBox">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#333333"/>
-            <Setter Property="BorderBrush" Value="#D0D0D0"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] ComboBoxItem">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] ComboBoxItem:pointerover">
-            <Setter Property="Background" Value="#E5E5E5"/>
-        </Style>
-
-        <!-- ListBox -->
-        <Style Selector="Window[RequestedThemeVariant=Light] ListBox">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#333333"/>
-            <Setter Property="BorderBrush" Value="#D0D0D0"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] ListBoxItem">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] ListBoxItem:selected">
-            <Setter Property="Background" Value="#0078D4"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-
-        <!-- TabControl -->
-        <Style Selector="Window[RequestedThemeVariant=Light] TabControl">
-            <Setter Property="Background" Value="#FFFFFF"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] TabItem">
-            <Setter Property="Background" Value="#F5F5F5"/>
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] TabItem:selected">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#0078D4"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] TabItem:pointerover">
-            <Setter Property="Background" Value="#E8E8E8"/>
-        </Style>
-
-        <!-- Slider -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Slider">
-            <Setter Property="Background" Value="#E0E0E0"/>
-        </Style>
-
-        <!-- GridSplitter -->
-        <Style Selector="Window[RequestedThemeVariant=Light] GridSplitter">
-            <Setter Property="Background" Value="#E0E0E0"/>
-        </Style>
-
-        <!-- ScrollViewer -->
-        <Style Selector="Window[RequestedThemeVariant=Light] ScrollViewer">
-            <Setter Property="Background" Value="#FFFFFF"/>
-        </Style>
-
-        <!-- CheckBox -->
-        <Style Selector="Window[RequestedThemeVariant=Light] CheckBox">
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <!-- TextBlock в статус-баре и панелях -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemePanel TextBlock, Window[RequestedThemeVariant=Light] Border.ThemeStatusBar TextBlock">
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <!-- Иконки темы -->
-        <Style Selector="Window[RequestedThemeVariant=Light] TextBlock.ThemeIcon">
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <!-- Холст - светлая шахматка -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border#CanvasBorder">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <DrawingBrush TileMode="Tile" DestinationRect="0,0,16,16">
-                        <DrawingBrush.Drawing>
-                            <DrawingGroup>
-                                <GeometryDrawing Brush="#FFFFFF" Geometry="M0,0 L16,0 16,16 0,16 Z"/>
-                                <GeometryDrawing Brush="#F0F0F0" Geometry="M0,0 L8,0 8,8 0,8 Z M8,8 L16,8 16,16 8,16 Z"/>
-                            </DrawingGroup>
-                        </DrawingBrush.Drawing>
-                    </DrawingBrush>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="BorderBrush" Value="#0078D4"/>
-        </Style>
-
-        <!-- Текст на холсте -->
-        <Style Selector="Window[RequestedThemeVariant=Light] TextBlock.CanvasText">
-            <Setter Property="Foreground" Value="#666666"/>
-        </Style>
-
-        <!-- Line на холсте -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Line">
-            <Setter Property="Stroke" Value="#CCCCCC"/>
-        </Style>
-
-        <!-- Border для превью цвета -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.ColorPreview">
-            <Setter Property="BorderBrush" Value="#BBBBBB"/>
-        </Style>
-
-        <!-- Вкладки документов -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.DocumentTab">
-            <Setter Property="Background" Value="#BCBCBC"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Dark] Border.DocumentTab">
-            <Setter Property="Background" Value="#252526"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.DocumentTab TextBlock">
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <!-- ========== СВЕТЛАЯ ТЕМА - ЛИНЕЙКИ И ПАНЕЛИ ========== -->
-
-        <!-- Линейки (горизонтальная и вертикальная) -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemeRuler">
-            <Setter Property="Background" Value="#F5F5F5"/>
-            <Setter Property="BorderBrush" Value="#D0D0D0"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemeRuler TextBlock">
-            <Setter Property="Foreground" Value="#777777"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Dark] Border.ThemeRuler">
-            <Setter Property="Background" Value="#252526"/>
-            <Setter Property="BorderBrush" Value="#3F3F46"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Dark] Border.ThemeRuler TextBlock">
-            <Setter Property="Foreground" Value="#888888"/>
-        </Style>
-
-        <!-- Контекстная панель параметров -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemePanel">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#D0D0D0"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Dark] Border.ThemePanel">
-            <Setter Property="Background" Value="#2C2C2E"/>
-            <Setter Property="BorderBrush" Value="#3F3F46"/>
-        </Style>
-
-        <!-- Текст в панелях -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemePanel TextBlock">
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        
-
-        <!-- Кнопки действий (↶ ↷) -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Button.ToolActionBtn">
-            <Setter Property="Background" Value="#E8E8E8"/>
-            <Setter Property="Foreground" Value="#333333"/>
-            <Setter Property="BorderBrush" Value="#D0D0D0"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] Button.ToolActionBtn:pointerover">
-            <Setter Property="Background" Value="#D0D0D0"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] Button.ToolActionBtn:pressed">
-            <Setter Property="Background" Value="#C0C0C0"/>
-        </Style>
-
-        <!-- Разделитель в верхней панели -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.DarkSeparator">
-            <Setter Property="Background" Value="#D0D0D0"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] Separator.DarkSeparator">
-            <Setter Property="Background" Value="#D0D0D0"/>
-        </Style>
-
-        <!-- Иконки темы (🌙 ☀️) -->
-        <Style Selector="Window[RequestedThemeVariant=Light] TextBlock.ThemeIcon">
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <!-- Слайдер темы -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Slider">
-            <Setter Property="Background" Value="#E0E0E0"/>
-        </Style>
-
-        <!-- ComboBox в панели параметров -->
-        <Style Selector="Window[RequestedThemeVariant=Light] ComboBox">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#333333"/>
-            <Setter Property="BorderBrush" Value="#D0D0D0"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] ComboBoxItem">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#333333"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] ComboBoxItem:pointerover">
-            <Setter Property="Background" Value="#E5E5E5"/>
-        </Style>
-
-        <!-- Border для превью цвета -->
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.ColorPreview">
-            <Setter Property="BorderBrush" Value="#BBBBBB"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] Border.Styling">
-            <Setter Property="BorderBrush" Value="#000000"/>
-        </Style>
-        <Style Selector="Window[RequestedThemeVariant=Dark] Border.Styling">
-            <Setter Property="BorderBrush" Value="#FFFFFF"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] Grid.MainForeGround">
-            <Setter Property="Background" Value="#FFFFFF"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Dark] Grid.MainForeGround">
-            <Setter Property="Background" Value="#000000"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] Grid.MainTheme">
-            <Setter Property="Background" Value="#333333"/>
-        </Style>
-
-        <Style Selector="Window[RequestedThemeVariant=Light] StackPanel.ParamBackground">
-            <Setter Property="Background" Value="#FFFFFF"/>
-        </Style>
+        <Setter Property="FontSize" Value="13"/>
+    </Style>
+
+    <Style Selector="Menu">
+        <Setter Property="Background" Value="#2C2C2E"/>
+    </Style>
+
+    <Style Selector="ContextMenu">
+        <Setter Property="Background" Value="#2D2D30"/>
+        <Setter Property="BorderBrush" Value="#3F3F46"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <Style Selector="MenuItem">
+        <Setter Property="Background" Value="#2D2D30"/>
+        <Setter Property="Foreground" Value="#CCCCCC"/>
+    </Style>
+
+    <Style Selector="MenuItem:pointerover">
+        <Setter Property="Background" Value="#0078D4"/>
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+
+    <Style Selector="Border.Panel">
+        <Setter Property="Background" Value="#252526"/>
+        <Setter Property="BorderBrush" Value="#3F3F46"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <Style Selector="Border.ThemePanel">
+        <Setter Property="Background" Value="#2C2C2E"/>
+        <Setter Property="BorderBrush" Value="#3F3F46"/>
+    </Style>
+
+    <Style Selector="Border.ThemeRuler">
+        <Setter Property="Background" Value="#252526"/>
+        <Setter Property="BorderBrush" Value="#3F3F46"/>
+    </Style>
+
+    <Style Selector="Border.DarkSeparator">
+        <Setter Property="Background" Value="#3F3F46"/>
+    </Style>
+
+    <Style Selector="Separator.DarkSeparator">
+        <Setter Property="Background" Value="#3F3F46"/>
+    </Style>
+
+    <Style Selector="Grid.MainForeGround">
+        <Setter Property="Background" Value="#000000"/>
+    </Style>
+
+    <Style Selector="Grid.MainTheme">
+        <Setter Property="Background" Value="#1C1C1E"/>
+    </Style>
+
+    <Style Selector="StackPanel.ParamBackground">
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light]">
+        <Setter Property="Background" Value="#F5F5F5"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] Menu">
+        <Setter Property="Background" Value="#FFFFFF"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] MenuItem">
+        <Setter Property="Background" Value="#FFFFFF"/>
+        <Setter Property="Foreground" Value="#333333"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] ContextMenu">
+        <Setter Property="Background" Value="#FFFFFF"/>
+        <Setter Property="BorderBrush" Value="#D0D0D0"/>
+        <Setter Property="Foreground" Value="#333333"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] Border.Panel">
+        <Setter Property="Background" Value="#FFFFFF"/>
+        <Setter Property="BorderBrush" Value="#D0D0D0"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemePanel">
+        <Setter Property="Background" Value="#FFFFFF"/>
+        <Setter Property="BorderBrush" Value="#D0D0D0"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemeRuler">
+        <Setter Property="Background" Value="#F5F5F5"/>
+        <Setter Property="BorderBrush" Value="#D0D0D0"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] Border.ThemeRuler TextBlock">
+        <Setter Property="Foreground" Value="#777777"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] Border.DarkSeparator">
+        <Setter Property="Background" Value="#D0D0D0"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] Separator.DarkSeparator">
+        <Setter Property="Background" Value="#D0D0D0"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] Grid.MainForeGround">
+        <Setter Property="Background" Value="#FFFFFF"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] Grid.MainTheme">
+        <Setter Property="Background" Value="#333333"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] StackPanel.ParamBackground">
+        <Setter Property="Background" Value="#FFFFFF"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] TextBox">
+        <Setter Property="Background" Value="#FFFFFF"/>
+        <Setter Property="Foreground" Value="#333333"/>
+        <Setter Property="BorderBrush" Value="#D0D0D0"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] ComboBox">
+        <Setter Property="Background" Value="#FFFFFF"/>
+        <Setter Property="Foreground" Value="#333333"/>
+        <Setter Property="BorderBrush" Value="#D0D0D0"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] ListBox">
+        <Setter Property="Background" Value="#FFFFFF"/>
+        <Setter Property="Foreground" Value="#333333"/>
+        <Setter Property="BorderBrush" Value="#D0D0D0"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] TabItem">
+        <Setter Property="Background" Value="#F5F5F5"/>
+        <Setter Property="Foreground" Value="#333333"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] TabItem:selected">
+        <Setter Property="Background" Value="#FFFFFF"/>
+    </Style>
+
+    <Style Selector="Window[RequestedThemeVariant=Light] GridSplitter">
+        <Setter Property="Background" Value="#E0E0E0"/>
+    </Style>
 </Styles>
