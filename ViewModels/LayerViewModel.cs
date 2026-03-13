@@ -41,6 +41,13 @@ public class LayerViewModel : ViewModelBase
         _name = name;
         _figures = new ObservableCollection<FigureViewModel>();
     }
+
+	public LayerViewModel(Guid id, string name)
+    {
+        _id = id;
+        _name = name;
+        _figures = new ObservableCollection<FigureViewModel>();
+    }
     
     /// <summary>
     /// Имя слоя для отображения в UI.

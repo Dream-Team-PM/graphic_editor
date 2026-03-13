@@ -61,9 +61,9 @@
                 <Menu Grid.Column="0" Background="Transparent" HorizontalAlignment="Left">
                     <MenuItem Header="_Файл">
                         <MenuItem Header="Новый…" InputGesture="Ctrl+N"/>
-                        <MenuItem Header="Открыть…" InputGesture="Ctrl+O"/>
-                        <MenuItem Header="Сохранить" InputGesture="Ctrl+S"/>
-                        <MenuItem Header="Сохранить как…" InputGesture="Ctrl+Shift+S"/>
+                        <MenuItem Header="Открыть…" InputGesture="Ctrl+O" Click="OpenMenuItem_Click"/>
+                        <MenuItem Header="Сохранить" InputGesture="Ctrl+S" Click="SaveMenuItem_Click"/>
+                        <MenuItem Header="Сохранить как…" InputGesture="Ctrl+Shift+S" Click="SaveAsMenuItem_Click"/>
                         <Separator/>
                         <MenuItem Header="Выход" InputGesture="Alt+F4"/>
                     </MenuItem>
@@ -92,7 +92,7 @@
                 <StackPanel Classes="Switcher" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0" Spacing="4">
                     <Button x:DataType="vm:MainWindowViewModel" Classes="ToolActionBtn" Content="↶" Width="32" Height="24" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip.Tip="Отменить (Ctrl+Z)" Command="{Binding History.Undo}" IsEnabled="{Binding History.CanUndo}"/>
                     <Button x:DataType="vm:MainWindowViewModel" Classes="ToolActionBtn" Content="↷" Width="32" Height="24" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip.Tip="Повторить (Ctrl+Y)" Command="{Binding History.Redo}" IsEnabled="{Binding History.CanRedo}"/>
-                    <Button Content="Экспорт" Background="#0078D4" Foreground="White" Padding="12,4" Height="28" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                    <Button Content="Экспорт" Background="#0078D4" Foreground="White" Padding="12,4" Height="28" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Click="ExportButton_Click"/>
                     <Border Classes="DarkSeparator" Width="1" Height="20" Margin="4,0" VerticalAlignment="Center"/>
                     
                     <!-- Переключатель темы -->
@@ -163,7 +163,6 @@
                         <RadioButton Classes="ToolButton" Content="⬛" Tag="Квадрат" ToolTip.Tip="Квадрат (Sq)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         <RadioButton Classes="ToolButton" Content="🕳️" Tag="Эллипс" ToolTip.Tip="Эллипс (E)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         <RadioButton Classes="ToolButton" Content="⭕" Tag="Круг" ToolTip.Tip="Круг (Cir)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
-                        <RadioButton Classes="ToolButton" Content="▱" Tag="Многоугольник" ToolTip.Tip="Многоугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         <RadioButton Classes="ToolButton" Content="✒️" Tag="Перо" ToolTip.Tip="Перо (P)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         <RadioButton Classes="ToolButton" Content="⬟" Tag="Пятиугольник" ToolTip.Tip="Пятиугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         <RadioButton Classes="ToolButton" Content="⬢" Tag="Шестиугольник" ToolTip.Tip="Шестиугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>

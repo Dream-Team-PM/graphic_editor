@@ -26,6 +26,20 @@ public static class FigureDtoMapper
                 Width = r.Width,
                 Height = r.Height
             },
+			CircleViewModel c => new CircleDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Opacity = c.Opacity,
+                Rotation = c.Rotation,
+                LineColorArgb = c.LineColor.ToArgb(),
+                FillColorArgb = c.FillColor.ToArgb(),
+                Thickness = c.Thickness,
+                IsSelected = c.IsSelected,
+                CenterX = c.Center.X,
+                CenterY = c.Center.Y,
+                Radius = c.Radius
+            },
             EllipseViewModel e => new EllipseDto
             {
                 Id = e.Id,
@@ -41,20 +55,6 @@ public static class FigureDtoMapper
                 Width = e.Width,
                 Height = e.Height
             },
-            //CircleViewModel c => new CircleDto
-            //{
-             //   Id = c.Id,
-             //   Name = c.Name,
-             //   Opacity = c.Opacity,
-            //    Rotation = c.Rotation,
-            //    LineColorArgb = c.LineColor.ToArgb(),
-              //  FillColorArgb = c.FillColor.ToArgb(),
-             //   Thickness = c.Thickness,
-            //    IsSelected = c.IsSelected,
-              //  CenterX = c.Center.X,
-             //   CenterY = c.Center.Y,
-             //   Radius = c.Radius
-           // },
             LineViewModel l => new LineDto
             {
                 Id = l.Id,
