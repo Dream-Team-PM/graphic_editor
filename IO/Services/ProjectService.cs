@@ -5,21 +5,23 @@ namespace graphic_editor.IO.Services;
 
 public class ProjectService : IProjectService
 {
-    private readonly IProjectFormat _format;
-
-    public ProjectService(IProjectFormat format)
-    {
-        _format = format;
-    }
+    private readonly Dictionary<string, IProjectFormat> _formats =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            { ".vec",  new JsonProjectFormat() },
+            { ".json", new JsonProjectFormat() },
+            { ".svg",  new SvgProjectFormat()  },
+        };
 
     public async Task<bool> SaveProjectAsync(string fullPath, CanvasViewModel canvas)
     {
-        if (!fullPath.EndsWith(_format.FileExtension, StringComparison.OrdinalIgnoreCase))
-            fullPath += _format.FileExtension;
+        var ext = Path.GetExtension(fullPath);
+        if (!_formats.TryGetValue(ext, out var format))
+            format = _formats[".vec"];
 
         try
         {
-            await _format.SaveAsync(fullPath, canvas);
+            await format.SaveAsync(fullPath, canvas);
             return true;
         }
         catch
@@ -30,12 +32,13 @@ public class ProjectService : IProjectService
 
     public async Task<bool> LoadProjectAsync(string fullPath, CanvasViewModel canvas)
     {
-        if (!fullPath.EndsWith(_format.FileExtension, StringComparison.OrdinalIgnoreCase))
-            fullPath += _format.FileExtension;
+        var ext = Path.GetExtension(fullPath);
+        if (!_formats.TryGetValue(ext, out var format))
+            return false;
 
         try
         {
-            await _format.LoadAsync(fullPath, canvas);
+            await format.LoadAsync(fullPath, canvas);
             return true;
         }
         catch
