@@ -11,6 +11,5 @@
   
     <Application.Styles>
         <FluentTheme />
-        <StyleInclude Source="Styles/GraphicEditorStyles.axaml"></StyleInclude> 
     </Application.Styles>
 </Application>
