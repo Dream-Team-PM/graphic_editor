@@ -26,7 +26,7 @@ public static class FigureDtoMapper
                 Width = r.Width,
                 Height = r.Height
             },
-            CircleViewModel c => new CircleDto
+			CircleViewModel c => new CircleDto
             {
                 Id = c.Id,
                 Name = c.Name,
