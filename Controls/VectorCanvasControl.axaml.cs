@@ -11,16 +11,17 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
-using System.Windows.Input;
 using DynamicData.Experimental;
-
+using graphic_editor.Commands;
 using graphic_editor.Geometry;
 using graphic_editor.Helpers;
+using graphic_editor.Models;
 using graphic_editor.ViewModels;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Windows.Input;
 using System.Windows.Input;
 
 namespace graphic_editor.Controls;
@@ -962,7 +963,7 @@ public partial class VectorCanvasControl : UserControl
         }
     }
 
-	/// <summary>
+    /// <summary>
     /// Обработчик нажатия на отрисованную фигуру.
     /// Передаёт событие выделения в ViewModel.
     /// </summary>
@@ -972,14 +973,34 @@ public partial class VectorCanvasControl : UserControl
     {
         if (sender is Control control && control.Tag is FigureViewModel figure)
         {
-            var addToSelection = e.KeyModifiers.HasFlag(KeyModifiers.Control);
-            CanvasViewModel?.SelectFigureAt(figure.Center, addToSelection);
-            e.Handled = true;
-            DebugLog.Write("[DEBUG] Entered to OnFigurePointerPressed");
+            // Проверяем, выбран ли инструмент ластика
+            if (CanvasViewModel?.CurrentTool == DrawingTool.Eraser)
+            {
+                var figuresToDelete = new List<FigureViewModel> { figure };
+                var deleteCmd = new DeleteFigureCommand(figuresToDelete);
+
+                // 1. Выполняем удаление через команду
+                deleteCmd.Execute(CanvasViewModel);
+
+                // 2. Записываем действие в историю для Undo/Redo
+                CanvasViewModel.History?.AddAction(deleteCmd);
+
+                e.Handled = true;
+                DebugLog.Write($"[DEBUG] Eraser: Figure {figure.Name} deleted");
+            }
+            else
+            {
+                // Обычная логика выделения (уже существующая у вас)
+                var addToSelection = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+                CanvasViewModel?.SelectFigureAt(figure.Center, addToSelection);
+
+                e.Handled = true;
+                DebugLog.Write("[DEBUG] Selection: Handled in OnFigurePointerPressed");
+            }
         }
     }
 
-	/// <summary>
+    /// <summary>
     /// Удаляет фигуру с канваса и очищает связанные ресурсы.
     /// </summary>
     /// <param name="figure">Модель фигуры для удаления.</param>
