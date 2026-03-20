@@ -26,7 +26,8 @@ public enum DrawingTool
     Pen,           // "Перо"
     Text,          // "Текст"
     Hand,          // "Рука"
-    Zoom           // "Масштаб"
+    Zoom,          // "Масштаб"
+    Eraser         // "Ластик"
 }
 
 /// <summary>
@@ -55,7 +56,8 @@ public static class DrawingToolExtensions
         { DrawingTool.Pen, "Перо" },
         { DrawingTool.Text, "Текст" },
         { DrawingTool.Hand, "Рука" },
-        { DrawingTool.Zoom, "Масштаб" }
+        { DrawingTool.Zoom, "Масштаб" },
+        { DrawingTool.Eraser, "Ластик" }
     };
 
     /// <summary>
