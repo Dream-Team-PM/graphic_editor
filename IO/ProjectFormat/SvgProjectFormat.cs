@@ -7,35 +7,49 @@ using graphic_editor.ViewModels;
 
 namespace graphic_editor.IO.ProjectFormat;
 
+/// <summary>
+/// Сохранение и загрузка проекта в формате SVG.
+/// Генерируемый файл совместим с Inkscape, браузерами и Adobe Illustrator:
+///   — слои оформлены как inkscape:groupmode="layer"
+///   — идентификаторы слоёв читаемые (layer1, layer2, …)
+///   — GUID слоя сохраняется в атрибуте data-id для повторной загрузки
+/// </summary>
 public class SvgProjectFormat : IProjectFormat
 {
     public string FileExtension => ".svg";
+
+    // ── Сохранение ──────────────────────────────────────────────────────────
 
     public async Task SaveAsync(string fullPath, CanvasViewModel canvas)
     {
         double maxX = 800, maxY = 600;
         foreach (var layer in canvas.Layers)
-        {
             foreach (var f in layer.Figures)
                 UpdateBounds(f, ref maxX, ref maxY);
-        }
 
         var sb = new StringBuilder();
         sb.AppendLine("""<?xml version="1.0" encoding="UTF-8"?>""");
-        sb.AppendLine($"""<svg xmlns="http://www.w3.org/2000/svg" width="{I(maxX)}" height="{I(maxY)}" viewBox="0 0 {I(maxX)} {I(maxY)}">""");
+        sb.AppendLine($"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="{I(maxX)}" height="{I(maxY)}" viewBox="0 0 {I(maxX)} {I(maxY)}">""");
+        sb.AppendLine($"  <title>INKognida project</title>");
 
+        int layerIndex = 1;
         foreach (var layer in canvas.Layers)
         {
             if (!layer.IsVisible) continue;
-            sb.AppendLine($"""  <g id="{layer.Id}" data-name="{Esc(layer.Name)}">""");
+            // layer1, layer2 … — читаемые ID для сторонних редакторов
+            // data-id — наш GUID для точного восстановления
+            sb.AppendLine($"""  <g id="layer{layerIndex}" inkscape:label="{Esc(layer.Name)}" inkscape:groupmode="layer" data-id="{layer.Id}" data-name="{Esc(layer.Name)}">""");
             foreach (var figure in layer.Figures)
                 AppendFigure(sb, figure, "    ");
             sb.AppendLine("  </g>");
+            layerIndex++;
         }
 
         sb.AppendLine("</svg>");
         await File.WriteAllTextAsync(fullPath, sb.ToString());
     }
+
+    // ── Загрузка ─────────────────────────────────────────────────────────────
 
     public async Task LoadAsync(string fullPath, CanvasViewModel canvas)
     {
@@ -61,11 +75,16 @@ public class SvgProjectFormat : IProjectFormat
         {
             foreach (var g in groups)
             {
-                var name = g.Attribute("data-name")?.Value
+                // Имя: inkscape:label > data-name > id > дефолт
+                var inkNs = XNamespace.Get("http://www.inkscape.org/namespaces/inkscape");
+                var name = g.Attribute(inkNs + "label")?.Value
+                    ?? g.Attribute("data-name")?.Value
                     ?? g.Attribute("id")?.Value
                     ?? "Слой";
-                var idStr = g.Attribute("id")?.Value;
-                var layer = Guid.TryParse(idStr, out var gid)
+
+                // GUID: data-id (наш атрибут) или сам id, если это GUID
+                var dataId = g.Attribute("data-id")?.Value ?? g.Attribute("id")?.Value;
+                var layer = Guid.TryParse(dataId, out var gid)
                     ? new LayerViewModel(gid, name)
                     : new LayerViewModel(name);
 
@@ -82,17 +101,26 @@ public class SvgProjectFormat : IProjectFormat
             canvas.ActiveLayer = canvas.Layers[0];
     }
 
-    // ── Сохранение ──────────────────────────────────────────────────────────
+    // ── Запись фигур ─────────────────────────────────────────────────────────
 
     private static void AppendFigure(StringBuilder sb, FigureViewModel figure, string indent)
     {
-        var fill = SvgColor(figure.FillColor);
+        var fill   = SvgColor(figure.FillColor);
         var stroke = SvgColor(figure.LineColor);
-        var sw = F(figure.Thickness);
-        var op = F(figure.Opacity);
-        var tr = figure.Rotation != 0
+        var sw     = F(figure.Thickness);
+        var op     = F(figure.Opacity);
+        var tr     = figure.Rotation != 0
             ? $""" transform="rotate({F(figure.Rotation)} {F(figure.Center.X)} {F(figure.Center.Y)})"""
             : "";
+
+        if (figure is GroupViewModel grp)
+        {
+            sb.AppendLine($"""{indent}<g opacity="{op}"{tr}>""");
+            foreach (var child in grp.Children)
+                AppendFigure(sb, child, indent + "  ");
+            sb.AppendLine($"{indent}</g>");
+            return;
+        }
 
         string line = figure switch
         {
@@ -111,22 +139,10 @@ public class SvgProjectFormat : IProjectFormat
             PenPointViewModel p =>
                 $"""<circle cx="{F(p.X)}" cy="{F(p.Y)}" r="{F(p.Thickness / 2.0)}" fill="{stroke}" opacity="{op}"/>""",
 
-            GroupViewModel g => null!,
-
             _ => $"""<!-- {Esc(figure.GetType().Name)} -->"""
         };
 
-        if (figure is GroupViewModel grp)
-        {
-            sb.AppendLine($"""{indent}<g opacity="{op}"{tr}>""");
-            foreach (var child in grp.Children)
-                AppendFigure(sb, child, indent + "  ");
-            sb.AppendLine($"{indent}</g>");
-        }
-        else
-        {
-            sb.AppendLine(indent + line);
-        }
+        sb.AppendLine(indent + line);
     }
 
     private static void UpdateBounds(FigureViewModel f, ref double maxX, ref double maxY)
@@ -156,13 +172,13 @@ public class SvgProjectFormat : IProjectFormat
         }
     }
 
-    // ── Загрузка ─────────────────────────────────────────────────────────────
+    // ── Парсинг фигур ─────────────────────────────────────────────────────────
 
     private static FigureViewModel? ParseElement(XElement el)
     {
-        var fill = ParseColor(el.Attribute("fill")?.Value);
-        var stroke = ParseColor(el.Attribute("stroke")?.Value);
-        var sw = ParseDouble(el.Attribute("stroke-width")?.Value, 1.0);
+        var fill    = ParseColor(el.Attribute("fill")?.Value);
+        var stroke  = ParseColor(el.Attribute("stroke")?.Value);
+        var sw      = ParseDouble(el.Attribute("stroke-width")?.Value, 1.0);
         var opacity = ParseDouble(el.Attribute("opacity")?.Value, 1.0);
 
         return el.Name.LocalName switch
@@ -209,6 +225,7 @@ public class SvgProjectFormat : IProjectFormat
     private static string SvgColor(Color c) =>
         c.A == 0 ? "none" : $"#{c.R:X2}{c.G:X2}{c.B:X2}";
 
+    /// <summary>Парсит SVG-цвет: #RRGGBB, rgb(r,g,b) и CSS-именованные цвета.</summary>
     private static Color ParseColor(string? value)
     {
         if (string.IsNullOrEmpty(value) || value == "none")
@@ -218,12 +235,15 @@ public class SvgProjectFormat : IProjectFormat
         {
             var hex = value.TrimStart('#');
             if (hex.Length == 6)
-            {
                 return Color.FromArgb(255,
                     Convert.ToInt32(hex[..2], 16),
                     Convert.ToInt32(hex[2..4], 16),
                     Convert.ToInt32(hex[4..6], 16));
-            }
+            if (hex.Length == 3)
+                return Color.FromArgb(255,
+                    Convert.ToInt32(new string(hex[0], 2), 16),
+                    Convert.ToInt32(new string(hex[1], 2), 16),
+                    Convert.ToInt32(new string(hex[2], 2), 16));
         }
 
         if (value.StartsWith("rgb(", StringComparison.OrdinalIgnoreCase))
@@ -235,6 +255,10 @@ public class SvgProjectFormat : IProjectFormat
                 int.TryParse(parts[2].Trim(), out int b))
                 return Color.FromArgb(255, r, g, b);
         }
+
+        // CSS named colours — Color.FromName возвращает пустой цвет при ошибке
+        var named = Color.FromName(value);
+        if (named.A != 0) return named;
 
         return Color.Transparent;
     }
