@@ -305,11 +305,14 @@ public partial class MainWindow : Window
     {
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Экспорт PNG",
+            Title = "Экспорт изображения",
             DefaultExtension = "png",
             FileTypeChoices = new[]
             {
-                new FilePickerFileType("PNG изображение (*.png)") { Patterns = ["*.png"] },
+                new FilePickerFileType("PNG изображение (*.png)")  { Patterns = ["*.png"] },
+                new FilePickerFileType("JPEG изображение (*.jpg)") { Patterns = ["*.jpg", "*.jpeg"] },
+                new FilePickerFileType("BMP изображение (*.bmp)")  { Patterns = ["*.bmp"] },
+                new FilePickerFileType("PDF документ (*.pdf)")     { Patterns = ["*.pdf"] },
             }
         });
 
@@ -318,15 +321,25 @@ public partial class MainWindow : Window
         var vectorCanvas = this.FindControl<VectorCanvasControl>("VectorCanvas");
         if (vectorCanvas == null) return;
 
-        _viewModel.StatusMessage = "Экспорт PNG...";
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        var format = ext switch
+        {
+            ".jpg" or ".jpeg" => RasterExporter.Format.Jpeg,
+            ".bmp"            => RasterExporter.Format.Bmp,
+            ".pdf"            => RasterExporter.Format.Pdf,
+            _                 => RasterExporter.Format.Png,
+        };
+
+        _viewModel.StatusMessage = $"Экспорт {ext.TrimStart('.').ToUpper()}...";
         try
         {
-            await PngExporter.ExportAsync(path, vectorCanvas);
+            await RasterExporter.ExportAsync(path, vectorCanvas, format);
             _viewModel.StatusMessage = $"Экспортировано: {Path.GetFileName(path)} ✓";
         }
-        catch
+        catch (Exception ex)
         {
-            _viewModel.StatusMessage = "Ошибка экспорта PNG ✗";
+            _viewModel.StatusMessage = $"Ошибка экспорта ✗";
+            _ = ex;
         }
     }
 
