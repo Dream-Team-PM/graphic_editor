@@ -139,6 +139,17 @@ public class CanvasViewModel: ViewModelBase
         set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
+    private DrawingTool _currentTool;
+    /// <summary>Текущий активный инструмент, передаваемый из MainWindowViewModel.</summary>
+    public DrawingTool CurrentTool
+    {
+        get => _currentTool;
+        set => this.RaiseAndSetIfChanged(ref _currentTool, value);
+    }
+
+    /// <summary>Ссылка на менеджер истории для выполнения команд из контрола.</summary>
+    public HistoryViewModel? History { get; set; }
+
     /// <summary>
     /// Активирует канвас: создаёт новый слой, если активный отсутствует.
     /// </summary>

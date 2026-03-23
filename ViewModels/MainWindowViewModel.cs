@@ -293,6 +293,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _fileService = fileService;
         _history = history;
         Canvas = new CanvasViewModel();
+        Canvas.History = _history;
         _history.SetCanvas(Canvas);
         SetTool(DrawingTool.Select);
         
@@ -414,6 +415,12 @@ public partial class MainWindowViewModel : ViewModelBase
             ResetDrawingState();
         }
         _selectedTool = tool;
+
+        if (Canvas != null)
+        {
+            Canvas.CurrentTool = tool;
+        }
+
         this.RaisePropertyChanged(nameof(SelectedToolDisplayName));
         StatusMessage = $"Установлен инструмент: {SelectedToolDisplayName}";
     }

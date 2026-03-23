@@ -155,6 +155,7 @@
                         <TextBlock Text="TOOLS" FontWeight="Bold" FontSize="11" Margin="6,4,6,8" Foreground="#999" HorizontalAlignment="Center"/>
                         <RadioButton Classes="ToolButton" Content="🖱" Tag="Выделение" ToolTip.Tip="Выделение (V)&#x0A;Ctrl+Click — мульти-выделение" IsChecked="True" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         <RadioButton Classes="ToolButton" Content="✂️" Tag="Прямое выделение" ToolTip.Tip="Прямое выделение (A)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+						<RadioButton Classes="ToolButton" Content="🧽" Tag="Ластик" ToolTip.Tip="Ластик (E)&#x0A;Удаляет фигуру при клике" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
                         
                         <Separator Margin="8,4" Height="1" Background="#3F3F46"/>
                         
