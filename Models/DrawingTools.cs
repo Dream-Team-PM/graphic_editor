@@ -93,7 +93,7 @@ public static class DrawingToolExtensions
     /// </returns>
     public static bool IsPrimitive(this DrawingTool tool) => 
         tool is DrawingTool.Rectangle or DrawingTool.Ellipse or DrawingTool.Line or DrawingTool.Square or DrawingTool.Circle or DrawingTool.Pentagon or DrawingTool.Hexagon 
-        or DrawingTool.Heptagon or DrawingTool.Octagon or DrawingTool.Pentagram or DrawingTool.Triangle;
+        or DrawingTool.Heptagon or DrawingTool.Octagon or DrawingTool.Pentagram or DrawingTool.Triangle or DrawingTool.Text;
 
     /// <summary>
     /// Определяет, требует ли инструмент режима рисования "перетаскиванием" (drag-to-create).
@@ -105,4 +105,7 @@ public static class DrawingToolExtensions
     /// </returns>
     public static bool RequiresDrawingMode(this DrawingTool tool) => 
         tool.IsPrimitive() || tool == DrawingTool.Pen;
+
+	public static bool IsClickToPlace(this DrawingTool tool) => 
+    tool == DrawingTool.Text || tool == DrawingTool.Pen;
 }

@@ -5,6 +5,7 @@
         mc:Ignorable="d"
         d:DesignWidth="1920" d:DesignHeight="1080"
         x:Class="graphic_editor.MainWindow"
+		x:Name="MainWindow1"
         xmlns:local="using:graphic_editor.Controls"
         xmlns:views="using:graphic_editor"
         xmlns:converters="using:graphic_editor.Converters"
@@ -33,6 +34,9 @@
         <converters:DrawingColorConverter x:Key="DrawingColorConverter"/>
         <converters:PercentToDoubleConverter x:Key="PercentToDoubleConverter"/>
         <converters:MathSubtractConverter x:Key="MathSubtract"/>
+		<converters:IsGreaterThanOneConverter x:Key="IsGreaterThanOneConverter"/>
+		<converters:BoolToBrushConverter x:Key="BoolToBrushConverter"/>
+		<converters:IsGreaterThanZeroConverter x:Key="IsGreaterThanZeroConverter"/>
     </Window.Resources>
 
     <Window.Styles>
@@ -83,9 +87,73 @@
                         <MenuItem x:DataType="vm:MainWindowViewModel" Header="Отдалить" InputGesture="Ctrl+OemMinus" Command="{Binding Commands.ZoomOut}"/>
                         <MenuItem x:DataType="vm:MainWindowViewModel" Header="Масштаб 100%" InputGesture="Ctrl+0" Command="{Binding Commands.ZoomFit}"/>
                     </MenuItem>
-                    <MenuItem Header="_Слой"/>
-                    <MenuItem Header="_Объект"/>
-                    <MenuItem Header="_Справка"/>
+                    <!-- Меню "Слой" -->
+<MenuItem Header="_Слой">
+    <MenuItem x:DataType="vm:MainWindowViewModel" 
+              Header="Новый слой" 
+              Command="{Binding Commands.CreateNewLayer}" 
+              InputGesture="Ctrl+Shift+N"/>
+    
+    <MenuItem x:DataType="vm:MainWindowViewModel" 
+              Header="Удалить слой" 
+              Command="{Binding Commands.DeleteLayerCommand}" 
+              CommandParameter="{Binding Canvas.ActiveLayer}" 
+              InputGesture="Ctrl+Shift+D"
+              IsEnabled="{Binding Canvas.Layers.Count, Converter={StaticResource IsGreaterThanOneConverter}}"/>
+    
+    <Separator/>
+    
+    <MenuItem x:DataType="vm:MainWindowViewModel" 
+              Header="Дублировать слой" 
+              Command="{Binding Commands.DuplicateLayerCommand}" 
+              InputGesture="Ctrl+J"/>
+
+    
+    <MenuItem x:DataType="vm:MainWindowViewModel" 
+              Header="Объединить с предыдущим" 
+              Command="{Binding Commands.MergeWithPreviousLayerCommand}" 
+              InputGesture="Ctrl+E"
+              IsEnabled="{Binding Canvas.ActiveLayerIndex, Converter={StaticResource IsGreaterThanZeroConverter}}"/>
+    
+    <Separator/>
+    
+    <MenuItem Header="Упорядочить">
+        <MenuItem x:DataType="vm:MainWindowViewModel" 
+                  Header="На передний план" 
+                  Command="{Binding Commands.BringLayerToFrontCommand}"
+                  InputGesture="Ctrl+Shift+OemCloseBrackets"/>
+        
+        <MenuItem x:DataType="vm:MainWindowViewModel" 
+                  Header="На задний план" 
+                  Command="{Binding Commands.SendLayerToBackCommand}"
+                  InputGesture="Ctrl+Shift+OemOpenBrackets"/>
+        
+        <Separator/>
+        
+        <MenuItem x:DataType="vm:MainWindowViewModel" 
+                  Header="Переместить вперед" 
+                  Command="{Binding Commands.BringLayerForwardCommand}"
+                  InputGesture="Ctrl+OemCloseBrackets"/>
+        
+        <MenuItem x:DataType="vm:MainWindowViewModel" 
+                  Header="Переместить назад" 
+                  Command="{Binding Commands.SendLayerBackwardCommand}"
+                  InputGesture="Ctrl+OemOpenBrackets"/>
+    </MenuItem>
+    
+    <Separator/>
+    
+    <MenuItem Header="Свойства слоя..." IsEnabled="False" Foreground="#666"/>
+</MenuItem>
+<MenuItem Header="_Объект"/>
+<!-- Меню "Справка" -->
+<MenuItem Header="_Справка">
+    <MenuItem Header="О программе..." Click="AboutMenuItem_Click"/>
+    <MenuItem Header="Сочетания клавиш..." Click="ShortcutsMenuItem_Click"/>
+    <Separator/>
+    <MenuItem Header="Документация" Click="DocumentationMenuItem_Click"/>
+    <MenuItem Header="Сообщить об ошибке" Click="ReportIssueMenuItem_Click"/>
+</MenuItem>
                 </Menu>
 
                 <!-- Кнопки и переключатель темы справа -->
@@ -472,25 +540,76 @@
                     </TabItem>
 
                     <TabItem Header="Слои">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8" Spacing="4">
-                                <Button x:DataType="vm:MainWindowViewModel" Content="📄 ＋" Command="{Binding Commands.CreateNewLayer}" ToolTip.Tip="Создать новый слой для рисования" Width="36" Height="28" HorizontalAlignment="Stretch"/>
-                                <Button Content="🗑️" Width="36" Height="28" ToolTip.Tip="Удалить"/>
-                                <Button Content="🔒" Width="36" Height="28" ToolTip.Tip="Заблокировать"/>
-                            </StackPanel>
-
-                            <ListBox x:DataType="vm:MainWindowViewModel" ItemsSource="{Binding Canvas.Layers}" SelectedItem="{Binding Canvas.ActiveLayer}" Background="Transparent" BorderThickness="0">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid ColumnDefinitions="20,*,Auto">
-                                            <CheckBox Grid.Column="0" IsChecked="{Binding IsVisible}"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                        </DockPanel>
-                    </TabItem>
+    <DockPanel>
+        <!-- Кнопки управления слоями -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8" Spacing="4">
+            <Button x:DataType="vm:MainWindowViewModel" 
+                    Content="📄 ＋" 
+                    Command="{Binding Commands.CreateNewLayer}" 
+                    ToolTip.Tip="Создать новый слой"
+                    Width="36" Height="28"/>
+            <Button x:DataType="vm:MainWindowViewModel" 
+					Content="🗑️" 
+                    Command="{Binding Commands.DeleteLayerCommand}" 
+                    CommandParameter="{Binding Canvas.ActiveLayer}"
+                    ToolTip.Tip="Удалить выбранный слой"
+                    Width="36" Height="28"
+                    IsEnabled="{Binding Canvas.Layers.Count, Converter={StaticResource IsGreaterThanOneConverter}}"/>
+            <Button x:DataType="vm:MainWindowViewModel" 
+					Content="🔒" 
+                    Command="{Binding Commands.ToggleLockLayerCommand}" 
+                    CommandParameter="{Binding Canvas.ActiveLayer}"
+                    ToolTip.Tip="Заблокировать/разблокировать слой"
+                    Width="36" Height="28"/>
+        </StackPanel>
+        
+        <!-- Список слоёв -->
+        <ListBox x:DataType="vm:MainWindowViewModel" 
+                 ItemsSource="{Binding Canvas.Layers}" 
+                 SelectedItem="{Binding Canvas.ActiveLayer}" 
+                 Background="Transparent" BorderThickness="0">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:LayerViewModel">
+            <Grid ColumnDefinitions="20,*,Auto,Auto,Auto" Margin="2">
+                <!-- Видимость -->
+				<ToggleButton Grid.Column="0" 
+             				  IsChecked="{Binding IsVisible, Mode=TwoWay}"
+							  Command="{Binding $parent[ListBox].DataContext.Commands.ToggleVisibilityLayerCommand}"
+                              CommandParameter="{Binding}"
+                              Content="👁️" 
+                              FontFamily="Segoe UI Emoji, Segoe UI Symbol, Arial Unicode MS"
+							  Width="30" Height="30"
+                              ToolTip.Tip="Показать/скрыть слой"/>
+                
+                <!-- Имя слоя -->
+                <TextBox Width="120" Grid.Column="1" Text="{Binding Name}" 
+                        Classes="PropertyInput" Margin="4,0"/>
+                
+                <!-- Блокировка -->
+                <ToggleButton Grid.Column="2" 
+                             IsChecked="{Binding IsLocked, Mode=TwoWay}"
+                             Command="{Binding $parent[ListBox].DataContext.Commands.ToggleLockLayerCommand}"
+                             CommandParameter="{Binding}"
+                             Content="🔓" Width="30" Height="30"
+                             ToolTip.Tip="Заблокировать/разблокировать слой"/>
+                
+                <!-- Удаление -->
+                <Button Grid.Column="3" Content="🗑️" Width="30" Height="30"
+                       Command="{Binding $parent[ListBox].DataContext.Commands.DeleteLayerCommand}"
+                       CommandParameter="{Binding}"
+                       ToolTip.Tip="Удалить слой"
+                       IsEnabled="{Binding $parent[ListBox].DataContext.Canvas.Layers.Count, Converter={StaticResource IsGreaterThanOneConverter}}"/>
+                
+                <!-- Индикатор активности (показывает, что слой видим) -->
+                <Border Grid.Column="4" Width="8" Height="8" CornerRadius="4"
+                       Background="{Binding IsVisible, Converter={StaticResource BoolToBrushConverter}}"
+                       IsVisible="{Binding IsVisible}"/>
+            </Grid>
+        </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </DockPanel>
+</TabItem>
                     <TabItem Header="История"/>
                 </TabControl>
             </Border>
