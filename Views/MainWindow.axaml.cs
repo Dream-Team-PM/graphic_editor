@@ -10,6 +10,10 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using graphic_editor.Controls;
+using graphic_editor.Models;
+using graphic_editor.Geometry;
+using ReactiveUI;
+
 using graphic_editor.Helpers;
 using graphic_editor.IO.Export;
 using graphic_editor.IO.Services;
@@ -22,12 +26,11 @@ namespace graphic_editor;
 /// <summary>
 /// Основное (главное) окно графического редактора.
 /// Отвечает за инициализацию UI, привязку ViewModel и обработку событий ввода с холста.
-/// </summary>
+/// </summary> 
 public partial class MainWindow : Window
 {
 	/// <summary>Приватное поле для хранения экземпляра ViewModel главного окна.</summary>
 	private MainWindowViewModel? _viewModel;
-
 	private readonly ProjectService _projectService = new();
 	private string? _currentFilePath;
 
@@ -60,6 +63,7 @@ public partial class MainWindow : Window
             vectorCanvas.AddHandler(PointerPressedEvent, OnCanvasPointerPressed, handledEventsToo: true);
             vectorCanvas.AddHandler(PointerMovedEvent, OnCanvasPointerMoved, handledEventsToo: true);
             vectorCanvas.AddHandler(PointerReleasedEvent, OnCanvasPointerReleased, handledEventsToo: true);
+			vectorCanvas.AddHandler(KeyDownEvent, OnWindowKeyDown, handledEventsToo: true);
         }
 
 		// Инициализация слайдера темы
@@ -254,7 +258,7 @@ public partial class MainWindow : Window
         ColorPopup.IsOpen = false;
     }
 
-    // ── Сохранение / Открытие / Экспорт ─────────────────────────────────────
+	// ── Сохранение / Открытие / Экспорт ─────────────────────────────────────
 
     private async void SaveMenuItem_Click(object? sender, RoutedEventArgs e)
     {
@@ -303,41 +307,51 @@ public partial class MainWindow : Window
 
     private async void ExportButton_Click(object? sender, RoutedEventArgs e)
     {
+		if (_viewModel?.Canvas == null) return;
+		var fileTypes = new[]
+    	{
+        	new FilePickerFileType("PNG изображение (*.png)") { Patterns = ["*.png"] },
+        	new FilePickerFileType("JPEG изображение (*.jpg;*.jpeg)") { Patterns = ["*.jpg", "*.jpeg"] },
+        	new FilePickerFileType("BMP изображение (*.bmp)") { Patterns = ["*.bmp"] },
+        	new FilePickerFileType("PDF документ (*.pdf)") { Patterns = ["*.pdf"] },
+        	// new FilePickerFileType("RTF документ (*.rtf)") { Patterns = ["*.rtf"] },
+    	};
+
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = "Экспорт изображения",
-            DefaultExtension = "png",
-            FileTypeChoices = new[]
-            {
-                new FilePickerFileType("PNG изображение (*.png)")  { Patterns = ["*.png"] },
-                new FilePickerFileType("JPEG изображение (*.jpg)") { Patterns = ["*.jpg", "*.jpeg"] },
-                new FilePickerFileType("PDF документ (*.pdf)")     { Patterns = ["*.pdf"] },
-            }
+        	DefaultExtension = "png",
+        	FileTypeChoices = fileTypes,
+        	SuggestedFileName = "Безымянный"
         });
 
-        if (file?.Path?.LocalPath is not string path || _viewModel == null) return;
+        if (file?.Path?.LocalPath is not string path) return;
 
         var vectorCanvas = this.FindControl<VectorCanvasControl>("VectorCanvas");
         if (vectorCanvas == null) return;
 
-        var ext = Path.GetExtension(path).ToLowerInvariant();
-        var format = ext switch
-        {
-            ".jpg" or ".jpeg" => RasterExporter.Format.Jpeg,
-            ".pdf"            => RasterExporter.Format.Pdf,
-            _                 => RasterExporter.Format.Png,
-        };
-
-        _viewModel.StatusMessage = $"Экспорт {ext.TrimStart('.').ToUpper()}...";
+        _viewModel.StatusMessage = "Экспорт изображения...";
         try
         {
-            await RasterExporter.ExportAsync(path, vectorCanvas, format);
-            _viewModel.StatusMessage = $"Экспортировано: {Path.GetFileName(path)} ✓";
+            var extension = Path.GetExtension(path).ToLowerInvariant();
+        
+        	Task exportTask = extension switch
+        	{
+            	".png" => PngExporter.ExportAsync(path, vectorCanvas),
+            	".jpg" or ".jpeg" => JpegExporter.ExportAsync(path, vectorCanvas, quality: 90),
+            	".bmp" => BmpExporter.ExportAsync(path, vectorCanvas),
+            	".pdf" => PdfExporter.ExportAsync(path, vectorCanvas, _viewModel.Canvas),
+				// ".rtf" => RtfExporter.ExportAsync(path, vectorCanvas),
+           		 _ => throw new NotSupportedException($"Формат {extension} не поддерживается")
+        	};
+			await exportTask;
+        
+       	 	_viewModel.StatusMessage = $"Экспортировано: {Path.GetFileName(path)} ✓";
         }
         catch (Exception ex)
         {
-            _viewModel.StatusMessage = $"Ошибка экспорта ✗";
-            _ = ex;
+            DebugLog.Write($"[ERROR] Export failed: {ex.Message}");
+        	_viewModel.StatusMessage = $"Ошибка экспорта: {ex.Message} ✗";
         }
     }
 
@@ -376,4 +390,165 @@ public partial class MainWindow : Window
             _viewModel.StatusMessage = "Ошибка сохранения ✗";
         }
     }
+
+protected override void OnKeyDown(KeyEventArgs e)
+{
+    base.OnKeyDown(e);
+    
+    if (_viewModel?.IsDrawing == true && _viewModel.CurrentTool == DrawingTool.Text)
+    {
+        if (e.Key == Key.Enter)
+        {
+            // Завершаем ввод текста
+            _viewModel.FinishTextInput();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            // Отменяем ввод
+            _viewModel.CancelTextInput();
+            e.Handled = true;
+        }
+    }
+}
+
+private void OnWindowKeyDown(object? sender, KeyEventArgs e)
+{
+    if (_viewModel?.IsDrawing != true || _viewModel.CurrentTool != DrawingTool.Text)
+        return;
+    
+    if (_viewModel.PreviewFigure is not TextViewModel text)
+        return;
+    
+    if (e.Key == Key.Enter)
+    {
+        _viewModel.FinishTextInput();
+        e.Handled = true;
+        return;
+    }
+    if (e.Key == Key.Escape)
+    {
+        _viewModel.CancelTextInput();
+        e.Handled = true;
+        return;
+    }
+    if (e.Key == Key.Back && text.Text.Length > 0)
+    {
+        text.Text = text.Text[..^1];
+        text.NotifyTextChanged();
+        e.Handled = true;
+        return;
+    }
+    
+    var keyText = e.Key.ToString();
+    
+    if (keyText.Length == 1)
+    {
+        var finalChar = e.KeyModifiers.HasFlag(KeyModifiers.Shift) 
+            ? keyText.ToUpper() 
+            : keyText.ToLower();
+        
+        text.Text += finalChar;
+        text.NotifyTextChanged();
+        e.Handled = true;
+    }
+}
+
+private void AboutMenuItem_Click(object? sender, RoutedEventArgs e)
+{
+    var about = new Window
+    {
+        Title = "О программе",
+        Width = 400,
+        Height = 300,
+        WindowStartupLocation = WindowStartupLocation.CenterOwner,
+        Content = new StackPanel
+        {
+            Margin = new Thickness(20),
+            Spacing = 12,
+            Children =
+            {
+                new TextBlock { Text = "INKognida", FontWeight = FontWeight.Bold, FontSize = 18 },
+                new TextBlock { Text = "Версия 1.0.0", Foreground = Brushes.Gray },
+                new TextBlock { Text = "Векторный графический редактор", Margin = new Thickness(0, 8, 0, 0) },
+                new TextBlock { Text = "© 2026 Dream Team CO", Foreground = Brushes.Gray },
+                // 🔥 Создаём кнопку БЕЗ подписки в инициализаторе
+                new Button 
+                { 
+                    Content = "Закрыть", 
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right 
+                }
+            }
+        }
+    };
+    
+    // 🔥 Подписываемся на событие ПОСЛЕ создания объекта
+    if (about.Content is StackPanel panel && panel.Children.LastOrDefault() is Button closeBtn)
+    {
+        closeBtn.Click += (s, args) => about.Close();
+    }
+    
+    about.Show(this);
+}
+
+private void ShortcutsMenuItem_Click(object? sender, RoutedEventArgs e)
+{
+    var shortcuts = new Window
+    {
+        Title = "Сочетания клавиш",
+        Width = 500,
+        Height = 400,
+        Content = new ScrollViewer
+        {
+            Content = new StackPanel
+            {
+                Margin = new Thickness(20),
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock { Text = "Файл", FontWeight = FontWeight.Bold, Margin = new Thickness(0, 0, 0, 4) },
+                    new TextBlock { Text = "Ctrl+N — Новый проект" },
+                    new TextBlock { Text = "Ctrl+O — Открыть" },
+                    new TextBlock { Text = "Ctrl+S — Сохранить" },
+                    new TextBlock { Text = "Ctrl+Shift+S — Сохранить как", Margin = new Thickness(0, 0, 0, 12) },
+                    
+                    new TextBlock { Text = "Редактирование", FontWeight = FontWeight.Bold, Margin = new Thickness(0, 0, 0, 4) },
+                    new TextBlock { Text = "Ctrl+Z — Отменить" },
+                    new TextBlock { Text = "Ctrl+Y — Повторить" },
+                    new TextBlock { Text = "Ctrl+G — Сгруппировать" },
+                    new TextBlock { Text = "Ctrl+Shift+G — Разгруппировать", Margin = new Thickness(0, 0, 0, 12) },
+                    
+                    new TextBlock { Text = "Слои", FontWeight = FontWeight.Bold, Margin = new Thickness(0, 0, 0, 4) },
+                    new TextBlock { Text = "Ctrl+Shift+N — Новый слой" },
+                    new TextBlock { Text = "Ctrl+Shift+D — Удалить слой" },
+                    new TextBlock { Text = "Ctrl+J — Дублировать слой" },
+                    new TextBlock { Text = "Ctrl+E — Объединить с предыдущим" },
+                }
+            }
+        }
+    };
+    shortcuts.Show(this);
+}
+
+private async void DocumentationMenuItem_Click(object? sender, RoutedEventArgs e)
+{
+    try 
+    {
+        var launcher = TopLevel.GetTopLevel(this)?.Launcher;
+        if (launcher != null)
+            await launcher.LaunchUriAsync(new Uri("https://github.com/Dream-Team-PM/graphic_editor/wiki"));
+    }
+    catch { /* ignore */ }
+}
+
+private async void ReportIssueMenuItem_Click(object? sender, RoutedEventArgs e)
+{
+    try 
+    {
+        var launcher = TopLevel.GetTopLevel(this)?.Launcher;
+        if (launcher != null)
+            await launcher.LaunchUriAsync(new Uri("https://github.com/Dream-Team-PM/graphic_editor/issues"));
+    }
+    catch { /* ignore */ }
+}
 }
