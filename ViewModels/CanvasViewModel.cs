@@ -230,6 +230,7 @@ public class CanvasViewModel: ViewModelBase
     public void SelectFigureAt(Point2D point, bool addToSelection = false)
     {
         if (ActiveLayer == null) return;
+		if (ActiveLayer.IsLocked) return;
         var figure = ActiveLayer.Figures.LastOrDefault(f => f.IsIn(point));
         if (addToSelection)
         {
@@ -351,4 +352,8 @@ public class CanvasViewModel: ViewModelBase
             ActiveLayer.Figures.Insert(0, SelectedFigure);
         }
     }
+
+	public int ActiveLayerIndex => ActiveLayer != null 
+    ? Layers.IndexOf(ActiveLayer) 
+    : -1;
 }
