@@ -21,7 +21,7 @@ public class PdfExporter : ImageExporterBase
     /// <param name="canvasVm">CanvasViewModel для доступа к данным фигур.</param>
     public static async Task ExportAsync(string path, VectorCanvasControl canvas, CanvasViewModel canvasVm)
     {
-        await Task.Yield();
+        //await Task.Yield();
         var width = (int)canvas.Bounds.Width;
         var height = (int)canvas.Bounds.Height;
         

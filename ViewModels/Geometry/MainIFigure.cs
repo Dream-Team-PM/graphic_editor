@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -22,9 +22,7 @@ namespace GeometryLib
         /// <summary>Попадает ли точка в фигуру (с допуском eps).</summary>
         bool IsIn(Vector2 point, double eps = 1e-9);
     }
-
     
-
     public static class GeometryUtils
     {
         public static Vector2 RotatePoint(Vector2 p, Vector2 center, double angleRadians)
