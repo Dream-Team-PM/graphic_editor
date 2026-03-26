@@ -21,6 +21,7 @@ public enum DrawingTool
     Octagon,       // "Восьмиугольник"
     Pentagram,     // "Пентаграмма"
     Triangle,      // "Треугольник"
+    Rhombus,       // "Ромб"
     Pen,           // "Перо"
     Text,          // "Текст"
     Hand,          // "Рука"
@@ -49,6 +50,7 @@ public static class DrawingToolExtensions
         { DrawingTool.Octagon, "Восьмиугольник" },
         { DrawingTool.Pentagram, "Пентаграмма" },
         { DrawingTool.Triangle, "Треугольник" },
+        { DrawingTool.Rhombus, "Ромб" },
         { DrawingTool.Line, "Линия" },
         { DrawingTool.Polygon, "Многоугольник" },
         { DrawingTool.Pen, "Перо" },
@@ -93,7 +95,7 @@ public static class DrawingToolExtensions
     /// </returns>
     public static bool IsPrimitive(this DrawingTool tool) => 
         tool is DrawingTool.Rectangle or DrawingTool.Ellipse or DrawingTool.Line or DrawingTool.Square or DrawingTool.Circle or DrawingTool.Pentagon or DrawingTool.Hexagon 
-        or DrawingTool.Heptagon or DrawingTool.Octagon or DrawingTool.Pentagram or DrawingTool.Triangle or DrawingTool.Text;
+        or DrawingTool.Heptagon or DrawingTool.Octagon or DrawingTool.Pentagram or DrawingTool.Triangle or DrawingTool.Text or DrawingTool.Rhombus;
 
     /// <summary>
     /// Определяет, требует ли инструмент режима рисования "перетаскиванием" (drag-to-create).

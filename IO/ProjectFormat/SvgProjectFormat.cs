@@ -205,6 +205,14 @@ public class SvgProjectFormat : IProjectFormat
                 sb.AppendLine($"{indent}  id=\"star{id}\"");
                 sb.AppendLine($"{indent}  points=\"{starPoints}\"{tr} />");
                 break;
+            
+            case RhombusViewModel rhombus:
+                var rhombusPoints = string.Join(" ", rhombus.Vertices.Select(v => $"{F(v.X)},{F(v.Y)}"));
+                sb.AppendLine($"{indent}<polygon");
+                sb.AppendLine($"{indent}  style=\"{style}\"");
+                sb.AppendLine($"{indent}  id=\"rhombus{id}\"");
+                sb.AppendLine($"{indent}  points=\"{rhombusPoints}\"{tr} />");
+                break;
 
             default:
                 sb.AppendLine($"{indent}<!-- {Esc(figure.GetType().Name)} -->");
@@ -331,6 +339,10 @@ public class SvgProjectFormat : IProjectFormat
         return points.Count switch
         {
             3 => new TriangleViewModel(points[0], points[1], points[2], stroke, sw, fill, opacity),
+            4 when IsRhombus(points) => new RhombusViewModel(
+                AverageCenter(points).X, AverageCenter(points).Y,
+                MaxHorizontalDistance(points), MaxVerticalDistance(points),
+                stroke, sw, fill, opacity),
             5 => new PentagonViewModel(AverageCenter(points), DistanceToCenter(points, 0), stroke, sw, fill, opacity),
             6 => new HexagonViewModel(AverageCenter(points), DistanceToCenter(points, 0), stroke, sw, fill, opacity),
             7 => new HeptagonViewModel(AverageCenter(points), DistanceToCenter(points, 0), stroke, sw, fill, opacity),
@@ -408,6 +420,25 @@ public class SvgProjectFormat : IProjectFormat
         var shortAvg = distances.Take(5).Average();
         var longAvg = distances.Skip(5).Average();
         return longAvg / shortAvg > 2.0; // Коэффициент ~2.618 для правильной звезды
+    }
+    
+    /// <summary>
+    /// Проверяет, является ли набор из 4 точек ромбом (симметрия относительно центра).
+    /// </summary>
+    private static bool IsRhombus(List<Point2D> points)
+    {
+        if (points.Count != 4) return false;
+        var center = AverageCenter(points);
+    
+        // Проверяем симметрию: противоположные вершины должны быть на равном расстоянии от центра
+        var d0 = points[0].DistanceTo(center);
+        var d2 = points[2].DistanceTo(center);
+        var d1 = points[1].DistanceTo(center);
+        var d3 = points[3].DistanceTo(center);
+    
+        // Допуск 10% для погрешностей парсинга
+        return Math.Abs(d0 - d2) / Math.Max(d0, d2) < 0.1 && 
+               Math.Abs(d1 - d3) / Math.Max(d1, d3) < 0.1;
     }
 
     private static Dictionary<string, string> ParseEmbeddedCss(XElement root)
@@ -526,4 +557,10 @@ public class SvgProjectFormat : IProjectFormat
 
     private static string Esc(string s) =>
         s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");
+    
+    private static double MaxHorizontalDistance(List<Point2D> points) =>
+        points.Max(p => p.X) - points.Min(p => p.X);
+
+    private static double MaxVerticalDistance(List<Point2D> points) =>
+        points.Max(p => p.Y) - points.Min(p => p.Y);
 }

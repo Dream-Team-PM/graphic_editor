@@ -318,6 +318,7 @@ public partial class MainWindowViewModel : ViewModelBase
             AddHeptagon: ReactiveCommand.Create(AddHeptagon),
             AddPentagram: ReactiveCommand.Create(AddPentagram),
             AddTriangle: ReactiveCommand.Create(AddTriangle),
+            AddRhombus: ReactiveCommand.Create(AddRhombus),
             DeleteSelected: ReactiveCommand.Create(DeleteSelected),
             DuplicateSelected: ReactiveCommand.Create(DuplicateSelected),
             RotateLeft: ReactiveCommand.Create(RotateLeft),
@@ -1102,6 +1103,26 @@ private void SendActiveLayerBackward()
         cmd.Execute(Canvas);
         _history.AddAction(cmd);
         StatusMessage = "Добавлен треугольник";
+    }
+
+    /// <summary>
+    /// Добавляет ромб с текущими настройками стиля на активный слой.
+    /// </summary>
+    private void AddRhombus()
+    {
+        var rhombus = new RhombusViewModel(
+            200, 200,           // центр
+            100, 100,           // ширина и высота (диагонали)
+            StrokeColor.Color, 
+            StrokeWidth, 
+            FillColor.Color, 
+            Opacity / 100.0);
+    
+        ApplyStyle(rhombus);
+        var cmd = new AddFigureCommand(rhombus, Canvas.ActiveLayer?.Id);
+        cmd.Execute(Canvas);
+        _history.AddAction(cmd);
+        StatusMessage = "Добавлен ромб";
     }
     
     /// <summary>
@@ -1903,6 +1924,11 @@ private void SendActiveLayerBackward()
                 new Point2D(center.X - radius, center.Y + radius),
                 new Point2D(center.X + radius, center.Y + radius),
                 StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+            DrawingTool.Rhombus => new RhombusViewModel(
+                center.X, center.Y,
+                Math.Abs(end.X - start.X),
+                Math.Abs(end.Y - start.Y),
+                StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
             DrawingTool.Text => new TextViewModel(
                 start.X, start.Y,
                 "Новый текст",  // Дефолтный текст, пользователь сможет отредактировать
@@ -1959,6 +1985,11 @@ private void SendActiveLayerBackward()
                 new Point2D(center.X, center.Y - Math.Max(1, radius)),
                 new Point2D(center.X - Math.Max(1, radius), center.Y + Math.Max(1, radius)),
                 new Point2D(center.X + Math.Max(1, radius), center.Y + Math.Max(1, radius)),
+                StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+            DrawingTool.Rhombus => new RhombusViewModel(
+                center.X, center.Y,
+                Math.Abs(end.X - start.X),
+                Math.Abs(end.Y - start.Y),
                 StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
             DrawingTool.Text => new TextViewModel(
                 start.X, start.Y,
@@ -2068,6 +2099,10 @@ private void SendActiveLayerBackward()
                 ellipse.RaisePropertyChanged(nameof(EllipseViewModel.Y));
                 ellipse.RaisePropertyChanged(nameof(EllipseViewModel.Width));
                 ellipse.RaisePropertyChanged(nameof(EllipseViewModel.Height));
+                break;
+            case RhombusViewModel rhombus:
+                // Пересчитываем вершины ромба по новым размерам
+                UpdatePolygonBoundingBox(rhombus, start, end);
                 break;
             case RegularPolygonViewModel polygon:
                 polygon.UpdateVertices(center, radius);

@@ -30,7 +30,6 @@ public static class PointTransformExtensions
             center.X + r.X * cos - r.Y * sin,
             center.Y + r.X * sin + r.Y * cos
         );
-        Console.WriteLine("ROTAAAATE");
         Console.WriteLine(point);
         Console.WriteLine(rfl);
         Console.WriteLine(center);

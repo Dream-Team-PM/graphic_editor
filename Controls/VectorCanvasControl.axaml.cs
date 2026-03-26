@@ -448,6 +448,7 @@ public partial class VectorCanvasControl : UserControl
             CircleViewModel circle => CreateShapeFromVertices(circle, isEllipse: true),
             RectangleViewModel rect => CreateShapeFromVertices(rect, isEllipse: false),
             EllipseViewModel ellipse => CreateShapeFromVertices(ellipse, isEllipse: true),
+            // RhombusViewModel rhombus => CreatePolygon(rhombus),
             PenPointViewModel pen => CreatePenPoint(pen), 
             LineViewModel lin => CreateLine(lin),
             TextViewModel text => CreateText(text),
@@ -1275,6 +1276,18 @@ public partial class VectorCanvasControl : UserControl
                     new Avalonia.Size(rx, ry), 0, false, SweepDirection.Clockwise);
                 ctx.EndFigure(isClosed: true);
             }
+            else if (figure is RhombusViewModel && figure.Vertices.Count >= 4)
+        {
+            ctx.BeginFigure(
+                new Avalonia.Point(figure.Vertices[0].X, figure.Vertices[0].Y),
+                isFilled: figure.FillColor.A > 0);
+            
+            for (int i = 1; i < figure.Vertices.Count; i++)
+                ctx.LineTo(new Avalonia.Point(figure.Vertices[i].X, figure.Vertices[i].Y));
+            
+            ctx.EndFigure(isClosed: true);
+            return geometry;
+        }
             else
             {
                 // Полигональная геометрия

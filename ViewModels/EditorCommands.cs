@@ -20,6 +20,7 @@ public record EditorCommands(
     ReactiveCommand<Unit, Unit> AddHeptagon, /// <summary>Reactive UI добавление семиугольника.</summary>
     ReactiveCommand<Unit, Unit> AddPentagram, /// <summary>Reactive UI добавление пентаграммы.</summary>
     ReactiveCommand<Unit, Unit> AddTriangle, /// <summary>Reactive UI добавление треугольника.</summary>
+    ReactiveCommand<Unit, Unit> AddRhombus, /// <summary>Reactive UI добавление ромба.</summary>
 
     // Выделение
     ReactiveCommand<Unit, Unit> DeleteSelected, /// <summary>Reactive UI удаление выбранной фигуры.</summary>
@@ -107,9 +108,4 @@ public record EditorCommands(
     ReactiveCommand<Unit, Unit> OpenFillColorPickerCommand, /// <summary>Reactive UI команда открытия палитры цвета заполнения.</summary>
     ReactiveCommand<Unit, Unit> OpenStrokeColorPickerCommand, /// <summary>Reactive UI команда открытия палитры цвета линии.</summary>
     ReactiveCommand<Unit, Unit> OpenPropertiesCommand
-    
-    // Pointer-команды можно добавить позже, когда вынесем через Behavior
-    // ReactiveCommand<PointerData, Unit> CanvasPointerPressed,
-    // ReactiveCommand<PointerData, Unit> CanvasPointerMoved,
-    // ReactiveCommand<PointerData, Unit> CanvasPointerReleased
 );
