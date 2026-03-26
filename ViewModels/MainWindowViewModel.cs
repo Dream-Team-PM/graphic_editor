@@ -32,6 +32,8 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly IFileService _fileService; /// <summary>Сервис для работы с файлами проекта (сохранение/загрузка).</summary>
     private readonly HistoryViewModel _history; /// <summary>Менеджер истории действий для поддержки Undo/Redo.</summary>
+	private readonly LayerViewModel _layer; /// <summary>Менеджер истории действий для поддержки Undo/Redo.</summary>
+
     private bool _isDragging;
     private Point2D _dragStart;
     private Dictionary<Guid, List<(double X, double Y)>> _originalVertices; // для каждой фигуры список исходных координат вершин
@@ -40,6 +42,7 @@ public partial class MainWindowViewModel : ViewModelBase
     /// Публичный доступ к ViewModel истории для привязки в UI.
     /// </summary>
     public HistoryViewModel History => _history;
+	public LayerViewModel Layer => _layer;
 
     // ========== ПОЛЯ ==========
     
@@ -102,7 +105,7 @@ public partial class MainWindowViewModel : ViewModelBase
     /// <summary>
     /// Получает текущий активный инструмент рисования.
     /// </summary>
-    private DrawingTool CurrentTool => _selectedTool;
+    public DrawingTool CurrentTool => _selectedTool;
     
     /// <summary>
     /// Коллекция ReactiveCommand для привязки действий UI к методам ViewModel.
@@ -293,6 +296,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _fileService = fileService;
         _history = history;
         Canvas = new CanvasViewModel();
+        Canvas.History = _history;
         _history.SetCanvas(Canvas);
         SetTool(DrawingTool.Select);
         
@@ -337,7 +341,16 @@ public partial class MainWindowViewModel : ViewModelBase
             SetStrokeColorCommand: ReactiveCommand.Create<Avalonia.Media.Color>(c => StrokeColor.Color = System.Drawing.Color.FromArgb(c.A, c.R, c.G, c.B)),
             SetFillColorCommand: ReactiveCommand.Create<Avalonia.Media.Color>(c => FillColor.Color = System.Drawing.Color.FromArgb(c.A, c.R, c.G, c.B)),
             OpenFillColorPickerCommand: ReactiveCommand.Create(() => { IsColorPickerOpen = true; }),
-            OpenStrokeColorPickerCommand: ReactiveCommand.Create(() => { IsStrokeColorPickerOpen = true; })
+            OpenStrokeColorPickerCommand: ReactiveCommand.Create(() => { IsStrokeColorPickerOpen = true; }),
+			DeleteLayerCommand: ReactiveCommand.Create<LayerViewModel>(DeleteLayer),
+			ToggleLockLayerCommand: ReactiveCommand.Create<LayerViewModel>(ToggleLockLayer),
+			ToggleVisibilityLayerCommand: ReactiveCommand.Create<LayerViewModel>(ToggleVisibilityLayer),
+			DuplicateLayerCommand: ReactiveCommand.Create(DuplicateLayer),
+    		MergeWithPreviousLayerCommand: ReactiveCommand.Create(MergeWithPreviousLayer),
+    		BringLayerForwardCommand: ReactiveCommand.Create(BringLayerForward),
+    		SendLayerBackwardCommand: ReactiveCommand.Create(SendLayerBackward),
+    		BringLayerToFrontCommand: ReactiveCommand.Create(BringLayerToFront),
+    		SendLayerToBackCommand: ReactiveCommand.Create(SendLayerToBack)
         );
         
         // Реактивная привязка: обновление текста координат при изменении MouseX/MouseY
@@ -414,6 +427,12 @@ public partial class MainWindowViewModel : ViewModelBase
             ResetDrawingState();
         }
         _selectedTool = tool;
+
+        if (Canvas != null)
+        {
+            Canvas.CurrentTool = tool;
+        }
+
         this.RaisePropertyChanged(nameof(SelectedToolDisplayName));
         StatusMessage = $"Установлен инструмент: {SelectedToolDisplayName}";
     }
@@ -1144,6 +1163,15 @@ public partial class MainWindowViewModel : ViewModelBase
             }
             e.Handled = true;
         }
+		else if (CurrentTool == DrawingTool.Text)
+		{
+    		// Текст создаётся по клику, а не по перетаскиванию
+    		if (!IsDrawing)
+    		{
+        		StartTextInput(point);
+    		}
+    		e.Handled = true;
+		}
     }
 
     /// <summary>
@@ -1495,6 +1523,14 @@ public partial class MainWindowViewModel : ViewModelBase
                 new Point2D(center.X - radius, center.Y + radius),
                 new Point2D(center.X + radius, center.Y + radius),
                 StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+            DrawingTool.Text => new TextViewModel(
+                start.X, start.Y,
+                "Новый текст",  // Дефолтный текст, пользователь сможет отредактировать
+                24,  // Размер шрифта по умолчанию
+                "Segoe UI",
+                StrokeColor.Color,
+                FillColor.Color,
+                Opacity / 100.0),
             _ => null
         };
         if (figure != null)
@@ -1544,6 +1580,14 @@ public partial class MainWindowViewModel : ViewModelBase
                 new Point2D(center.X - Math.Max(1, radius), center.Y + Math.Max(1, radius)),
                 new Point2D(center.X + Math.Max(1, radius), center.Y + Math.Max(1, radius)),
                 StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+            DrawingTool.Text => new TextViewModel(
+                start.X, start.Y,
+                "Текст...",
+                24,
+                "Segoe UI",
+                StrokeColor.Color,
+                FillColor.Color,
+                Opacity / 100.0),
             _ => null
         };
         if (figure != null)
@@ -1690,6 +1734,28 @@ public partial class MainWindowViewModel : ViewModelBase
         polygon.RaisePropertyChanged(nameof(PolygonViewModel.Center));
         polygon.RaisePropertyChanged(nameof(PolygonViewModel.Vertices));
     }
+    
+    private void StartTextInput(Point2D point)
+    {
+        IsDrawing = true;
+        _currentDrawingTool = DrawingTool.Text;
+        _drawingStartPoint = point;
+        _hasDrawingStart = true;
+    
+        // Создаём временный текст для предпросмотра
+        _previewFigure = new TextViewModel(
+            point.X, point.Y,
+            "",  // Пустой текст — ждём ввода
+            24,
+            "Segoe UI",
+            StrokeColor.Color,
+            FillColor.Color,
+            Opacity / 100.0);
+    
+        Canvas?.AddFigure(_previewFigure);
+        StatusMessage = "Введите текст (Enter для завершения, Esc для отмены)";
+		// TopLevel.GetTopLevel(...)?.Activate();
+    }
 
     /// <summary>
     /// Преобразует экранные координаты события мыши в координаты канваса с учётом зума и смещения.
@@ -1708,4 +1774,228 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         return new Point2D(screenPos.X, screenPos.Y);
     }
+
+/// <summary>
+/// Удаляет указанный слой (если он не последний).
+/// </summary>
+private void DeleteLayer(LayerViewModel layer)
+{
+    if (Canvas?.Layers.Count <= 1)
+    {
+        StatusMessage = "Нельзя удалить последний слой";
+        return;
+    }
+    
+    // Если удаляем активный слой — переключаем на другой
+    if (Canvas.ActiveLayer == layer)
+    {
+        var index = Canvas.Layers.IndexOf(layer);
+        Canvas.ActiveLayer = index > 0 ? Canvas.Layers[index - 1] : Canvas.Layers[1];
+    }
+    
+    Canvas.Layers.Remove(layer);
+    StatusMessage = $"Слой '{layer.Name}' удалён";
+}
+
+/// <summary>
+/// Переключает блокировку слоя.
+/// </summary>
+private void ToggleLockLayer(LayerViewModel layer)
+{
+	DebugLog.Write($"[DEBUG] ToggleLockLayer: {layer.Name} -> {layer.IsLocked}");
+    StatusMessage = layer.IsLocked 
+        ? $"Слой '{layer.Name}' заблокирован" 
+        : $"Слой '{layer.Name}' разблокирован";
+	Canvas?.RaisePropertyChanged(nameof(Canvas.Layers));
+}
+
+/// <summary>
+/// Переключает видимость слоя.
+/// </summary>
+private void ToggleVisibilityLayer(LayerViewModel layer)
+{
+    DebugLog.Write($"[DEBUG] ToggleVisibilityLayer: {layer.Name} -> {layer.IsVisible}");
+    
+    StatusMessage = layer.IsVisible 
+        ? $"Слой '{layer.Name}' показан" 
+        : $"Слой '{layer.Name}' скрыт";
+	Canvas?.RaisePropertyChanged(nameof(Canvas.Layers));
+}
+
+/// <summary>
+/// Дублирует активный слой с сохранением всех фигур.
+/// </summary>
+private void DuplicateLayer()
+{
+    if (Canvas?.ActiveLayer == null) return;
+    
+    var source = Canvas.ActiveLayer;
+    var duplicate = new LayerViewModel($"Копия {source.Name}")
+    {
+        IsVisible = source.IsVisible,
+        IsLocked = source.IsLocked
+    };
+    
+    // Копируем фигуры (глубокое клонирование)
+    foreach (var figure in source.Figures)
+    {
+        var clone = figure.Clone();
+        duplicate.Figures.Add(clone);
+    }
+    
+    // Вставляем после текущего слоя
+    var index = Canvas.Layers.IndexOf(source);
+    Canvas.Layers.Insert(index + 1, duplicate);
+    Canvas.ActiveLayer = duplicate;
+    
+    StatusMessage = $"Слой '{source.Name}' дублирован";
+    DebugLog.Write($"[DEBUG] Layer duplicated: {source.Name} -> {duplicate.Name}");
+}
+
+/// <summary>
+/// Объединяет активный слой с предыдущим.
+/// </summary>
+private void MergeWithPreviousLayer()
+{
+    if (Canvas?.ActiveLayer == null) return;
+    
+    var current = Canvas.ActiveLayer;
+    var index = Canvas.Layers.IndexOf(current);
+    
+    if (index <= 0)
+    {
+        StatusMessage = "Нет предыдущего слоя для объединения";
+        return;
+    }
+    
+    var previous = Canvas.Layers[index - 1];
+    
+    // Переносим все фигуры из текущего в предыдущий
+    foreach (var figure in current.Figures.ToList())
+    {
+        current.Figures.Remove(figure);
+        previous.Figures.Add(figure);
+    }
+    
+    // Удаляем текущий слой
+    Canvas.Layers.Remove(current);
+    Canvas.ActiveLayer = previous;
+    
+    StatusMessage = $"Слои '{current.Name}' и '{previous.Name}' объединены";
+}
+
+/// <summary>
+/// Перемещает активный слой на один уровень вверх (ближе к переднему плану).
+/// </summary>
+private void BringLayerForward()
+{
+    if (Canvas?.ActiveLayer == null) return;
+    
+    var layer = Canvas.ActiveLayer;
+    var index = Canvas.Layers.IndexOf(layer);
+    
+    if (index < Canvas.Layers.Count - 1)
+    {
+        Canvas.Layers.Move(index, index + 1);
+        StatusMessage = $"Слой '{layer.Name}' перемещён вверх";
+    }
+    else
+    {
+        StatusMessage = "Слой уже на переднем плане";
+    }
+}
+
+/// <summary>
+/// Перемещает активный слой на один уровень вниз.
+/// </summary>
+private void SendLayerBackward()
+{
+    if (Canvas?.ActiveLayer == null) return;
+    
+    var layer = Canvas.ActiveLayer;
+    var index = Canvas.Layers.IndexOf(layer);
+    
+    if (index > 0)
+    {
+        Canvas.Layers.Move(index, index - 1);
+        StatusMessage = $"Слой '{layer.Name}' перемещён вниз";
+    }
+    else
+    {
+        StatusMessage = "Слой уже на заднем плане";
+    }
+}
+
+/// <summary>
+/// Перемещает активный слой на самый передний план.
+/// </summary>
+private void BringLayerToFront()
+{
+    if (Canvas?.ActiveLayer == null) return;
+    
+    var layer = Canvas.ActiveLayer;
+    var index = Canvas.Layers.IndexOf(layer);
+    
+    if (index < Canvas.Layers.Count - 1)
+    {
+        Canvas.Layers.Move(index, Canvas.Layers.Count - 1);
+        StatusMessage = $"Слой '{layer.Name}' перемещён на передний план";
+    }
+}
+
+/// <summary>
+/// Перемещает активный слой на самый задний план.
+/// </summary>
+private void SendLayerToBack()
+{
+    if (Canvas?.ActiveLayer == null) return;
+    
+    var layer = Canvas.ActiveLayer;
+    var index = Canvas.Layers.IndexOf(layer);
+    
+    if (index > 0)
+    {
+        Canvas.Layers.Move(index, 0);
+        StatusMessage = $"Слой '{layer.Name}' перемещён на задний план";
+    }
+}
+
+public void FinishTextInput()
+{
+    if (_previewFigure is TextViewModel text && !string.IsNullOrWhiteSpace(text.Text))
+    {
+        // Создаём финальную копию с введённым текстом
+        var finalText = new TextViewModel(
+            text.Vertices[0].X, text.Vertices[0].Y,
+            text.Text,
+            text.FontSize,
+            text.FontFamily,
+            text.LineColor,
+            text.FillColor,
+            text.Opacity);
+        
+        // Удаляем превью и добавляем финальный текст
+        Canvas?.ActiveLayer?.Figures.Remove(_previewFigure);
+        Canvas?.AddFigure(finalText);
+        
+        StatusMessage = "Текст добавлен";
+    }
+    else
+    {
+        // Если текст пустой — просто удаляем превью
+        Canvas?.ActiveLayer?.Figures.Remove(_previewFigure);
+        StatusMessage = "Ввод текста отменён (пустой)";
+    }
+    
+    ResetDrawingState();
+}
+
+public void CancelTextInput()
+{
+    Canvas?.ActiveLayer?.Figures.Remove(_previewFigure);
+    ResetDrawingState();
+    StatusMessage = "Ввод текста отменён";
+}
+
+
 }

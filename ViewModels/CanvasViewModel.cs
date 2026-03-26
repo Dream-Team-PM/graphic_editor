@@ -139,6 +139,17 @@ public class CanvasViewModel: ViewModelBase
         set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
+    private DrawingTool _currentTool;
+    /// <summary>Текущий активный инструмент, передаваемый из MainWindowViewModel.</summary>
+    public DrawingTool CurrentTool
+    {
+        get => _currentTool;
+        set => this.RaiseAndSetIfChanged(ref _currentTool, value);
+    }
+
+    /// <summary>Ссылка на менеджер истории для выполнения команд из контрола.</summary>
+    public HistoryViewModel? History { get; set; }
+
     /// <summary>
     /// Активирует канвас: создаёт новый слой, если активный отсутствует.
     /// </summary>
@@ -219,6 +230,7 @@ public class CanvasViewModel: ViewModelBase
     public void SelectFigureAt(Point2D point, bool addToSelection = false)
     {
         if (ActiveLayer == null) return;
+		if (ActiveLayer.IsLocked) return;
         var figure = ActiveLayer.Figures.LastOrDefault(f => f.IsIn(point));
         if (addToSelection)
         {
@@ -340,4 +352,8 @@ public class CanvasViewModel: ViewModelBase
             ActiveLayer.Figures.Insert(0, SelectedFigure);
         }
     }
+
+	public int ActiveLayerIndex => ActiveLayer != null 
+    ? Layers.IndexOf(ActiveLayer) 
+    : -1;
 }

@@ -1,4 +1,4 @@
-# **Модуль IO**
+﻿# **Модуль IO**
 
 
 ### Архитектура
@@ -167,4 +167,3 @@ public class MainWindowViewModel
     }
   ]
 }
-```

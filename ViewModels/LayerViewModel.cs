@@ -42,7 +42,7 @@ public class LayerViewModel : ViewModelBase
         _figures = new ObservableCollection<FigureViewModel>();
     }
 
-    public LayerViewModel(Guid id, string name)
+	  public LayerViewModel(Guid id, string name)
     {
         _id = id;
         _name = name;

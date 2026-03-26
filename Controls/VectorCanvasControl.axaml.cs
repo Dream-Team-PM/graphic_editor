@@ -6,17 +6,20 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
-using System.Windows.Input;
 using DynamicData.Experimental;
-
+using graphic_editor.Commands;
 using graphic_editor.Geometry;
 using graphic_editor.Helpers;
+using graphic_editor.Models;
 using graphic_editor.ViewModels;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Windows.Input;
+using Avalonia.Interactivity;
+
+using ReactiveUI;
 
 namespace graphic_editor.Controls;
 
@@ -67,9 +70,26 @@ public partial class VectorCanvasControl : UserControl
     public VectorCanvasControl()
     {
         InitializeComponent();
-		//this.AddHandler(PointerPressedEvent, OnPointerPressed, handledEventsToo: true);
-        //this.AddHandler(PointerMovedEvent, OnPointerMoved, handledEventsToo: true);
-        //this.AddHandler(PointerReleasedEvent, OnPointerReleased, handledEventsToo: true);
+        this.Focusable = true; 
+        // this.CanFocus = true;
+    
+        // Запрашиваем фокус при загрузке
+        this.AttachedToVisualTree += (s, e) => 
+        {
+            this.Focus();
+        };
+    }
+    
+    protected override void OnGotFocus(GotFocusEventArgs e)
+    {
+        base.OnGotFocus(e);
+        DebugLog.Write("[DEBUG] VectorCanvasControl got focus!");
+    }
+
+    protected override void OnLostFocus(RoutedEventArgs e)
+    {
+        base.OnLostFocus(e);
+        DebugLog.Write("[DEBUG] VectorCanvasControl lost focus!");
     }
     
     /// <summary>
@@ -455,6 +475,7 @@ public partial class VectorCanvasControl : UserControl
            EllipseViewModel ellipse => CreateShapeFromVertices(ellipse, isEllipse: true),
             PenPointViewModel pen => CreatePenPoint(pen), 
             LineViewModel lin => CreateLine(lin),
+            TextViewModel text => CreateText(text),
             // BezieCurveViewModel bezie => CreateBezieCurve(bezie),
             // CurveViewModel curve => CreateCurve(curve),
             // SplineViewModel spline => CreateSpline(spline),
@@ -497,6 +518,32 @@ public partial class VectorCanvasControl : UserControl
                 : null,
             Tag = polygon
         };
+    }
+    
+    /// <summary>
+    /// Создаёт TextBlock для отрисовки текстовой фигуры.
+    /// </summary>
+    private TextBlock CreateText(TextViewModel text)
+    {
+        var textBlock = new TextBlock
+        {
+            Text = text.Text,
+            FontFamily = new FontFamily(text.FontFamily),
+            FontSize = text.FontSize,
+            FontWeight = text.FontWeight,
+            FontStyle = text.FontStyle,
+            Foreground = new SolidColorBrush(ToAvaloniaColor(text.FillColor)),
+            TextAlignment = text.TextAlignment,
+            [Canvas.LeftProperty] = text.Vertices[0].X,
+            [Canvas.TopProperty] = text.Vertices[0].Y,
+            Tag = text,
+            IsHitTestVisible = true
+        };
+    
+        // Обработка клика для редактирования (опционально)
+        textBlock.Tapped += OnTextDoubleTapped;
+    
+        return textBlock;
     }
     
 	/// <summary>
@@ -633,6 +680,72 @@ public partial class VectorCanvasControl : UserControl
     private void BindFigureProperties(FigureViewModel figure, Control control)
     {
         // Конвертация цвета
+        if (control is TextBlock textBlock && figure is TextViewModel textVm)
+        {
+            figure.PropertyChanged += (s, e) =>
+            {
+                switch (e.PropertyName)
+                {
+                    case nameof(TextViewModel.Text):
+                        textBlock.Text = textVm.Text;
+                        break;
+                    case nameof(TextViewModel.FontSize):
+                        textBlock.FontSize = textVm.FontSize;
+                        break;
+                    case nameof(TextViewModel.FontFamily):
+                        textBlock.FontFamily = new FontFamily(textVm.FontFamily);
+                        break;
+                    case nameof(TextViewModel.FillColor):
+                        textBlock.Foreground = new SolidColorBrush(ToAvaloniaColor(textVm.FillColor));
+                        break;
+                    case nameof(TextViewModel.FontStyle):
+                        textBlock.FontStyle = textVm.FontStyle;
+                        break;
+                    case nameof(TextViewModel.FontWeight):
+                        textBlock.FontWeight = textVm.FontWeight;
+                        break;
+                    case nameof(TextViewModel.Opacity):
+                        textBlock.Opacity = Math.Clamp(textVm.Opacity, 0.1, 1.0);
+                        break;
+                    case nameof(TextViewModel.Rotation):
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            if (Math.Abs(textVm.Rotation) > 0.01)
+                            {
+                                textBlock.RenderTransformOrigin = new RelativePoint(0.5, 0.5, RelativeUnit.Relative);
+                                textBlock.RenderTransform = new RotateTransform(textVm.Rotation);
+                            }
+                            else
+                            {
+                                textBlock.RenderTransform = null;
+                            }
+                        });
+                        break;
+                    case nameof(FigureViewModel.IsSelected):
+                        UpdateSelectionVisual(figure, control);
+                        break;
+                }
+            };
+            return;  // 🔥 Выходим, не обрабатываем как Shape
+        }
+        if (control is TextBlock tb && figure is TextViewModel txt)
+        {
+            foreach (var vertex in txt.Vertices)
+            {
+                vertex.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName is nameof(PointViewModel.X) or nameof(PointViewModel.Y))
+                    {
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            // Обновляем позицию текстового блока
+                            Canvas.SetLeft(tb, txt.Vertices[0].X);
+                            Canvas.SetTop(tb, txt.Vertices[0].Y);
+                        });
+                    }
+                };
+            }
+        }
         if (control is not Shape shape) return;
         ApplyStyle(shape, figure);
         
@@ -748,7 +861,7 @@ public partial class VectorCanvasControl : UserControl
     /// </summary>
     /// <param name="shape">Элемент управления Shape.</param>
     /// <param name="figure">Модель фигуры с обновлёнными данными.</param>
-    private void UpdateShapeGeometry(Shape shape, FigureViewModel figure)
+    private void UpdateShapeGeometry(Control shape, FigureViewModel figure)
     {
         switch (figure)
         {
@@ -797,6 +910,81 @@ public partial class VectorCanvasControl : UserControl
                     Canvas.SetTop(e, Math.Min(ellipse.Y, ellipse.Y + ellipse.Height));
                 }
                 break;
+            
+            case TextViewModel txt when shape is TextBlock tb:
+                Canvas.SetLeft(tb, txt.Vertices[0].X);
+                Canvas.SetTop(tb, txt.Vertices[0].Y);
+                tb.Text = txt.Text;
+                tb.FontSize = txt.FontSize;
+                tb.FontFamily = new FontFamily(txt.FontFamily);
+                tb.Foreground = new SolidColorBrush(ToAvaloniaColor(txt.FillColor));
+                if (Math.Abs(txt.Rotation) > 0.01) // Избегаем дребезга при малых углах
+                {
+                    var center = txt.Center;
+                    // Поворот вокруг центра текста (относительно левого-верхнего угла)
+                    tb.RenderTransformOrigin = new RelativePoint(0.5, 0.5, RelativeUnit.Relative);
+                    tb.RenderTransform = new RotateTransform(txt.Rotation);
+                }
+                else
+                {
+                    tb.RenderTransform = null;
+                }
+                break;
+        }
+    }
+    private void OnTextDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (sender is TextBlock tb && tb.Tag is TextViewModel text)
+        {
+            // Временно заменяем TextBlock на TextBox
+            var parent = tb.Parent as Panel;
+            if (parent != null)
+            {
+                var textBox = new TextBox
+                {
+                    Text = text.Text,
+                    FontFamily = tb.FontFamily,
+                    FontSize = tb.FontSize,
+                    FontWeight = tb.FontWeight,
+                    Foreground = tb.Foreground,
+                    [Canvas.LeftProperty] = Canvas.GetLeft(tb),
+                    [Canvas.TopProperty] = Canvas.GetTop(tb),
+                    Width = tb.Bounds.Width,
+                    Background = Brushes.Transparent,
+                    BorderThickness = new Thickness(1),
+                    BorderBrush = Brushes.Blue
+                };
+            
+                textBox.LostFocus += (s, args) =>
+                {
+                    text.Text = textBox.Text;
+                    tb.Text = textBox.Text; 
+                    parent.Children.Remove(textBox);
+                    parent.Children.Add(tb);
+                };
+                
+                textBox.KeyDown += (s, args) =>
+                {
+                    if (args.Key == Key.Enter)
+                    {
+                        text.Text = textBox.Text;
+                        tb.Text = textBox.Text;
+                        parent.Children.Remove(textBox);
+                        parent.Children.Add(tb);
+                        args.Handled = true;
+                    }
+                    else if (args.Key == Key.Escape)
+                    {
+                        parent.Children.Remove(textBox);
+                        parent.Children.Add(tb);
+                        args.Handled = true;
+                    }
+                };
+            
+                parent.Children.Remove(tb);
+                parent.Children.Add(textBox);
+                textBox.Focus();
+            }
         }
     }
     
@@ -957,7 +1145,7 @@ public partial class VectorCanvasControl : UserControl
         }
     }
 
-	/// <summary>
+    /// <summary>
     /// Обработчик нажатия на отрисованную фигуру.
     /// Передаёт событие выделения в ViewModel.
     /// </summary>
@@ -967,14 +1155,40 @@ public partial class VectorCanvasControl : UserControl
     {
         if (sender is Control control && control.Tag is FigureViewModel figure)
         {
-            var addToSelection = e.KeyModifiers.HasFlag(KeyModifiers.Control);
-            CanvasViewModel?.SelectFigureAt(figure.Center, addToSelection);
-            e.Handled = true;
-            DebugLog.Write("[DEBUG] Entered to OnFigurePointerPressed");
+            // Проверяем, выбран ли инструмент ластика
+            var layer = CanvasViewModel?.Layers.FirstOrDefault(l => l.Figures.Contains(figure));
+            if (layer?.IsLocked == true)
+            {
+                DebugLog.Write($"[DEBUG] Layer '{layer.Name}' is locked, ignoring pointer event");
+                return;
+            }
+            if (CanvasViewModel?.CurrentTool == DrawingTool.Eraser)
+            {
+                var figuresToDelete = new List<FigureViewModel> { figure };
+                var deleteCmd = new DeleteFigureCommand(figuresToDelete);
+
+                // 1. Выполняем удаление через команду
+                deleteCmd.Execute(CanvasViewModel);
+
+                // 2. Записываем действие в историю для Undo/Redo
+                CanvasViewModel.History?.AddAction(deleteCmd);
+
+                e.Handled = true;
+                DebugLog.Write($"[DEBUG] Eraser: Figure {figure.Name} deleted");
+            }
+            else
+            {
+                // Обычная логика выделения (уже существующая у вас)
+                var addToSelection = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+                CanvasViewModel?.SelectFigureAt(figure.Center, addToSelection);
+
+                e.Handled = true;
+                DebugLog.Write("[DEBUG] Selection: Handled in OnFigurePointerPressed");
+            }
         }
     }
 
-	/// <summary>
+    /// <summary>
     /// Удаляет фигуру с канваса и очищает связанные ресурсы.
     /// </summary>
     /// <param name="figure">Модель фигуры для удаления.</param>

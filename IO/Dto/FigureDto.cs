@@ -1,3 +1,4 @@
+
 using System.Text.Json.Serialization;
 
 namespace graphic_editor.IO.Dto;

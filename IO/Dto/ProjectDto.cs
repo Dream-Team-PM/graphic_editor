@@ -1,3 +1,4 @@
+
 namespace graphic_editor.IO.Dto;
 
 public class ProjectDto
