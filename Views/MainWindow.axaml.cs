@@ -51,6 +51,14 @@ public partial class MainWindow : Window
 
         var screenPos = e.GetPosition(EditorWorkspaceControl.VectorCanvasElement);
         var canvasPoint = EditorWorkspaceControl.VectorCanvasElement.ScreenToCanvas(screenPos);
+    
+        // БЕЗОПАСНОЕ ОБНОВЛЕНИЕ ТЕКСТА
+        var coordsText = this.FindControl<TextBlock>("CoordsDisplay");
+        if (coordsText != null)
+        {
+            coordsText.Text = $"X: {(int)canvasPoint.X}, Y: {(int)canvasPoint.Y}";
+        }
+
         _viewModel.Commands.UpdateCoordinates.Execute((canvasPoint.X, canvasPoint.Y));
         _viewModel.HandlePointerMoved(e);
     }
@@ -77,13 +85,19 @@ public partial class MainWindow : Window
     {
         if (sender is RadioButton btn && btn.IsChecked == true && btn.Tag is string toolName)
         {
-            DebugLog.Write($"[DEBUG] ToolButton_Checked: Setting SelectedTool to '{toolName}' (Tag={btn.Tag})");
             _viewModel?.SetToolByName(toolName);
             ToolSettingsBarControl.SelectedToolTextElement.Text = toolName;
+
+            // ИЗМЕНЕНИЕ КУРСОРОВ
+            if (EditorWorkspaceControl?.VectorCanvasElement != null)
+            {
+                EditorWorkspaceControl.VectorCanvasElement.Cursor = toolName switch
+                {
+                    "Выделение" => new Cursor(StandardCursorType.Arrow),
+                    "Карандаш" or "Линия" or "Полигон" => new Cursor(StandardCursorType.Cross),
+                _   => new Cursor(StandardCursorType.Ibeam)
+                };
         }
-        else
-        {
-            DebugLog.Write($"[DEBUG] ToolButton_Checked: sender={sender?.GetType()}, IsChecked={(sender as RadioButton)?.IsChecked}, Tag={(sender as RadioButton)?.Tag}");
         }
     }
 

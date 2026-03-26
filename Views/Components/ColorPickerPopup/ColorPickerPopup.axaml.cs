@@ -57,18 +57,27 @@ public partial class ColorPickerPopup : UserControl
 
     private void UpdatePreviewFromHex()
     {
-        if (HexInput.Text?.Length == 6)
+        var text = HexInput.Text ?? "";
+    
+        // Проверка: регулярное выражение для 6 символов Hex
+        bool isValid = System.Text.RegularExpressions.Regex.IsMatch(text, "^[0-9A-Fa-f]{6}$");
+
+        if (isValid)
         {
             try
             {
-                var color = Color.Parse("#" + HexInput.Text);
+                var color = Color.Parse("#" + text);
                 _currentColor = color;
                 PreviewBorder.Background = new SolidColorBrush(color);
+                HexInput.BorderBrush = Brush.Parse("#3F3F46"); // Возвращаем стандартный цвет
             }
-            catch
-            {
-            }
+            catch { isValid = false; }
         }
+
+    if (!isValid)
+    {
+        HexInput.BorderBrush = Brushes.Red; // Подсвечиваем ошибку
+    }
     }
 
     private void HexInput_TextChanged(object? sender, TextChangedEventArgs e)

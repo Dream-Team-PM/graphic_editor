@@ -53,6 +53,15 @@
             <components:PropertiesSidebar Grid.Column="2"/>
         </Grid>
 
-        <components:StatusBarView Grid.Row="3" Grid.ColumnSpan="3"/>
+        <Grid Grid.Row="3" Grid.ColumnSpan="3" ColumnDefinitions="*, Auto" Background="#252526">
+            <components:StatusBarView Grid.Column="0"/>
+            <TextBlock Name="CoordsDisplay" 
+                        Grid.Column="1" 
+                        Text="X: 0, Y: 0" 
+                        Foreground="#999" 
+                        FontSize="11" 
+                        Margin="0,0,15,0" 
+                        VerticalAlignment="Center"/>
+        </Grid>
     </Grid>
 </Window>
