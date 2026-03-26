@@ -21,7 +21,7 @@ public class JpegExporter : ImageExporterBase
     /// <param name="quality">Качество сжатия от 1 до 100 (по умолчанию 90).</param>
     public static async Task ExportAsync(string fullPath, Control canvasControl, int quality = 90)
     {
-        await Task.Yield();
+        //await Task.Yield();
         quality = Math.Clamp(quality, 1, 100);
         using var avaloniaBitmap = RenderControl(canvasControl);
         using var skBitmap = ConvertToSkia(avaloniaBitmap);
