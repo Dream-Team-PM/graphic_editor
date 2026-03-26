@@ -879,8 +879,8 @@ public partial class MainWindowViewModel : ViewModelBase
     public void ToggleTheme()
     {
         CurrentTheme = CurrentTheme == ThemeVariant.Dark
-            ? ThemeVariant.Light
-            : ThemeVariant.Dark;
+            ? ThemeVariant.Dark
+            : ThemeVariant.Light;
         StatusMessage = $"Тема: {(CurrentTheme == ThemeVariant.Light ? "Светлая ☀️" : "Тёмная 🌙")}";
     }
 
