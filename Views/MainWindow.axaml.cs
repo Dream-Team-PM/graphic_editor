@@ -311,7 +311,6 @@ public partial class MainWindow : Window
             {
                 new FilePickerFileType("PNG изображение (*.png)")  { Patterns = ["*.png"] },
                 new FilePickerFileType("JPEG изображение (*.jpg)") { Patterns = ["*.jpg", "*.jpeg"] },
-                new FilePickerFileType("BMP изображение (*.bmp)")  { Patterns = ["*.bmp"] },
                 new FilePickerFileType("PDF документ (*.pdf)")     { Patterns = ["*.pdf"] },
             }
         });
@@ -325,7 +324,6 @@ public partial class MainWindow : Window
         var format = ext switch
         {
             ".jpg" or ".jpeg" => RasterExporter.Format.Jpeg,
-            ".bmp"            => RasterExporter.Format.Bmp,
             ".pdf"            => RasterExporter.Format.Pdf,
             _                 => RasterExporter.Format.Png,
         };
