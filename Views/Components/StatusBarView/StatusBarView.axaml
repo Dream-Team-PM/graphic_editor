@@ -1,0 +1,27 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:graphic_editor.ViewModels"
+             x:Class="graphic_editor.Views.Components.StatusBarView"
+             x:DataType="vm:MainWindowViewModel">
+    <UserControl.Styles>
+        <StyleInclude Source="StatusBarViewStyles.axaml"/>
+    </UserControl.Styles>
+
+    <Border Classes="ThemeStatusBar" Height="26" BorderThickness="0,1,0,0">
+        <Grid Margin="12,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" Margin="0,0,20,0">
+                <TextBlock Text="{Binding CoordinatesText}" Foreground="#999"/>
+                <TextBlock Text="Ш: 480  В: 320" Foreground="#999"/>
+            </StackPanel>
+            <TextBlock Grid.Column="2" Text="100%" VerticalAlignment="Center" Margin="0,0,20,0"/>
+            <TextBlock Grid.Column="3" Text="RGB" VerticalAlignment="Center"/>
+        </Grid>
+    </Border>
+</UserControl>
