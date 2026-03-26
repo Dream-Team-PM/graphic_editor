@@ -113,7 +113,8 @@ public class SvgProjectFormat : IProjectFormat
         // fill и stroke с поддержкой альфа-канала через fill-opacity / stroke-opacity
         var (fill,   fillOp)   = SvgColorWithOpacity(figure.FillColor,  "fill");
         var (stroke, strokeOp) = SvgColorWithOpacity(figure.LineColor,  "stroke");
-        var sw = F(figure.Thickness);
+        // Минимум 1px — так же как VectorCanvasControl (Math.Max(1, Thickness))
+        var sw = F(Math.Max(1.0, figure.Thickness));
         // figure.Opacity — прозрачность (0=непрозрачный, 1=прозрачный),
         // SVG opacity — непрозрачность (0=прозрачный, 1=непрозрачный) → инвертируем
         var svgOpacity = 1.0 - figure.Opacity;

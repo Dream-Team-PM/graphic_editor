@@ -6,13 +6,13 @@ using SkiaSharp;
 namespace graphic_editor.IO.Export;
 
 /// <summary>
-/// Растровый экспорт холста в PNG, JPEG, BMP и PDF.
+/// Растровый экспорт холста в PNG, JPEG и PDF.
 /// Все форматы реализованы через одну библиотеку — SkiaSharp.
 /// Workflow: Avalonia.RenderTargetBitmap → PNG-байты → SKBitmap → целевой формат.
 /// </summary>
 public static class RasterExporter
 {
-    public enum Format { Png, Jpeg, Bmp, Pdf }
+    public enum Format { Png, Jpeg, Pdf }
 
     // ── Публичный метод ───────────────────────────────────────────────────────
 
@@ -70,7 +70,6 @@ public static class RasterExporter
         var (encFormat, quality) = format switch
         {
             Format.Jpeg => (SKEncodedImageFormat.Jpeg, 95),
-            Format.Bmp  => (SKEncodedImageFormat.Bmp,  100),
             _           => (SKEncodedImageFormat.Png,  100),
         };
 
