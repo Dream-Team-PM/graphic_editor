@@ -85,6 +85,13 @@ public partial class MainWindow : Window
     	// Обновляем координаты курсора
     	var screenPos = e.GetPosition(VectorCanvas);
     	var canvasPoint = VectorCanvas.ScreenToCanvas(screenPos);
+
+		// БЕЗОПАСНОЕ ОБНОВЛЕНИЕ ТЕКСТА
+        var coordsText = this.FindControl<TextBlock>("CoordsDisplay");
+        if (coordsText != null)
+        {
+            coordsText.Text = $"X: {(int)canvasPoint.X}, Y: {(int)canvasPoint.Y}";
+        }
     	_viewModel.Commands.UpdateCoordinates.Execute((canvasPoint.X, canvasPoint.Y));
     	_viewModel.HandlePointerMoved(e);
 	}

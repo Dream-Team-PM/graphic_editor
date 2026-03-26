@@ -2,21 +2,25 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:components="using:graphic_editor.Views.Components"
-        xmlns:vm="using:graphic_editor.ViewModels"
         mc:Ignorable="d"
-        d:DesignWidth="1920"
-        d:DesignHeight="1080"
+        d:DesignWidth="1920" d:DesignHeight="1080"
         x:Class="graphic_editor.MainWindow"
+		x:Name="MainWindow1"
+        xmlns:local="using:graphic_editor.Controls"
+        xmlns:views="using:graphic_editor"
+        xmlns:converters="using:graphic_editor.Converters"
+        xmlns:vm="using:graphic_editor.ViewModels"
         x:DataType="vm:MainWindowViewModel"
+        xmlns:colorPicker="using:Avalonia.Controls"
         Title="INKognida — Безымянный.vec"
         Background="#1C1C1E"
         WindowState="Maximized"
         RequestedThemeVariant="Dark"
         FontFamily="Segoe UI Emoji, Segoe UI Symbol, Segoe UI, system-ui">
-
     <Window.Resources>
-        <DrawingBrush x:Key="CheckerBrush" TileMode="Tile" DestinationRect="0,0,16,16">
+        <DrawingBrush x:Key="CheckerBrush" 
+                      TileMode="Tile" 
+                      DestinationRect="0,0,16,16">
             <DrawingBrush.Drawing>
                 <DrawingGroup>
                     <GeometryDrawing Brush="#252526" Geometry="M0,0 L16,0 16,16 0,16 Z"/>
@@ -24,10 +28,19 @@
                 </DrawingGroup>
             </DrawingBrush.Drawing>
         </DrawingBrush>
+        <converters:InvertedBoolConverter x:Key="InvertedBool"/>
+        <converters:IsZeroToVisibleConverter x:Key="IsZeroToVisible"/>
+        <converters:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
+        <converters:DrawingColorConverter x:Key="DrawingColorConverter"/>
+        <converters:PercentToDoubleConverter x:Key="PercentToDoubleConverter"/>
+        <converters:MathSubtractConverter x:Key="MathSubtract"/>
+		<converters:IsGreaterThanOneConverter x:Key="IsGreaterThanOneConverter"/>
+		<converters:BoolToBrushConverter x:Key="BoolToBrushConverter"/>
+		<converters:IsGreaterThanZeroConverter x:Key="IsGreaterThanZeroConverter"/>
     </Window.Resources>
 
     <Window.Styles>
-        <StyleInclude Source="Styles/GraphicEditorStyles.axaml"/>
+        <StyleInclude Source="Styles/GraphicEditorStyles.axaml"></StyleInclude> 
     </Window.Styles>
 
     <Window.KeyBindings>
@@ -40,28 +53,624 @@
     </Window.KeyBindings>
 
     <Grid Classes="MainTheme" RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="Auto,*,Auto">
-        <components:MainMenuBar x:Name="MainMenuBarControl" Grid.Row="0" Grid.ColumnSpan="3"/>
-        <components:ToolSettingsBar x:Name="ToolSettingsBarControl" Grid.Row="1" Grid.ColumnSpan="3"/>
+        <!-- 1. Главное меню -->
+        <Border Grid.Row="0" Grid.ColumnSpan="3" Classes="ThemePanel" Height="32">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Меню слева -->
+                <Menu Grid.Column="0" Background="Transparent" HorizontalAlignment="Left">
+                    <MenuItem Header="_Файл">
+                        <MenuItem Header="Новый…" InputGesture="Ctrl+N"/>
+                        <MenuItem Header="Открыть…" InputGesture="Ctrl+O" Click="OpenMenuItem_Click"/>
+                        <MenuItem Header="Сохранить" InputGesture="Ctrl+S" Click="SaveMenuItem_Click"/>
+                        <MenuItem Header="Сохранить как…" InputGesture="Ctrl+Shift+S" Click="SaveAsMenuItem_Click"/>
+                        <Separator/>
+                        <MenuItem Header="Выход" InputGesture="Alt+F4"/>
+                    </MenuItem>
+                    <MenuItem Header="_Правка">
+                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="Отменить" InputGesture="Ctrl+Z" Command="{Binding History.Undo}" IsEnabled="{Binding History.CanUndo}"/>
+                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="Повторить" InputGesture="Ctrl+Y" Command="{Binding History.Redo}" IsEnabled="{Binding History.CanRedo}"/>
+                        <Separator/>
+                        <MenuItem Header="Вырезать" InputGesture="Ctrl+X"/>
+                        <MenuItem Header="Копировать" InputGesture="Ctrl+C"/>
+                        <MenuItem Header="Вставить" InputGesture="Ctrl+V"/>
+                    </MenuItem>
+                    <MenuItem Header="_Вид">
+                        <MenuItem Header="Показать линейки" IsChecked="True"/>
+                        <MenuItem Header="Показать сетку" IsChecked="True"/>
+                        <Separator/>
+                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="Приблизить" InputGesture="Ctrl+OemPlus" Command="{Binding Commands.ZoomIn}"/>
+                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="Отдалить" InputGesture="Ctrl+OemMinus" Command="{Binding Commands.ZoomOut}"/>
+                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="Масштаб 100%" InputGesture="Ctrl+0" Command="{Binding Commands.ZoomFit}"/>
+                    </MenuItem>
+                    <!-- Меню "Слой" -->
+<MenuItem Header="_Слой">
+    <MenuItem x:DataType="vm:MainWindowViewModel" 
+              Header="Новый слой" 
+              Command="{Binding Commands.CreateNewLayer}" 
+              InputGesture="Ctrl+Shift+N"/>
+    
+    <MenuItem x:DataType="vm:MainWindowViewModel" 
+              Header="Удалить слой" 
+              Command="{Binding Commands.DeleteLayerCommand}" 
+              CommandParameter="{Binding Canvas.ActiveLayer}" 
+              InputGesture="Ctrl+Shift+D"
+              IsEnabled="{Binding Canvas.Layers.Count, Converter={StaticResource IsGreaterThanOneConverter}}"/>
+    
+    <Separator/>
+    
+    <MenuItem x:DataType="vm:MainWindowViewModel" 
+              Header="Дублировать слой" 
+              Command="{Binding Commands.DuplicateLayerCommand}" 
+              InputGesture="Ctrl+J"/>
 
+    
+    <MenuItem x:DataType="vm:MainWindowViewModel" 
+              Header="Объединить с предыдущим" 
+              Command="{Binding Commands.MergeWithPreviousLayerCommand}" 
+              InputGesture="Ctrl+E"
+              IsEnabled="{Binding Canvas.ActiveLayerIndex, Converter={StaticResource IsGreaterThanZeroConverter}}"/>
+    
+    <Separator/>
+    
+    <MenuItem Header="Упорядочить">
+        <MenuItem x:DataType="vm:MainWindowViewModel" 
+                  Header="На передний план" 
+                  Command="{Binding Commands.BringLayerToFrontCommand}"
+                  InputGesture="Ctrl+Shift+OemCloseBrackets"/>
+        
+        <MenuItem x:DataType="vm:MainWindowViewModel" 
+                  Header="На задний план" 
+                  Command="{Binding Commands.SendLayerToBackCommand}"
+                  InputGesture="Ctrl+Shift+OemOpenBrackets"/>
+        
+        <Separator/>
+        
+        <MenuItem x:DataType="vm:MainWindowViewModel" 
+                  Header="Переместить вперед" 
+                  Command="{Binding Commands.BringLayerForwardCommand}"
+                  InputGesture="Ctrl+OemCloseBrackets"/>
+        
+        <MenuItem x:DataType="vm:MainWindowViewModel" 
+                  Header="Переместить назад" 
+                  Command="{Binding Commands.SendLayerBackwardCommand}"
+                  InputGesture="Ctrl+OemOpenBrackets"/>
+    </MenuItem>
+    
+    <Separator/>
+    
+    <MenuItem Header="Свойства слоя..." IsEnabled="False" Foreground="#666"/>
+</MenuItem>
+<MenuItem Header="_Объект"/>
+<!-- Меню "Справка" -->
+<MenuItem Header="_Справка">
+    <MenuItem Header="О программе..." Click="AboutMenuItem_Click"/>
+    <MenuItem Header="Сочетания клавиш..." Click="ShortcutsMenuItem_Click"/>
+    <Separator/>
+    <MenuItem Header="Документация" Click="DocumentationMenuItem_Click"/>
+    <MenuItem Header="Сообщить об ошибке" Click="ReportIssueMenuItem_Click"/>
+</MenuItem>
+                </Menu>
+
+                <!-- Кнопки и переключатель темы справа -->
+                <StackPanel Classes="Switcher" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0" Spacing="4">
+                    <Button x:DataType="vm:MainWindowViewModel" Classes="ToolActionBtn" Content="↶" Width="32" Height="24" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip.Tip="Отменить (Ctrl+Z)" Command="{Binding History.Undo}" IsEnabled="{Binding History.CanUndo}"/>
+                    <Button x:DataType="vm:MainWindowViewModel" Classes="ToolActionBtn" Content="↷" Width="32" Height="24" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip.Tip="Повторить (Ctrl+Y)" Command="{Binding History.Redo}" IsEnabled="{Binding History.CanRedo}"/>
+                    <Button Content="Экспорт" Background="#0078D4" Foreground="White" Padding="12,4" Height="28" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Click="ExportButton_Click"/>
+                    <Border Classes="DarkSeparator" Width="1" Height="20" Margin="4,0" VerticalAlignment="Center"/>
+                    
+                    <!-- Переключатель темы -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="4">
+                        <TextBlock Classes="ThemeIcon" Text="🌙" FontSize="14" VerticalAlignment="Center" Margin="0,0,0,2"/>
+                        <Slider x:DataType="vm:MainWindowViewModel" x:Name="ThemeSlider" Width="80" Height="50" Minimum="0" Maximum="1" Value="0" VerticalAlignment="Center" TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="Переключение темы: 0 — тёмная, 1 — светлая" ValueChanged="ThemeSlider_ValueChanged" Margin="0,0,8,0"/>
+                        <TextBlock Classes="ThemeIcon" Text="☀️" FontSize="14" VerticalAlignment="Center" Margin="0,0,0,2"/>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 2. Контекстная панель параметров -->
+        <Border Grid.Row="1" Grid.ColumnSpan="3" Classes="ThemePanel" Height="36" BorderThickness="0,0,0,1">
+            <StackPanel Classes="ParamBackground" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0" Spacing="16">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Classes="subtle" Text="Инструмент:" VerticalAlignment="Center" Foreground="#999"/>
+                    <TextBlock x:Name="SelectedToolText" Text="Перо" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Separator Classes="DarkSeparator" Width="1" Height="20"/>
+                 <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="Заливка:" VerticalAlignment="Center"/>
+                    <Button x:Name="FillColorButton" Width="28" Height="20" Padding="0" 
+                            Background="Transparent" BorderThickness="0" Click="FillColorButton_Click">
+                        <Border Width="28" Height="20" CornerRadius="2" BorderBrush="#555" BorderThickness="1" 
+                                Background="{Binding FillColor.Color, Converter={StaticResource ColorToBrushConverter}}"/>
+                    </Button>
+                    <Popup x:Name="ColorPopup" Placement="Bottom" PlacementTarget="{Binding ElementName=FillColorButton}">
+                        <views:ColorPickerPopup x:Name="ColorPickerControl"/>
+                    </Popup>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="Обводка:" VerticalAlignment="Center"/>
+                    <Button x:Name="StrokeColorButton" Width="28" Height="20" Padding="0" 
+                            Background="Transparent" BorderThickness="0" Click="StrokeColorButton_Click">
+                        <Border Width="28" Height="20" CornerRadius="2" BorderBrush="#555" BorderThickness="1" 
+                                Background="{Binding StrokeColor.Color, Converter={StaticResource ColorToBrushConverter}}"/>
+                    </Button>
+                    <Popup x:Name="StrokeColorPopup" Placement="Bottom" PlacementTarget="{Binding ElementName=StrokeColorButton}">
+                        <views:ColorPickerPopup x:Name="StrokeColorPickerControl"/>
+                    </Popup>
+                    <ComboBox Width="80" SelectedIndex="1">
+                        <ComboBoxItem Content="Нет"/>
+                        <ComboBoxItem Content="1 пкс"/>
+                        <ComboBoxItem Content="2 пкс"/>
+                    </ComboBox>
+                </StackPanel>
+                <Slider x:DataType="vm:MainWindowViewModel" x:Name="StrokeSlider" Width="120" Minimum="0" Maximum="100" Value="{Binding StrokeWidth, Mode=TwoWay}" TickFrequency="5" IsSnapToTickEnabled="True" ValueChanged="StrokeSlider_ValueChanged"/>
+                <TextBlock x:Name="StrokePercentText" Text="75%" VerticalAlignment="Center" Width="40"/>
+            </StackPanel>
+        </Border>
+
+        <!-- 3. Основная рабочая область -->
         <Grid Grid.Row="2" Grid.ColumnSpan="3" Classes="MainForeGround" ColumnDefinitions="Auto,*,Auto" RowDefinitions="*,Auto">
-            <components:ToolsSidebar x:Name="ToolsSidebarControl" Grid.Column="0"/>
-            <GridSplitter Grid.Column="0" Width="4" Background="Transparent" HorizontalAlignment="Right"/>
 
-            <components:EditorWorkspace x:Name="EditorWorkspaceControl" Grid.Column="1"/>
+            <!-- Левая панель инструментов -->
+            <Border Grid.Column="0" Classes="Panel" Width="98" Margin="4,4,0,4">
+                <ScrollViewer>
+                    <StackPanel Margin="4" Spacing="2">
+                        <TextBlock Text="TOOLS" FontWeight="Bold" FontSize="11" Margin="6,4,6,8" Foreground="#999" HorizontalAlignment="Center"/>
+                        <RadioButton Classes="ToolButton" Content="🖱" Tag="Выделение" ToolTip.Tip="Выделение (V)&#x0A;Ctrl+Click — мульти-выделение" IsChecked="True" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="✂️" Tag="Прямое выделение" ToolTip.Tip="Прямое выделение (A)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+						<RadioButton Classes="ToolButton" Content="🧽" Tag="Ластик" ToolTip.Tip="Ластик (E)&#x0A;Удаляет фигуру при клике" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        
+                        <Separator Margin="8,4" Height="1" Background="#3F3F46"/>
+                        
+                        <RadioButton Classes="ToolButton" Content="───" Tag="Линия" ToolTip.Tip="Линия (L)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content=" ⃢ " Tag="Прямоугольник" ToolTip.Tip="Прямоугольник (Rect)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="⬛" Tag="Квадрат" ToolTip.Tip="Квадрат (Sq)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="🕳️" Tag="Эллипс" ToolTip.Tip="Эллипс (E)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="⭕" Tag="Круг" ToolTip.Tip="Круг (Cir)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="✒️" Tag="Перо" ToolTip.Tip="Перо (P)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="⬟" Tag="Пятиугольник" ToolTip.Tip="Пятиугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="⬢" Tag="Шестиугольник" ToolTip.Tip="Шестиугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="⯃" Tag="Семиугольник" ToolTip.Tip="Семиугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="🛑" Tag="Восьмиугольник" ToolTip.Tip="Восьмиугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="★" Tag="Пентаграмма" ToolTip.Tip="Пентаграмма" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="△" Tag="Треугольник" ToolTip.Tip="Треугольник" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        
+                        <Separator Margin="8,4" Height="1" Background="#3F3F46"/>
+                        
+                        <RadioButton Classes="ToolButton" Content="🔤" Tag="Текст" ToolTip.Tip="Текст (T)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="✋" Tag="Рука" ToolTip.Tip="Рука (H)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                        <RadioButton Classes="ToolButton" Content="🔍" Tag="Масштаб" ToolTip.Tip="Масштаб (Z)" Checked="ToolButton_Checked" GroupName="ToolsGroup"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <GridSplitter Grid.Column="0" Width="4" Background="Transparent" HorizontalAlignment="Right"/>
+            <!-- Холст + линейки + вкладки документов -->
+            <Grid Grid.Column="1" RowDefinitions="Auto,Auto,*,Auto" Margin="0,4,0,4">
+                <!-- Вкладки документов -->
+                <Border Grid.Row="0" Classes="ThemePanel" Height="32" BorderThickness="0,0,0,1">
+                    <StackPanel Orientation="Horizontal" Spacing="2" Margin="8,0">
+                        <Border Classes="DocumentTab" Padding="12,6,32,6" CornerRadius="4,4,0,0">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="Безымянный.vec" FontWeight="SemiBold"/>
+                                <TextBlock Text="×" Foreground="#999" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Button Content="＋" Width="32" Height="32" Background="Transparent" Foreground="#999"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Горизонтальная линейка -->
+                <Border Grid.Row="1" Classes="ThemeRuler" Height="20" BorderThickness="0,1">
+                    <Canvas>
+                        <TextBlock Canvas.Left="40" Text="0" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="140" Text="100" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="240" Text="200" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="340" Text="300" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="440" Text="400" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="540" Text="500" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="640" Text="600" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="740" Text="700" FontSize="10" Foreground="#888"/>
+                        <TextBlock Canvas.Left="840" Text="800" FontSize="10" Foreground="#888"/>
+                    </Canvas>
+                </Border>
+
+                <!-- Холст с контекстным меню -->
+                <Grid Grid.Row="2" ColumnDefinitions="20,*">
+                    <!-- Вертикальная линейка -->
+                    <Border Classes="ThemeRuler" BorderThickness="1,0">
+                        <Canvas>
+                            <TextBlock Canvas.Top="40" Text="0" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Canvas.Top="140" Text="100" FontSize="10" HorizontalAlignment="Center"/>
+                            <TextBlock Canvas.Top="240" Text="200" FontSize="10" HorizontalAlignment="Center"/>
+                        </Canvas>
+                    </Border>
+
+                    <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                        <Border x:Name="CanvasBorder" Width="900" Height="620" Background="{StaticResource CheckerBrush}" BorderBrush="#0078D4" BorderThickness="2" CornerRadius="4" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 10 30 0 #00000088">
+                            
+                            <!-- Контекстное меню по правой кнопке мыши -->
+                            <Border.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Поворот">
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="↶ Влево (90°)" Command="{Binding Commands.RotateLeft}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="↷ Вправо (90°)" Command="{Binding Commands.RotateRight}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="↻ На 180°" Command="{Binding Commands.RotateFull}"/>
+                                    </MenuItem>
+                                    
+                                    <MenuItem Header="Масштаб">
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuScaleUp" Header="🔍 Увеличить (150%)" Command="{Binding Commands.ZoomIn}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuScaleDown" Header="🔎 Уменьшить (50%)" Command="{Binding Commands.ZoomOut}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuScaleFit" Header="По размеру окна" Command="{Binding Commands.ZoomFit}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuScaleOriginal" Header="Оригинальный размер" Command="{Binding Commands.ZoomFit}"/>
+                                    </MenuItem>
+                                    
+                                    <MenuItem Header="Отражение">
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuFlipHorizontal" Header="↔ По горизонтали" Command="{Binding Commands.FlipHorizontal}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuFlipVertical" Header="↕ По вертикали" Command="{Binding Commands.FlipVertical}"/>
+                                    </MenuItem>
+                                    
+                                    <Separator/>
+                                    
+                                    <MenuItem Header="Перемещение">
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" x:Name="MenuMoveUp" Header="↑ Вверх (10px)" Command="{Binding Commands.MoveUp}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel"  x:Name="MenuMoveDown" Header="↓ Вниз (10px)" Command="{Binding Commands.MoveDown}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel"  x:Name="MenuMoveLeft" Header="← Влево (10px)" Command="{Binding Commands.MoveLeft}"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel"  x:Name="MenuMoveRight" Header="→ Вправо (10px)" Command="{Binding Commands.MoveRight}"/>
+                                    </MenuItem>
+
+                                    <MenuItem Header="Группа">
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="📦 Сгруппировать" Command="{Binding Commands.GroupSelected}" InputGesture="Ctrl+G"/>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="📦 Разгруппировать" Command="{Binding Commands.UngroupSelected}" InputGesture="Ctrl+Shift+G"/>
+                                    </MenuItem>
+                                    
+                                    <Separator/>
+                                     <MenuItem Header="Цвет обводки">
+                                        <!-- Быстрые пресеты -->
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Red}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🔴" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Красный"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Green}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🟢" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Зелёный"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Blue}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🔵" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Синий"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Yellow}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🟡" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Жёлтый"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.White}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="⚪" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Белый"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Black}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="⚫" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Чёрный"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <Separator/>
+                                         <!-- Кнопка "Выбрать цвет..." через команду ViewModel -->
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Header="🎨 Выбрать цвет…" Command="{Binding Commands.OpenStrokeColorPickerCommand}">
+                                            <MenuItem.Icon>
+                                                <Border Width="20" Height="20" CornerRadius="2" Background="{Binding StrokeColor.Color, Converter={StaticResource ColorToBrushConverter}}"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                    </MenuItem>
+                                    <Separator/>
+                                     <MenuItem Header="Цвет заливки">
+                                        <!-- Быстрые пресеты -->
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Red}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🔴" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Красный"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Green}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🟢" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Зелёный"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Blue}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🔵" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Синий"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Yellow}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="🟡" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Жёлтый"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.White}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="⚪" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Белый"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        <MenuItem x:DataType="vm:MainWindowViewModel" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Black}">
+                                            <MenuItem.Header>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="⚫" FontFamily="Segoe UI Emoji, Segoe UI Symbol" FontSize="14"/>
+                                                    <TextBlock Text="Чёрный"/>
+                                                </StackPanel>
+                                            </MenuItem.Header>
+                                        </MenuItem>
+                                        
+                                        <Separator/>
+                                         <!-- Кнопка "Выбрать цвет..." через команду ViewModel -->
+                                        <MenuItem Header="🎨 Выбрать цвет…" 
+                                                  Command="{Binding Commands.OpenFillColorPickerCommand}">
+                                            <MenuItem.Icon>
+                                                <Border Width="20" Height="20" CornerRadius="2" 
+                                                        Background="{Binding FillColor.Color, Converter={StaticResource ColorToBrushConverter}}"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                    </MenuItem>
+                                    <Separator/>
+                                    <MenuItem x:DataType="vm:MainWindowViewModel"  x:Name="MenuDelete" Header="🗑️ Удалить объект" Command="{Binding Commands.DeleteSelected}"/>
+                                    <MenuItem x:DataType="vm:MainWindowViewModel"  x:Name="MenuDuplicate" Header="📋 Дублировать" Command="{Binding Commands.DuplicateSelected}"/>
+                                </ContextMenu>
+                            </Border.ContextMenu>
+
+                            <Grid>
+                                <Rectangle x:DataType="vm:MainWindowViewModel" Fill="White" IsVisible="{Binding Canvas.IsCanvasActive}" Opacity="1"/>
+                                <local:VectorCanvasControl x:DataType="vm:MainWindowViewModel" x:Name="VectorCanvas" CanvasViewModel="{Binding Canvas}" Zoom="{Binding Canvas.Zoom}" OffsetX="{Binding Canvas.OffsetX}" OffsetY="{Binding Canvas.OffsetY}" PointerMoved="OnCanvasPointerMoved" PointerPressed="OnCanvasPointerPressed" PointerReleased="OnCanvasPointerReleased"/>
+                                <Canvas IsHitTestVisible="False">
+                                    <Rectangle x:DataType="vm:MainWindowViewModel" Stroke="#0078D4" StrokeThickness="1" StrokeDashArray="4,2" Fill="#0078D420" Canvas.Left="{Binding SelectionStart.X}" Canvas.Top="{Binding SelectionStart.Y}" IsVisible="{Binding IsSelectingArea}">
+                                        
+                                        <!-- ✅ MultiBinding для Width: SelectionEnd.X - SelectionStart.X -->
+                                        <Rectangle.Width>
+                                            <MultiBinding Converter="{StaticResource MathSubtract}">
+                                                <Binding Path="SelectionEnd.X"/>
+                                                <Binding Path="SelectionStart.X"/>
+                                            </MultiBinding>
+                                        </Rectangle.Width>
+                                        
+                                        <!-- ✅ MultiBinding для Height: SelectionEnd.Y - SelectionStart.Y -->
+                                        <Rectangle.Height>
+                                            <MultiBinding Converter="{StaticResource MathSubtract}">
+                                                <Binding Path="SelectionEnd.Y"/>
+                                                <Binding Path="SelectionStart.Y"/>
+                                            </MultiBinding>
+                                        </Rectangle.Height>
+                                    </Rectangle>
+                                </Canvas>
+
+                                <!-- Текст-подсказка (исчезает при активации) -->
+                                 <TextBlock x:DataType="vm:MainWindowViewModel" Classes="CanvasText" Text="Ваш векторный холст here&#x0A;(Добавьте прямоугольник или эллипс)&#x0A;&#x0A;ПКМ для контекстного меню" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="18" TextAlignment="Center" IsVisible="{Binding Canvas.IsCanvasActive, Converter={x:Static converters:InvertedBoolConverter.Instance}}"/>
+                                
+                                <!-- Подсказка при активном холсте -->
+                                <TextBlock x:DataType="vm:MainWindowViewModel" Classes="CanvasText" Text="✏️ Выберите инструмент и рисуйте" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,20" FontSize="14" Foreground="#888" IsVisible="{Binding Canvas.IsCanvasActive}"/>
+                            </Grid>
+                        </Border>
+                    </ScrollViewer>
+                </Grid>
+
+                <Border Grid.Row="3" Classes="ThemeRuler" Height="20"/>
+            </Grid>
+
             <GridSplitter Grid.Column="1" Width="4" Background="Transparent" HorizontalAlignment="Right"/>
 
-            <components:PropertiesSidebar Grid.Column="2"/>
+            <!-- Правая панель -->
+            <Border Grid.Column="2" Classes="Panel" Width="300" Margin="0,4,4,4">
+                <TabControl Background="Transparent" TabStripPlacement="Top">
+                    <TabItem Header="Свойства">
+                        <ScrollViewer Padding="12">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="Трансформация" FontWeight="SemiBold"/>
+                                <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto">
+                                    <TextBlock Text="X:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Row="0" Grid.Column="1" Text="120" Classes="PropertyInput"/>
+                                    <TextBlock Text="Y:" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                    <TextBox Grid.Row="0" Grid.Column="3" Text="240" Classes="PropertyInput"/>
+                                </Grid>
+
+                                <TextBlock Text="Внешний вид" FontWeight="SemiBold" Margin="0,8,0,4"/>
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Заливка"/>
+                                    <Border x:DataType="vm:MainWindowViewModel"  Classes="ColorPreview" Height="28" Background="{Binding FillColor.Color, Converter={StaticResource ColorToBrushConverter}}" CornerRadius="3" BorderBrush="#555" BorderThickness="1"/>
+                                    <TextBlock Text="Обводка"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                     <Border x:DataType="vm:MainWindowViewModel" Classes="ColorPreview" Height="28" Width="28" Background="{Binding StrokeColor.Color, Converter={StaticResource ColorToBrushConverter}}" CornerRadius="3" BorderBrush="#555" BorderThickness="1"/>
+                                        <Border x:DataType="vm:MainWindowViewModel" Background="#555" CornerRadius="2" Height="28" Width="{Binding StrokeWidth}" MinWidth="1" MaxWidth="20" HorizontalAlignment="Left"/>
+                                        <TextBlock x:DataType="vm:MainWindowViewModel" Text="{Binding StrokeWidth, StringFormat='{}{0}px'}" VerticalAlignment="Center" Foreground="#999"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <Slider x:DataType="vm:MainWindowViewModel" x:Name="OpacitySlider" Minimum="0" Maximum="100" Value="{Binding Opacity, Mode=TwoWay}" TickPlacement="BottomRight"/>
+                                    <TextBlock x:DataType="vm:MainWindowViewModel" Text="{Binding Opacity, StringFormat='{}{0:F0}%'}" HorizontalAlignment="Center" Foreground="#999"/>
+                                    
+                                    <!-- Превью прозрачности -->
+                                    <Border Height="20" CornerRadius="3" BorderBrush="#555" BorderThickness="1">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                                <GradientStop x:DataType="vm:MainWindowViewModel" Color="{Binding FillColor.Color, Converter={StaticResource DrawingColorConverter}}" Offset="0"/>
+                                                <GradientStop x:DataType="vm:MainWindowViewModel" Color="Transparent" Offset="{Binding Opacity, Converter={StaticResource PercentToDoubleConverter}}"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <TabItem Header="Слои">
+    <DockPanel>
+        <!-- Кнопки управления слоями -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8" Spacing="4">
+            <Button x:DataType="vm:MainWindowViewModel" 
+                    Content="📄 ＋" 
+                    Command="{Binding Commands.CreateNewLayer}" 
+                    ToolTip.Tip="Создать новый слой"
+                    Width="36" Height="28"/>
+            <Button x:DataType="vm:MainWindowViewModel" 
+					Content="🗑️" 
+                    Command="{Binding Commands.DeleteLayerCommand}" 
+                    CommandParameter="{Binding Canvas.ActiveLayer}"
+                    ToolTip.Tip="Удалить выбранный слой"
+                    Width="36" Height="28"
+                    IsEnabled="{Binding Canvas.Layers.Count, Converter={StaticResource IsGreaterThanOneConverter}}"/>
+            <Button x:DataType="vm:MainWindowViewModel" 
+					Content="🔒" 
+                    Command="{Binding Commands.ToggleLockLayerCommand}" 
+                    CommandParameter="{Binding Canvas.ActiveLayer}"
+                    ToolTip.Tip="Заблокировать/разблокировать слой"
+                    Width="36" Height="28"/>
+        </StackPanel>
+        
+        <!-- Список слоёв -->
+        <ListBox x:DataType="vm:MainWindowViewModel" 
+                 ItemsSource="{Binding Canvas.Layers}" 
+                 SelectedItem="{Binding Canvas.ActiveLayer}" 
+                 Background="Transparent" BorderThickness="0">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:LayerViewModel">
+            <Grid ColumnDefinitions="20,*,Auto,Auto,Auto" Margin="2">
+                <!-- Видимость -->
+				<ToggleButton Grid.Column="0" 
+             				  IsChecked="{Binding IsVisible, Mode=TwoWay}"
+							  Command="{Binding $parent[ListBox].DataContext.Commands.ToggleVisibilityLayerCommand}"
+                              CommandParameter="{Binding}"
+                              Content="👁️" 
+                              FontFamily="Segoe UI Emoji, Segoe UI Symbol, Arial Unicode MS"
+							  Width="30" Height="30"
+                              ToolTip.Tip="Показать/скрыть слой"/>
+                
+                <!-- Имя слоя -->
+                <TextBox Width="120" Grid.Column="1" Text="{Binding Name}" 
+                        Classes="PropertyInput" Margin="4,0"/>
+                
+                <!-- Блокировка -->
+                <ToggleButton Grid.Column="2" 
+                             IsChecked="{Binding IsLocked, Mode=TwoWay}"
+                             Command="{Binding $parent[ListBox].DataContext.Commands.ToggleLockLayerCommand}"
+                             CommandParameter="{Binding}"
+                             Content="🔓" Width="30" Height="30"
+                             ToolTip.Tip="Заблокировать/разблокировать слой"/>
+                
+                <!-- Удаление -->
+                <Button Grid.Column="3" Content="🗑️" Width="30" Height="30"
+                       Command="{Binding $parent[ListBox].DataContext.Commands.DeleteLayerCommand}"
+                       CommandParameter="{Binding}"
+                       ToolTip.Tip="Удалить слой"
+                       IsEnabled="{Binding $parent[ListBox].DataContext.Canvas.Layers.Count, Converter={StaticResource IsGreaterThanOneConverter}}"/>
+                
+                <!-- Индикатор активности (показывает, что слой видим) -->
+                <Border Grid.Column="4" Width="8" Height="8" CornerRadius="4"
+                       Background="{Binding IsVisible, Converter={StaticResource BoolToBrushConverter}}"
+                       IsVisible="{Binding IsVisible}"/>
+            </Grid>
+        </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </DockPanel>
+</TabItem>
+                    <TabItem Header="История"/>
+                </TabControl>
+            </Border>
         </Grid>
 
-        <Grid Grid.Row="3" Grid.ColumnSpan="3" ColumnDefinitions="*, Auto" Background="#252526">
-            <components:StatusBarView Grid.Column="0"/>
-            <TextBlock Name="CoordsDisplay" 
-                        Grid.Column="1" 
-                        Text="X: 0, Y: 0" 
-                        Foreground="#999" 
-                        FontSize="11" 
-                        Margin="0,0,15,0" 
-                        VerticalAlignment="Center"/>
-        </Grid>
+        <!-- 4. Статус-бар -->
+        <Border 
+            Grid.Row="3" 
+            Grid.ColumnSpan="3" 
+            Classes="ThemeStatusBar" 
+            Height="26" 
+            BorderThickness="0,1,0,0">
+            <Grid Margin="12,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:DataType="vm:MainWindowViewModel" Text="{Binding StatusMessage}" VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" Margin="0,0,20,0">
+                    <TextBlock x:DataType="vm:MainWindowViewModel" Text="{Binding CoordinatesText}" Foreground="#999"/>
+                    <TextBlock Text="Ш: 480  В: 320" Foreground="#999"/>
+                </StackPanel>
+                <TextBlock Grid.Column="2" Text="100%" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                <TextBlock Grid.Column="3" Text="RGB" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+        <Popup x:Name="FillColorPopup"
+               Placement="Bottom"
+               PlacementTarget="{Binding ElementName=FillColorButton}"
+               IsOpen="{Binding IsColorPickerOpen, Mode=TwoWay}"
+               >
+            
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundChromeHighBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="8">
+                <views:ColorPickerPopup x:Name="FillColorPickerControl"
+                                        Width="220"
+                                        ColorSelected="OnFillColorSelected"
+                                        Cancelled="OnFillColorCancelled"/>
+            </Border>
+        </Popup>
+        <Popup x:Name="StrokeColorPopupNew"
+               Placement="Bottom"
+               PlacementTarget="{Binding ElementName=StrokeColorButton}"
+               IsOpen="{Binding IsStrokeColorPickerOpen, Mode=TwoWay}"
+               >
+            
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundChromeHighBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="8">
+                <views:ColorPickerPopup x:Name="StrokeColorPickerControlNew"
+                                        Width="220"
+                                        ColorSelected="OnStrokeColorSelected"
+                                        Cancelled="OnStrokeColorCancelled"/>
+            </Border>
+        </Popup>
     </Grid>
 </Window>
