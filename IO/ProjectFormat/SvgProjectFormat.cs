@@ -113,8 +113,11 @@ public class SvgProjectFormat : IProjectFormat
         // fill и stroke с поддержкой альфа-канала через fill-opacity / stroke-opacity
         var (fill,   fillOp)   = SvgColorWithOpacity(figure.FillColor,  "fill");
         var (stroke, strokeOp) = SvgColorWithOpacity(figure.LineColor,  "stroke");
-        var sw     = F(figure.Thickness);
-        var opProp = figure.Opacity < 0.9999 ? $";opacity:{F(figure.Opacity)}" : "";
+        var sw = F(figure.Thickness);
+        // figure.Opacity — прозрачность (0=непрозрачный, 1=прозрачный),
+        // SVG opacity — непрозрачность (0=прозрачный, 1=непрозрачный) → инвертируем
+        var svgOpacity = 1.0 - figure.Opacity;
+        var opProp = svgOpacity < 0.9999 ? $";opacity:{F(svgOpacity)}" : "";
         var style  = $"fill:{fill}{fillOp};stroke:{stroke}{strokeOp};stroke-width:{sw};stroke-linejoin:round;paint-order:markers fill stroke{opProp}";
         var tr     = figure.Rotation != 0
             ? $"\n{indent}  transform=\"rotate({F(figure.Rotation)} {F(figure.Center.X)} {F(figure.Center.Y)})\""
@@ -122,7 +125,8 @@ public class SvgProjectFormat : IProjectFormat
 
         if (figure is GroupViewModel grp)
         {
-            var grpStyle = figure.Opacity < 0.9999 ? $" style=\"opacity:{F(figure.Opacity)}\"" : "";
+            var grpSvgOp  = 1.0 - figure.Opacity;
+            var grpStyle = grpSvgOp < 0.9999 ? $" style=\"opacity:{F(grpSvgOp)}\"" : "";
             sb.AppendLine($"{indent}<g id=\"g{figId++}\"{grpStyle}{tr}>");
             foreach (var child in grp.Children)
                 AppendFigure(sb, child, indent + "  ", ref figId);
@@ -235,8 +239,9 @@ public class SvgProjectFormat : IProjectFormat
         // Цвет + отдельный opacity канала (fill-opacity / stroke-opacity)
         var fill    = ParseColorWithOpacity(Get("fill"),   Get("fill-opacity"));
         var stroke  = ParseColorWithOpacity(Get("stroke"), Get("stroke-opacity"));
-        var sw      = ParseDouble(Get("stroke-width"), 1.0);
-        var opacity = ParseDouble(Get("opacity"), 1.0);
+        var sw = ParseDouble(Get("stroke-width"), 1.0);
+        // SVG opacity (0=прозрачный, 1=непрозрачный) → figure.Opacity (0=непрозрачный, 1=прозрачный)
+        var opacity = 1.0 - ParseDouble(Get("opacity"), 1.0);
 
         return el.Name.LocalName switch
         {
