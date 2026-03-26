@@ -16,7 +16,7 @@ public class BmpExporter : ImageExporterBase
     /// </summary>
     public static async Task ExportAsync(string fullPath, Control canvasControl)
     {
-        await Task.Yield();
+        //await Task.Yield();
         
         DebugLog.Write($"[BMP] Starting export to: {fullPath}");
         
@@ -148,13 +148,11 @@ public class BmpExporter : ImageExporterBase
         if (source.ColorType == SKColorType.Bgra8888 && source.AlphaType == SKAlphaType.Opaque)
             return source;
         var result = new SKBitmap(source.Width, source.Height, SKColorType.Bgra8888, SKAlphaType.Opaque);
-        
         using var canvas = new SKCanvas(result);
         using var bgPaint = new SKPaint { Color = SKColors.White };
         canvas.DrawRect(0, 0, result.Width, result.Height, bgPaint);
         using var srcPaint = new SKPaint { IsAntialias = true, FilterQuality = SKFilterQuality.High };
         canvas.DrawBitmap(source, 0, 0, srcPaint);
-        
         return result;
     }
 }
