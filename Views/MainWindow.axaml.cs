@@ -13,7 +13,6 @@ using graphic_editor.Controls;
 using graphic_editor.Models;
 using graphic_editor.Geometry;
 using ReactiveUI;
-
 using graphic_editor.Helpers;
 using graphic_editor.IO.Export;
 using graphic_editor.IO.Services;
@@ -26,11 +25,14 @@ namespace graphic_editor;
 /// <summary>
 /// Основное (главное) окно графического редактора.
 /// Отвечает за инициализацию UI, привязку ViewModel и обработку событий ввода с холста.
-/// </summary> 
+/// </summary>
 public partial class MainWindow : Window
 {
 	/// <summary>Приватное поле для хранения экземпляра ViewModel главного окна.</summary>
 	private MainWindowViewModel? _viewModel;
+	private readonly ProjectService _projectService = new();
+	private string? _currentFilePath;
+
 	private readonly ProjectService _projectService = new();
 	private string? _currentFilePath;
 
@@ -258,7 +260,6 @@ public partial class MainWindow : Window
         ColorPopup.IsOpen = false;
     }
 
-	// ── Сохранение / Открытие / Экспорт ─────────────────────────────────────
 
     private async void SaveMenuItem_Click(object? sender, RoutedEventArgs e)
     {
@@ -307,51 +308,42 @@ public partial class MainWindow : Window
 
     private async void ExportButton_Click(object? sender, RoutedEventArgs e)
     {
-		if (_viewModel?.Canvas == null) return;
-		var fileTypes = new[]
-    	{
-        	new FilePickerFileType("PNG изображение (*.png)") { Patterns = ["*.png"] },
-        	new FilePickerFileType("JPEG изображение (*.jpg;*.jpeg)") { Patterns = ["*.jpg", "*.jpeg"] },
-        	new FilePickerFileType("BMP изображение (*.bmp)") { Patterns = ["*.bmp"] },
-        	new FilePickerFileType("PDF документ (*.pdf)") { Patterns = ["*.pdf"] },
-        	// new FilePickerFileType("RTF документ (*.rtf)") { Patterns = ["*.rtf"] },
-    	};
-
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = "Экспорт изображения",
-        	DefaultExtension = "png",
-        	FileTypeChoices = fileTypes,
-        	SuggestedFileName = "Безымянный"
+            DefaultExtension = "png",
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("PNG изображение (*.png)")  { Patterns = ["*.png"] },
+                new FilePickerFileType("JPEG изображение (*.jpg)") { Patterns = ["*.jpg", "*.jpeg"] },
+                new FilePickerFileType("PDF документ (*.pdf)")     { Patterns = ["*.pdf"] },
+            }
         });
 
-        if (file?.Path?.LocalPath is not string path) return;
+        if (file?.Path?.LocalPath is not string path || _viewModel == null) return;
 
         var vectorCanvas = this.FindControl<VectorCanvasControl>("VectorCanvas");
         if (vectorCanvas == null) return;
 
-        _viewModel.StatusMessage = "Экспорт изображения...";
+
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        var format = ext switch
+        {
+            ".jpg" or ".jpeg" => RasterExporter.Format.Jpeg,
+            ".pdf"            => RasterExporter.Format.Pdf,
+            _                 => RasterExporter.Format.Png,
+        };
+
+        _viewModel.StatusMessage = $"Экспорт {ext.TrimStart('.').ToUpper()}...";
         try
         {
-            var extension = Path.GetExtension(path).ToLowerInvariant();
-        
-        	Task exportTask = extension switch
-        	{
-            	".png" => PngExporter.ExportAsync(path, vectorCanvas),
-            	".jpg" or ".jpeg" => JpegExporter.ExportAsync(path, vectorCanvas, quality: 90),
-            	".bmp" => BmpExporter.ExportAsync(path, vectorCanvas),
-            	".pdf" => PdfExporter.ExportAsync(path, vectorCanvas, _viewModel.Canvas),
-				// ".rtf" => RtfExporter.ExportAsync(path, vectorCanvas),
-           		 _ => throw new NotSupportedException($"Формат {extension} не поддерживается")
-        	};
-			await exportTask;
-        
-       	 	_viewModel.StatusMessage = $"Экспортировано: {Path.GetFileName(path)} ✓";
+            await RasterExporter.ExportAsync(path, vectorCanvas, format);
+            _viewModel.StatusMessage = $"Экспортировано: {Path.GetFileName(path)} ✓";
         }
         catch (Exception ex)
         {
-            DebugLog.Write($"[ERROR] Export failed: {ex.Message}");
-        	_viewModel.StatusMessage = $"Ошибка экспорта: {ex.Message} ✗";
+            _viewModel.StatusMessage = $"Ошибка экспорта ✗";
+            _ = ex;
         }
     }
 
@@ -390,6 +382,7 @@ public partial class MainWindow : Window
             _viewModel.StatusMessage = "Ошибка сохранения ✗";
         }
     }
+
 
 protected override void OnKeyDown(KeyEventArgs e)
 {

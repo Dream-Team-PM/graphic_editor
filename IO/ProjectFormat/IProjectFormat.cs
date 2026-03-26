@@ -1,4 +1,5 @@
-﻿using graphic_editor.ViewModels;
+
+using graphic_editor.ViewModels;
 
 namespace graphic_editor.IO.ProjectFormat;
 
@@ -8,3 +9,4 @@ public interface IProjectFormat
     Task SaveAsync(string fullPath, CanvasViewModel canvas);
     Task LoadAsync(string fullPath, CanvasViewModel canvas);
 }
+

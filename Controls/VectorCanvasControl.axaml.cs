@@ -1,10 +1,5 @@
 ﻿// Controls/VectorCanvasControl.axaml.cs
 
-using System;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.Linq;
-
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
@@ -477,7 +472,7 @@ public partial class VectorCanvasControl : UserControl
             SquareViewModel square => CreateShapeFromVertices(square, isEllipse: false),
             CircleViewModel circle => CreateShapeFromVertices(circle, isEllipse: true),
             RectangleViewModel rect => CreateShapeFromVertices(rect, isEllipse: false),
-            EllipseViewModel ellipse => CreateShapeFromVertices(ellipse, isEllipse: true),
+           EllipseViewModel ellipse => CreateShapeFromVertices(ellipse, isEllipse: true),
             PenPointViewModel pen => CreatePenPoint(pen), 
             LineViewModel lin => CreateLine(lin),
             TextViewModel text => CreateText(text),

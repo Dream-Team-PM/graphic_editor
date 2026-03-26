@@ -33,6 +33,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly IFileService _fileService; /// <summary>Сервис для работы с файлами проекта (сохранение/загрузка).</summary>
     private readonly HistoryViewModel _history; /// <summary>Менеджер истории действий для поддержки Undo/Redo.</summary>
 	private readonly LayerViewModel _layer; /// <summary>Менеджер истории действий для поддержки Undo/Redo.</summary>
+
     private bool _isDragging;
     private Point2D _dragStart;
     private Dictionary<Guid, List<(double X, double Y)>> _originalVertices; // для каждой фигуры список исходных координат вершин

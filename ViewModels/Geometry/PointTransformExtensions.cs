@@ -2,7 +2,6 @@
 
 using ReactiveUI;
 using System.Reflection.Metadata.Ecma335;
-
 namespace graphic_editor.Geometry;
 
 /// <summary>
@@ -25,7 +24,6 @@ public static class PointTransformExtensions
         double cos = Math.Cos(rad);
         double sin = Math.Sin(rad);
         var r = point - center;
-        
         Point2D rfl = new Point2D(
             center.X + r.X * cos - r.Y * sin,
             center.Y + r.X * sin + r.Y * cos

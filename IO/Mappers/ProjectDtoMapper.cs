@@ -1,4 +1,5 @@
-﻿using graphic_editor.IO.Dto;
+
+using graphic_editor.IO.Dto;
 using graphic_editor.ViewModels;
 
 namespace graphic_editor.IO.Mappers;
@@ -23,3 +24,4 @@ public static class ProjectDtoMapper
         };
     }
 }
+

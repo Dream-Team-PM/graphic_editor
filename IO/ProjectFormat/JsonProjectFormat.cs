@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using graphic_editor.IO.Dto;
 using graphic_editor.IO.Mappers;
@@ -35,19 +36,19 @@ public class JsonProjectFormat : IProjectFormat
 
         foreach (var layerDto in dto.Layers)
         {
-            // var layer = new LayerViewModel(layerDto.Id, layerDto.Name)
-            // {
-            //     IsVisible = layerDto.IsVisible,
-            //     IsLocked = layerDto.IsLocked
-            // };
+            var layer = new LayerViewModel(layerDto.Id, layerDto.Name)
+            {
+                IsVisible = layerDto.IsVisible,
+                IsLocked = layerDto.IsLocked
+            };
 
             foreach (var figDto in layerDto.Figures)
             {
                 var figure = FigureDtoMapper.ToViewModel(figDto);
-                //layer.Figures.Add(figure);
+                layer.Figures.Add(figure);
             }
 
-            //canvas.Layers.Add(layer);
+            canvas.Layers.Add(layer);
         }
 
         canvas.Zoom = dto.Zoom;

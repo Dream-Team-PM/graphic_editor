@@ -1,8 +1,9 @@
-﻿using System.Text.Json.Serialization;
+
+using System.Text.Json.Serialization;
 
 namespace graphic_editor.IO.Dto;
 
-//[JsonPolymorphic(TEpRDGGnaYbJGTz4gMcj99yqt65ajcAY4B = "$type")]
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
 [JsonDerivedType(typeof(RectangleDto), "Rectangle")]
 [JsonDerivedType(typeof(EllipseDto), "Ellipse")]
 [JsonDerivedType(typeof(CircleDto), "Circle")]

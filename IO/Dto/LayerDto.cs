@@ -1,4 +1,5 @@
-﻿namespace graphic_editor.IO.Dto;
+
+namespace graphic_editor.IO.Dto;
 
 public class LayerDto
 {
@@ -8,3 +9,4 @@ public class LayerDto
     public bool IsLocked { get; set; }
     public List<FigureDto> Figures { get; set; } = new();
 }
+

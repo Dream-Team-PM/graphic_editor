@@ -1,4 +1,6 @@
-﻿using graphic_editor.IO.ProjectFormat;
+
+using graphic_editor.IO.ProjectFormat;
+
 using graphic_editor.ViewModels;
 
 namespace graphic_editor.IO.Services;
@@ -47,3 +49,4 @@ public class ProjectService : IProjectService
         }
     }
 }
+
