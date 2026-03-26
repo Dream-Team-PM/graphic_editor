@@ -61,6 +61,17 @@ public record EditorCommands(
     ReactiveCommand<(double x, double y), Unit> UpdateCoordinates, /// <summary>Reactive UI обновление координат.</summary>
     ReactiveCommand<Point2D, Unit> CanvasClicked, /// <summary>Reactive UI реакция канваса на клик.</summary>
 
+    // Слой
+    ReactiveCommand<LayerViewModel, Unit> DeleteLayerCommand,
+    ReactiveCommand<LayerViewModel, Unit> ToggleLockLayerCommand,
+    ReactiveCommand<LayerViewModel, Unit> ToggleVisibilityLayerCommand,
+	ReactiveCommand<Unit, Unit> DuplicateLayerCommand,
+    ReactiveCommand<Unit, Unit> MergeWithPreviousLayerCommand,
+    ReactiveCommand<Unit, Unit> BringLayerForwardCommand,
+    ReactiveCommand<Unit, Unit> SendLayerBackwardCommand,
+    ReactiveCommand<Unit, Unit> BringLayerToFrontCommand,
+    ReactiveCommand<Unit, Unit> SendLayerToBackCommand,
+
     ReactiveCommand<Unit, Unit> SaveCommand, /// <summary>Reactive UI команда сохранения.</summary>
     ReactiveCommand<Avalonia.Media.Color, Unit> SetStrokeColorCommand, /// <summary>Reactive UI команда установка толщины.</summary>
     ReactiveCommand<Avalonia.Media.Color, Unit> SetFillColorCommand, /// <summary>Reactive UI команда установка заполнения.</summary>
