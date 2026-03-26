@@ -128,6 +128,7 @@ public partial class MainWindowViewModel : ViewModelBase
     
     private bool _isColorPickerOpen; /// <summary>Флаг открытия палитры цветов для заливки.</summary>
     private bool _isStrokeColorPickerOpen; /// <summary>Флаг открытия палитры цветов для обводки.</summary>
+    private List<FigureViewModel> _clipboard = new();
 
     // ========== СВОЙСТВА ==========
     
@@ -279,6 +280,11 @@ public partial class MainWindowViewModel : ViewModelBase
         figure.Thickness = StrokeWidth;
     }
 
+    public bool CanGroup => Canvas?.SelectedFigures?.Count >= 2;
+    public bool CanUngroup => Canvas?.SelectedFigure is GroupViewModel;
+     public bool CanAlign => Canvas?.SelectedFigures?.Count >= 2;
+     public bool CanDistribute => Canvas?.SelectedFigures?.Count >= 3;
+
     // ========== КОНСТРУКТОР ==========
     
     /// <summary>
@@ -349,7 +355,44 @@ public partial class MainWindowViewModel : ViewModelBase
     		BringLayerForwardCommand: ReactiveCommand.Create(BringLayerForward),
     		SendLayerBackwardCommand: ReactiveCommand.Create(SendLayerBackward),
     		BringLayerToFrontCommand: ReactiveCommand.Create(BringLayerToFront),
-    		SendLayerToBackCommand: ReactiveCommand.Create(SendLayerToBack)
+    		SendLayerToBackCommand: ReactiveCommand.Create(SendLayerToBack),
+            // Выделение
+    CutSelected: ReactiveCommand.Create(CutSelected, this.WhenAnyValue(x => x.HasSelection)),
+    CopySelected: ReactiveCommand.Create(CopySelected, this.WhenAnyValue(x => x.HasSelection)),
+    PasteSelected: ReactiveCommand.Create(PasteSelected),
+    SelectAllCommand: ReactiveCommand.Create(SelectAll),
+    DeselectAllCommand: ReactiveCommand.Create(DeselectAll),
+    
+    // Порядок (Z-order)
+    BringToFront: ReactiveCommand.Create(BringSelectedToFront, this.WhenAnyValue(x => x.HasSelection)),
+    SendToBack: ReactiveCommand.Create(SendSelectedToBack, this.WhenAnyValue(x => x.HasSelection)),
+    BringForward: ReactiveCommand.Create(BringSelectedForward, this.WhenAnyValue(x => x.HasSelection)),
+    SendBackward: ReactiveCommand.Create(SendSelectedBackward, this.WhenAnyValue(x => x.HasSelection)),
+    
+    // Выравнивание
+    AlignLeft: ReactiveCommand.Create(AlignLeft, this.WhenAnyValue(x => x.CanAlign)),
+    AlignCenter: ReactiveCommand.Create(AlignCenter, this.WhenAnyValue(x => x.CanAlign)),
+    AlignRight: ReactiveCommand.Create(AlignRight, this.WhenAnyValue(x => x.CanAlign)),
+    AlignTop: ReactiveCommand.Create(AlignTop, this.WhenAnyValue(x => x.CanAlign)),
+    AlignMiddle: ReactiveCommand.Create(AlignMiddle, this.WhenAnyValue(x => x.CanAlign)),
+    AlignBottom: ReactiveCommand.Create(AlignBottom, this.WhenAnyValue(x => x.CanAlign)),
+    
+    // Распределение
+    DistributeHorizontal: ReactiveCommand.Create(DistributeHorizontal, this.WhenAnyValue(x => x.CanDistribute)),
+    DistributeVertical: ReactiveCommand.Create(DistributeVertical, this.WhenAnyValue(x => x.CanDistribute)),
+    
+    // Масштаб фигур
+    ScaleUp: ReactiveCommand.Create(ScaleSelectedUp, this.WhenAnyValue(x => x.HasSelection)),
+    ScaleDown: ReactiveCommand.Create(ScaleSelectedDown, this.WhenAnyValue(x => x.HasSelection)),
+    ScaleToFit: ReactiveCommand.Create(ScaleSelectedToFit, this.WhenAnyValue(x => x.HasSelection)),
+    
+    // Стиль
+    SetStrokeWidthCommand: ReactiveCommand.Create<string>(SetStrokeWidth, this.WhenAnyValue(x => x.HasSelection)),
+    SetFillNone: ReactiveCommand.Create(SetFillNone, this.WhenAnyValue(x => x.HasSelection)),
+    SetStrokeNone: ReactiveCommand.Create(SetStrokeNone, this.WhenAnyValue(x => x.HasSelection)),
+    
+    // Свойства
+    OpenPropertiesCommand: ReactiveCommand.Create(OpenProperties, this.WhenAnyValue(x => x.HasSelection))
         );
         
         // Реактивная привязка: обновление текста координат при изменении MouseX/MouseY
@@ -371,7 +414,345 @@ public partial class MainWindowViewModel : ViewModelBase
             .Subscribe(thickness => ApplyStyleToSelected(f => f.Thickness = thickness));
         this.WhenAnyValue(x => x.Opacity)
             .Subscribe(opacity => ApplyStyleToSelected(f => f.Opacity = opacity / 100.0));
+        this.WhenAnyValue(x => x.Canvas.SelectedFigures)
+        .Subscribe(_ => 
+        {
+            this.RaisePropertyChanged(nameof(CanGroup));
+            this.RaisePropertyChanged(nameof(CanUngroup));
+            this.RaisePropertyChanged(nameof(CanAlign));
+            this.RaisePropertyChanged(nameof(CanDistribute));
+        });
     }
+
+    private void CutSelected()
+{
+    CopySelected();
+    DeleteSelected();
+}
+
+private void CopySelected()
+{
+    _clipboard.Clear();
+    if (Canvas?.SelectedFigures?.Any() == true)
+    {
+        foreach (var figure in Canvas.SelectedFigures)
+        {
+            _clipboard.Add(figure.Clone());
+        }
+    }
+    StatusMessage = $"Скопировано {_clipboard.Count} объектов";
+}
+
+private void PasteSelected()
+{
+    if (_clipboard.Count == 0 || Canvas?.ActiveLayer == null) return;
+    
+    foreach (var original in _clipboard)
+    {
+        var clone = original.Clone();
+        clone.Move(20, 20); // Смещение при вставке
+        Canvas.AddFigure(clone);
+    }
+    StatusMessage = $"Вставлено {_clipboard.Count} объектов";
+}
+
+private void SelectAll()
+{
+    if (Canvas?.ActiveLayer == null) return;
+    
+    foreach (var f in Canvas.SelectedFigures)
+        f.IsSelected = false;
+    Canvas.SelectedFigures.Clear();
+    
+    foreach (var figure in Canvas.ActiveLayer.Figures)
+    {
+        figure.IsSelected = true;
+        Canvas.SelectedFigures.Add(figure);
+    }
+    Canvas.RaisePropertyChanged(nameof(Canvas.SelectedFigures));
+    StatusMessage = $"Выделено {Canvas.SelectedFigures.Count} объектов";
+}
+
+private void DeselectAll()
+{
+    foreach (var f in Canvas.SelectedFigures)
+        f.IsSelected = false;
+    Canvas.SelectedFigures.Clear();
+    Canvas.SelectedFigure = null;
+    StatusMessage = "Выделение снято";
+}
+
+
+// === Порядок отрисовки ===
+private void BringSelectedToFront()
+{
+    if (Canvas?.ActiveLayer == null || !Canvas.SelectedFigures.Any()) return;
+    
+    foreach (var figure in Canvas.SelectedFigures.ToList())
+    {
+        Canvas.ActiveLayer.Figures.Remove(figure);
+        Canvas.ActiveLayer.Figures.Add(figure);
+    }
+    StatusMessage = "На передний план";
+}
+
+private void SendSelectedToBack()
+{
+    if (Canvas?.ActiveLayer == null || !Canvas.SelectedFigures.Any()) return;
+    
+    foreach (var figure in Canvas.SelectedFigures.Reverse().ToList())
+    {
+        Canvas.ActiveLayer.Figures.Remove(figure);
+        Canvas.ActiveLayer.Figures.Insert(0, figure);
+    }
+    StatusMessage = "На задний план";
+}
+
+private void BringSelectedForward()
+{
+    if (Canvas?.ActiveLayer == null || !Canvas.SelectedFigures.Any()) return;
+    
+    foreach (var figure in Canvas.SelectedFigures.ToList())
+    {
+        var index = Canvas.ActiveLayer.Figures.IndexOf(figure);
+        if (index < Canvas.ActiveLayer.Figures.Count - 1)
+        {
+            Canvas.ActiveLayer.Figures.Move(index, index + 1);
+        }
+    }
+    StatusMessage = "Перемещено вперёд";
+}
+
+
+private void SendSelectedBackward()
+{
+    if (Canvas?.ActiveLayer == null || !Canvas.SelectedFigures.Any()) return;
+    
+    foreach (var figure in Canvas.SelectedFigures.ToList())
+    {
+        var index = Canvas.ActiveLayer.Figures.IndexOf(figure);
+        if (index > 0)
+        {
+            Canvas.ActiveLayer.Figures.Move(index, index - 1);
+        }
+    }
+    StatusMessage = "Перемещено назад";
+}
+
+// === Выравнивание ===
+private void AlignLeft() => AlignSelected(AlignType.Left);
+private void AlignCenter() => AlignSelected(AlignType.Center);
+private void AlignRight() => AlignSelected(AlignType.Right);
+private void AlignTop() => AlignSelected(AlignType.Top);
+private void AlignMiddle() => AlignSelected(AlignType.Middle);
+private void AlignBottom() => AlignSelected(AlignType.Bottom);
+
+private enum AlignType { Left, Center, Right, Top, Middle, Bottom }
+
+private void AlignSelected(AlignType type)
+{
+    if (Canvas?.SelectedFigures?.Count < 2) return;
+    
+    var bounds = Canvas.SelectedFigures.Select(f => f.GetBoundingBox()).ToList();
+    double target = type switch
+    {
+        AlignType.Left => bounds.Min(b => b.MinX),
+        AlignType.Center => bounds.Average(b => (b.MinX + b.MaxX) / 2),
+        AlignType.Right => bounds.Max(b => b.MaxX),
+        AlignType.Top => bounds.Min(b => b.MinY),
+        AlignType.Middle => bounds.Average(b => (b.MinY + b.MaxY) / 2),
+        AlignType.Bottom => bounds.Max(b => b.MaxY),
+        _ => 0
+    };
+    foreach (var figure in Canvas.SelectedFigures)
+    {
+        var bbox = figure.GetBoundingBox();
+        double current = type switch
+        {
+            AlignType.Left or AlignType.Right or AlignType.Center => 
+                type == AlignType.Center ? (bbox.MinX + bbox.MaxX) / 2 : 
+                type == AlignType.Left ? bbox.MinX : bbox.MaxX,
+            _ => type == AlignType.Middle ? (bbox.MinY + bbox.MaxY) / 2 : 
+                type == AlignType.Top ? bbox.MinY : bbox.MaxY
+        };
+        
+        double delta = target - current;
+        if (type is AlignType.Left or AlignType.Center or AlignType.Right)
+            figure.Move(delta, 0);
+        else
+            figure.Move(0, delta);
+    }
+    StatusMessage = $"Выровнено по {(type == AlignType.Center || type == AlignType.Middle ? "центру" : type.ToString().ToLower())}";
+}
+
+// === Распределение ===
+private void DistributeHorizontal()
+{
+    if (Canvas?.SelectedFigures?.Count < 3) return;
+    
+    var sorted = Canvas.SelectedFigures
+        .OrderBy(f => f.GetBoundingBox().MinX)
+        .ToList();
+    
+    double min = sorted.First().GetBoundingBox().MinX;
+    double max = sorted.Last().GetBoundingBox().MaxX;
+    double step = (max - min) / (sorted.Count - 1);
+    
+    for (int i = 1; i < sorted.Count - 1; i++)
+    {
+        var figure = sorted[i];
+        var bbox = figure.GetBoundingBox();
+        double target = min + i * step - (bbox.MinX + bbox.MaxX) / 2;
+        figure.Move(target, 0);
+    }
+    StatusMessage = "Распределено горизонтально";
+}
+
+private void DistributeVertical()
+{
+    if (Canvas?.SelectedFigures?.Count < 3) return;
+    
+    var sorted = Canvas.SelectedFigures
+        .OrderBy(f => f.GetBoundingBox().MinY)
+        .ToList();
+    
+    double min = sorted.First().GetBoundingBox().MinY;
+    double max = sorted.Last().GetBoundingBox().MaxY;
+    double step = (max - min) / (sorted.Count - 1);
+    
+    for (int i = 1; i < sorted.Count - 1; i++)
+    {
+        var figure = sorted[i];
+        var bbox = figure.GetBoundingBox();
+        double target = min + i * step - (bbox.MinY + bbox.MaxY) / 2;
+        figure.Move(0, target);
+    }
+    StatusMessage = "Распределено вертикально";
+}
+
+// === Масштаб фигур ===
+private void ScaleSelectedUp() => ScaleSelected(1.1, 1.1);
+private void ScaleSelectedDown() => ScaleSelected(0.9, 0.9);
+
+private void ScaleSelected(double sx, double sy)
+{
+    if (Canvas?.SelectedFigures?.Any() != true) return;
+    
+    foreach (var figure in Canvas.SelectedFigures)
+    {
+        figure.Scale(sx, sy);
+    }
+    StatusMessage = $"Масштаб: {sx:P0}";
+}
+
+private void ScaleSelectedToFit()
+{
+    // Заглушка: масштабирует выделенное под размер видимой области
+    StatusMessage = "Масштабирование по размеру холста (заглушка)";
+}
+
+// === Стиль ===
+private void SetStrokeWidth(string widthStr)
+{
+    if (int.TryParse(widthStr, out var width) && Canvas?.SelectedFigures?.Any() == true)
+    {
+        foreach (var f in Canvas.SelectedFigures)
+            f.Thickness = width;
+        StrokeWidth = width;
+        StatusMessage = $"Толщина: {width} пкс";
+    }
+}
+
+private void SetFillNone()
+{
+    if (Canvas?.SelectedFigures?.Any() == true)
+    {
+        foreach (var f in Canvas.SelectedFigures)
+            f.FillColor = System.Drawing.Color.Transparent;
+        StatusMessage = "Заливка: нет";
+    }
+}
+
+private void SetStrokeNone()
+{
+    if (Canvas?.SelectedFigures?.Any() == true)
+    {
+        foreach (var f in Canvas.SelectedFigures)
+            f.LineColor = System.Drawing.Color.Transparent;
+        StatusMessage = "Обводка: нет";
+    }
+}
+
+private void OpenProperties()
+{
+    // TODO: Открыть панель свойств объекта
+    StatusMessage = "Свойства объекта (заглушка)";
+}
+
+// === Управление слоями ===
+
+private void MergeLayerWithPrevious()
+{
+    if (Canvas?.ActiveLayer == null) return;
+    var index = Canvas.Layers.IndexOf(Canvas.ActiveLayer);
+    if (index <= 0)
+    {
+        StatusMessage = "Нет предыдущего слоя для объединения";
+        return;
+    }
+    
+    var current = Canvas.ActiveLayer;
+    var previous = Canvas.Layers[index - 1];
+    
+    foreach (var figure in current.Figures.ToList())
+    {
+        previous.Figures.Add(figure);
+        current.Figures.Remove(figure);
+    }
+    
+    Canvas.Layers.Remove(current);
+    Canvas.ActiveLayer = previous;
+    
+    StatusMessage = $"Слой '{current.Name}' объединён с '{previous.Name}'";
+}
+
+private void BringActiveLayerToFront()
+{
+    if (Canvas?.ActiveLayer == null) return;
+    Canvas.Layers.Remove(Canvas.ActiveLayer);
+    Canvas.Layers.Add(Canvas.ActiveLayer);
+    StatusMessage = "Слой перемещён на передний план";
+}
+
+private void SendActiveLayerToBack()
+{
+    if (Canvas?.ActiveLayer == null) return;
+    Canvas.Layers.Remove(Canvas.ActiveLayer);
+    Canvas.Layers.Insert(0, Canvas.ActiveLayer);
+    StatusMessage = "Слой перемещён на задний план";
+}
+
+private void BringActiveLayerForward()
+{
+    if (Canvas?.ActiveLayer == null) return;
+    var index = Canvas.Layers.IndexOf(Canvas.ActiveLayer);
+    if (index < Canvas.Layers.Count - 1)
+    {
+        Canvas.Layers.Move(index, index + 1);
+        StatusMessage = "Слой перемещён вперёд";
+    }
+}
+
+private void SendActiveLayerBackward()
+{
+    if (Canvas?.ActiveLayer == null) return;
+    var index = Canvas.Layers.IndexOf(Canvas.ActiveLayer);
+    if (index > 0)
+    {
+        Canvas.Layers.Move(index, index - 1);
+        StatusMessage = "Слой перемещён назад";
+    }
+}
 
     /// <summary>
     /// Создаёт модель проекта из текущего состояния редактора для сохранения.

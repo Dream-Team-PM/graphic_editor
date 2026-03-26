@@ -24,6 +24,29 @@ public record EditorCommands(
     // Выделение
     ReactiveCommand<Unit, Unit> DeleteSelected, /// <summary>Reactive UI удаление выбранной фигуры.</summary>
     ReactiveCommand<Unit, Unit> DuplicateSelected, /// <summary>Reactive UI дубликация выбранной фигуры.</summary>
+    ReactiveCommand<Unit, Unit> CutSelected,
+    ReactiveCommand<Unit, Unit> CopySelected,
+    ReactiveCommand<Unit, Unit> PasteSelected,
+    ReactiveCommand<Unit, Unit> SelectAllCommand,
+    ReactiveCommand<Unit, Unit> DeselectAllCommand,
+
+    // === Порядок (Z-order) ===
+    ReactiveCommand<Unit, Unit> BringToFront,
+    ReactiveCommand<Unit, Unit> SendToBack,
+    ReactiveCommand<Unit, Unit> BringForward,
+    ReactiveCommand<Unit, Unit> SendBackward,
+
+    // === Выравнивание ===
+    ReactiveCommand<Unit, Unit> AlignLeft,
+    ReactiveCommand<Unit, Unit> AlignCenter,
+    ReactiveCommand<Unit, Unit> AlignRight,
+    ReactiveCommand<Unit, Unit> AlignTop,
+    ReactiveCommand<Unit, Unit> AlignMiddle,
+    ReactiveCommand<Unit, Unit> AlignBottom,
+
+    // === Распределение ===
+    ReactiveCommand<Unit, Unit> DistributeHorizontal,
+    ReactiveCommand<Unit, Unit> DistributeVertical,
     
     // Трансформации
     ReactiveCommand<Unit, Unit> RotateLeft, /// <summary>Reactive UI вращение фигуры влево.</summary>
@@ -32,6 +55,9 @@ public record EditorCommands(
     ReactiveCommand<Unit, Unit> RotateFreeClick, /// <summary>Reactive UI полное вращение фигуры.</summary>
     ReactiveCommand<Unit, Unit> FlipHorizontal, /// <summary>Reactive UI отражение фигуры по горизонтали.</summary>
     ReactiveCommand<Unit, Unit> FlipVertical, /// <summary>Reactive UI отражение фигуры по вертикали.</summary>
+    ReactiveCommand<Unit, Unit> ScaleUp,
+    ReactiveCommand<Unit, Unit> ScaleDown,
+    ReactiveCommand<Unit, Unit> ScaleToFit,
 
     // Zoom
     ReactiveCommand<Unit, Unit> ZoomIn, /// <summary>Reactive UI приближение зума.</summary>
@@ -45,7 +71,6 @@ public record EditorCommands(
 
     // UI
     ReactiveCommand<Unit, Unit> ToggleTheme, /// <summary>Reactive UI переключение темы.</summary>
-    ReactiveCommand<Unit, Unit> CreateNewLayer, /// <summary>Reactive UI создание нового слоя.</summary>
     
     // Group
     ReactiveCommand<Unit, Unit> GroupSelected, /// <summary>Reactive UI создание группы.</summary>
@@ -62,6 +87,7 @@ public record EditorCommands(
     ReactiveCommand<Point2D, Unit> CanvasClicked, /// <summary>Reactive UI реакция канваса на клик.</summary>
 
     // Слой
+    ReactiveCommand<Unit, Unit> CreateNewLayer, /// <summary>Reactive UI создание нового слоя.</summary>
     ReactiveCommand<LayerViewModel, Unit> DeleteLayerCommand,
     ReactiveCommand<LayerViewModel, Unit> ToggleLockLayerCommand,
     ReactiveCommand<LayerViewModel, Unit> ToggleVisibilityLayerCommand,
@@ -72,11 +98,15 @@ public record EditorCommands(
     ReactiveCommand<Unit, Unit> BringLayerToFrontCommand,
     ReactiveCommand<Unit, Unit> SendLayerToBackCommand,
 
+    ReactiveCommand<string, Unit> SetStrokeWidthCommand,
+    ReactiveCommand<Unit, Unit> SetFillNone,
+    ReactiveCommand<Unit, Unit> SetStrokeNone,
     ReactiveCommand<Unit, Unit> SaveCommand, /// <summary>Reactive UI команда сохранения.</summary>
     ReactiveCommand<Avalonia.Media.Color, Unit> SetStrokeColorCommand, /// <summary>Reactive UI команда установка толщины.</summary>
     ReactiveCommand<Avalonia.Media.Color, Unit> SetFillColorCommand, /// <summary>Reactive UI команда установка заполнения.</summary>
     ReactiveCommand<Unit, Unit> OpenFillColorPickerCommand, /// <summary>Reactive UI команда открытия палитры цвета заполнения.</summary>
-    ReactiveCommand<Unit, Unit> OpenStrokeColorPickerCommand /// <summary>Reactive UI команда открытия палитры цвета линии.</summary>
+    ReactiveCommand<Unit, Unit> OpenStrokeColorPickerCommand, /// <summary>Reactive UI команда открытия палитры цвета линии.</summary>
+    ReactiveCommand<Unit, Unit> OpenPropertiesCommand
     
     // Pointer-команды можно добавить позже, когда вынесем через Behavior
     // ReactiveCommand<PointerData, Unit> CanvasPointerPressed,

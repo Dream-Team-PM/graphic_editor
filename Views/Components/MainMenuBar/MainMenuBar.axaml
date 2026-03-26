@@ -111,7 +111,191 @@
                     <MenuItem Header="Свойства слоя..." IsEnabled="False" Foreground="#666"/>
                 </MenuItem>
 
-                <MenuItem Header="_Объект"/>
+                <!-- Замените пустой <MenuItem Header="_Объект"/> на следующее: -->
+                <MenuItem Header="_Объект">
+                    <!-- Выделение -->
+                    <MenuItem Header="Выделить всё" 
+                              Command="{Binding Commands.SelectAllCommand}" 
+                              InputGesture="Ctrl+A"/>
+                    <MenuItem Header="Снять выделение" 
+                              Command="{Binding Commands.DeselectAllCommand}" 
+                              InputGesture="Ctrl+Shift+A"/>
+                    <Separator/>
+                    
+                    <!-- Основные действия -->
+                    <MenuItem Header="Удалить" 
+                              Command="{Binding Commands.DeleteSelected}" 
+                              InputGesture="Delete"
+                              IsEnabled="{Binding HasSelection}"/>
+                    <MenuItem Header="Дублировать" 
+                              Command="{Binding Commands.DuplicateSelected}" 
+                              InputGesture="Ctrl+D"
+                              IsEnabled="{Binding HasSelection}"/>
+                    <MenuItem Header="Вырезать" 
+                              Command="{Binding Commands.CutSelected}" 
+                              InputGesture="Ctrl+X"
+                              IsEnabled="{Binding HasSelection}"/>
+                    <MenuItem Header="Копировать" 
+                              Command="{Binding Commands.CopySelected}" 
+                              InputGesture="Ctrl+C"
+                              IsEnabled="{Binding HasSelection}"/>
+                    <MenuItem Header="Вставить" 
+                              Command="{Binding Commands.PasteSelected}" 
+                              InputGesture="Ctrl+V"/>
+                    <Separator/>
+                    
+                    <!-- Группировка -->
+                    <MenuItem Header="Сгруппировать" 
+                              Command="{Binding Commands.GroupSelected}" 
+                              InputGesture="Ctrl+G"
+                              IsEnabled="{Binding CanGroup}"/>
+                    <MenuItem Header="Разгруппировать" 
+                              Command="{Binding Commands.UngroupSelected}" 
+                              InputGesture="Ctrl+Shift+G"
+                              IsEnabled="{Binding CanUngroup}"/>
+                    <Separator/>
+                    
+                    <!-- Порядок отрисовки (Z-order) -->
+                    <MenuItem Header="На передний план" 
+                              Command="{Binding Commands.BringToFront}" 
+                              InputGesture="Ctrl+Shift+OemCloseBrackets"
+                              IsEnabled="{Binding HasSelection}"/>
+                    <MenuItem Header="На задний план" 
+                              Command="{Binding Commands.SendToBack}" 
+                              InputGesture="Ctrl+Shift+OemOpenBrackets"
+                              IsEnabled="{Binding HasSelection}"/>
+                    <MenuItem Header="Переместить вперёд" 
+                              Command="{Binding Commands.BringForward}" 
+                              InputGesture="Ctrl+OemCloseBrackets"
+                              IsEnabled="{Binding HasSelection}"/>
+                    <MenuItem Header="Переместить назад" 
+                              Command="{Binding Commands.SendBackward}" 
+                              InputGesture="Ctrl+OemOpenBrackets"
+                              IsEnabled="{Binding HasSelection}"/>
+                    <Separator/>
+                    
+                    <!-- Выравнивание (активно при выделении ≥2 объектов) -->
+                    <MenuItem Header="Выровнять">
+                        <MenuItem Header="По левому краю" 
+                                  Command="{Binding Commands.AlignLeft}" 
+                                  IsEnabled="{Binding CanAlign}"/>
+                        <MenuItem Header="По центру (горизонтально)" 
+                                  Command="{Binding Commands.AlignCenter}" 
+                                  IsEnabled="{Binding CanAlign}"/>
+                        <MenuItem Header="По правому краю" 
+                                  Command="{Binding Commands.AlignRight}" 
+                                  IsEnabled="{Binding CanAlign}"/>
+                        <Separator/>
+                        <MenuItem Header="По верхнему краю" 
+                                  Command="{Binding Commands.AlignTop}" 
+                                  IsEnabled="{Binding CanAlign}"/>
+                        <MenuItem Header="По середине (вертикально)" 
+                                  Command="{Binding Commands.AlignMiddle}" 
+                                  IsEnabled="{Binding CanAlign}"/>
+                        <MenuItem Header="По нижнему краю" 
+                                  Command="{Binding Commands.AlignBottom}" 
+                                  IsEnabled="{Binding CanAlign}"/>
+                    </MenuItem>
+                    
+                    <!-- Распределение (активно при выделении ≥3 объектов) -->
+                    <MenuItem Header="Распределить">
+                        <MenuItem Header="Горизонтально" 
+                                  Command="{Binding Commands.DistributeHorizontal}" 
+                                  IsEnabled="{Binding CanDistribute}"/>
+                        <MenuItem Header="Вертикально" 
+                                  Command="{Binding Commands.DistributeVertical}" 
+                                  IsEnabled="{Binding CanDistribute}"/>
+                    </MenuItem>
+                    <Separator/>
+                    
+                    <!-- Трансформации -->
+                    <MenuItem Header="Поворот">
+                        <MenuItem Header="↶ Влево на 90°" 
+                                  Command="{Binding Commands.RotateLeft}" 
+                                  InputGesture="Ctrl+OemMinus"
+                                  IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="↷ Вправо на 90°" 
+                                  Command="{Binding Commands.RotateRight}" 
+                                  InputGesture="Ctrl+OemPlus"
+                                  IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="↻ На 180°" 
+                                  Command="{Binding Commands.RotateFull}" 
+                                  IsEnabled="{Binding HasSelection}"/>
+                        <Separator/>
+                        <MenuItem Header="Произвольно..." 
+                                  Command="{Binding Commands.RotateFreeClick}" 
+                                  IsEnabled="{Binding HasSelection}"/>
+                    </MenuItem>
+                    
+                    <MenuItem Header="Отражение">
+                        <MenuItem Header="↔ По горизонтали" 
+                                  Command="{Binding Commands.FlipHorizontal}" 
+                                  IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="↕ По вертикали" 
+                                  Command="{Binding Commands.FlipVertical}" 
+                                  IsEnabled="{Binding HasSelection}"/>
+                    </MenuItem>
+                    
+                    <MenuItem Header="Масштаб">
+                        <MenuItem Header="Увеличить на 10%" 
+                                  Command="{Binding Commands.ScaleUp}" 
+                                  IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="Уменьшить на 10%" 
+                                  Command="{Binding Commands.ScaleDown}" 
+                                  IsEnabled="{Binding HasSelection}"/>
+                        <Separator/>
+                        <MenuItem Header="По размеру холста" 
+                                  Command="{Binding Commands.ScaleToFit}" 
+                                  IsEnabled="{Binding HasSelection}"/>
+                    </MenuItem>
+                    <Separator/>
+                    
+                    <!-- Стиль -->
+                    <MenuItem Header="Заливка">
+                        <MenuItem Header="Нет" Command="{Binding Commands.SetFillNone}" IsEnabled="{Binding HasSelection}"/>
+                        <Separator/>
+                        <MenuItem Header="Красный" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Red}" IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="Зелёный" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Green}" IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="Синий" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Blue}" IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="Жёлтый" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Yellow}" IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="Белый" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.White}" IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="Чёрный" Command="{Binding Commands.SetFillColorCommand}" CommandParameter="{x:Static Colors.Black}" IsEnabled="{Binding HasSelection}"/>
+                        <Separator/>
+                        <MenuItem Header="Выбрать цвет…" 
+                                  Command="{Binding Commands.OpenFillColorPickerCommand}" 
+                                  IsEnabled="{Binding HasSelection}"/>
+                    </MenuItem>
+                    
+                    <MenuItem Header="Обводка">
+                        <MenuItem Header="Нет" Command="{Binding Commands.SetStrokeNone}" IsEnabled="{Binding HasSelection}"/>
+                        <Separator/>
+                        <MenuItem Header="Красный" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Red}" IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="Зелёный" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Green}" IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="Синий" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Blue}" IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="Жёлтый" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Yellow}" IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="Белый" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.White}" IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="Чёрный" Command="{Binding Commands.SetStrokeColorCommand}" CommandParameter="{x:Static Colors.Black}" IsEnabled="{Binding HasSelection}"/>
+                        <Separator/>
+                        <MenuItem Header="Выбрать цвет…" 
+                                  Command="{Binding Commands.OpenStrokeColorPickerCommand}" 
+                                  IsEnabled="{Binding HasSelection}"/>
+                    </MenuItem>
+                    
+                    <MenuItem Header="Толщина линии">
+                        <MenuItem Header="1 пкс" Command="{Binding Commands.SetStrokeWidthCommand}" CommandParameter="1" IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="2 пкс" Command="{Binding Commands.SetStrokeWidthCommand}" CommandParameter="2" IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="3 пкс" Command="{Binding Commands.SetStrokeWidthCommand}" CommandParameter="3" IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="5 пкс" Command="{Binding Commands.SetStrokeWidthCommand}" CommandParameter="5" IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="10 пкс" Command="{Binding Commands.SetStrokeWidthCommand}" CommandParameter="10" IsEnabled="{Binding HasSelection}"/>
+                    </MenuItem>
+                    <Separator/>
+                    
+                    <!-- Свойства -->
+                    <MenuItem Header="Свойства объекта..." 
+                              Command="{Binding Commands.OpenPropertiesCommand}" 
+                              InputGesture="Alt+Enter"
+                              IsEnabled="{Binding HasSelection}"/>
+                </MenuItem>
                 <!-- Меню "Справка" -->
                 <MenuItem Header="_Справка">
                     <MenuItem x:Name="AboutMenuItem" Header="О программе..."/>

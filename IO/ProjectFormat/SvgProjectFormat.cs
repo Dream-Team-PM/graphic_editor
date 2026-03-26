@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using graphic_editor.Geometry;
 using graphic_editor.ViewModels;
@@ -9,10 +10,7 @@ namespace graphic_editor.IO.ProjectFormat;
 
 /// <summary>
 /// Сохранение и загрузка проекта в формате SVG.
-/// Совместим с Inkscape, Illustrator, браузерами:
-///   — стили в атрибуте style="fill:...;stroke:...;" (CSS inline)
-///   — слои: inkscape:groupmode="layer" + читаемые id (layer1, layer2)
-///   — парсинг понимает и style-атрибут, и отдельные атрибуты
+/// Совместим с Inkscape, Illustrator, браузерами.
 /// </summary>
 public class SvgProjectFormat : IProjectFormat
 {
@@ -57,11 +55,8 @@ public class SvgProjectFormat : IProjectFormat
         var root = doc.Root ?? throw new InvalidDataException("Пустой SVG файл");
 
         canvas.Layers.Clear();
-
-        // Парсим встроенные CSS-классы из <defs><style>…</style></defs>
         var cssClasses = ParseEmbeddedCss(root);
 
-        // Элементы верхнего уровня, игнорируем <defs> и <title>
         var topLevel = root.Elements()
             .Where(e => e.Name.LocalName != "defs" && e.Name.LocalName != "title")
             .ToList();
@@ -106,27 +101,23 @@ public class SvgProjectFormat : IProjectFormat
             canvas.ActiveLayer = canvas.Layers[0];
     }
 
-    // ── Запись фигур (Inkscape-совместимый формат) ────────────────────────────
+    // ── Запись фигур ─────────────────────────────────────────────────────────
 
     private static void AppendFigure(StringBuilder sb, FigureViewModel figure, string indent, ref int figId)
     {
-        // fill и stroke с поддержкой альфа-канала через fill-opacity / stroke-opacity
-        var (fill,   fillOp)   = SvgColorWithOpacity(figure.FillColor,  "fill");
-        var (stroke, strokeOp) = SvgColorWithOpacity(figure.LineColor,  "stroke");
-        // Минимум 1px — так же как VectorCanvasControl (Math.Max(1, Thickness))
+        var (fill, fillOp) = SvgColorWithOpacity(figure.FillColor, "fill");
+        var (stroke, strokeOp) = SvgColorWithOpacity(figure.LineColor, "stroke");
         var sw = F(Math.Max(1.0, figure.Thickness));
-        // figure.Opacity — прозрачность (0=непрозрачный, 1=прозрачный),
-        // SVG opacity — непрозрачность (0=прозрачный, 1=непрозрачный) → инвертируем
         var svgOpacity = 1.0 - figure.Opacity;
         var opProp = svgOpacity < 0.9999 ? $";opacity:{F(svgOpacity)}" : "";
-        var style  = $"fill:{fill}{fillOp};stroke:{stroke}{strokeOp};stroke-width:{sw};stroke-linejoin:round;paint-order:markers fill stroke{opProp}";
-        var tr     = figure.Rotation != 0
+        var style = $"fill:{fill}{fillOp};stroke:{stroke}{strokeOp};stroke-width:{sw};stroke-linejoin:round;paint-order:markers fill stroke{opProp}";
+        var tr = figure.Rotation != 0
             ? $"\n{indent}  transform=\"rotate({F(figure.Rotation)} {F(figure.Center.X)} {F(figure.Center.Y)})\""
             : "";
 
         if (figure is GroupViewModel grp)
         {
-            var grpSvgOp  = 1.0 - figure.Opacity;
+            var grpSvgOp = 1.0 - figure.Opacity;
             var grpStyle = grpSvgOp < 0.9999 ? $" style=\"opacity:{F(grpSvgOp)}\"" : "";
             sb.AppendLine($"{indent}<g id=\"g{figId++}\"{grpStyle}{tr}>");
             foreach (var child in grp.Children)
@@ -178,14 +169,41 @@ public class SvgProjectFormat : IProjectFormat
                 break;
 
             case PenPointViewModel p:
-                // Точки пера — маленькие закрашенные круги; цвет берём из LineColor как fill
                 var (dotColor, dotOp) = SvgColorWithOpacity(p.LineColor, "fill");
+                var radius = Math.Max(2, p.Thickness / 2.0);
                 sb.AppendLine($"{indent}<circle");
                 sb.AppendLine($"{indent}  style=\"fill:{dotColor}{dotOp};stroke:none\"");
                 sb.AppendLine($"{indent}  id=\"dot{id}\"");
                 sb.AppendLine($"{indent}  cx=\"{F(p.X)}\"");
                 sb.AppendLine($"{indent}  cy=\"{F(p.Y)}\"");
-                sb.AppendLine($"{indent}  r=\"{F(p.Thickness / 2.0)}\" />");
+                sb.AppendLine($"{indent}  r=\"{F(radius)}\" />");
+                break;
+
+            // ✅ Полигоны: треугольник, пяти-, шести-, семи-, восьмиугольник
+            case PolygonViewModel polygon when polygon is not RegularPolygonViewModel && polygon is not PentagramViewModel:
+                var polyPoints = string.Join(" ", polygon.Vertices.Select(v => $"{F(v.X)},{F(v.Y)}"));
+                sb.AppendLine($"{indent}<polygon");
+                sb.AppendLine($"{indent}  style=\"{style}\"");
+                sb.AppendLine($"{indent}  id=\"poly{id}\"");
+                sb.AppendLine($"{indent}  points=\"{polyPoints}\"{tr} />");
+                break;
+
+            // ✅ Правильные многоугольники (пяти-, шести-, семи-, восьмиугольник)
+            case RegularPolygonViewModel regular:
+                var regPoints = string.Join(" ", regular.Vertices.Select(v => $"{F(v.X)},{F(v.Y)}"));
+                sb.AppendLine($"{indent}<polygon");
+                sb.AppendLine($"{indent}  style=\"{style}\"");
+                sb.AppendLine($"{indent}  id=\"regpoly{id}\"");
+                sb.AppendLine($"{indent}  points=\"{regPoints}\"{tr} />");
+                break;
+
+            // ✅ Пентаграмма (звезда)
+            case PentagramViewModel star:
+                var starPoints = string.Join(" ", star.Vertices.Select(v => $"{F(v.X)},{F(v.Y)}"));
+                sb.AppendLine($"{indent}<polygon");
+                sb.AppendLine($"{indent}  style=\"{style}\"");
+                sb.AppendLine($"{indent}  id=\"star{id}\"");
+                sb.AppendLine($"{indent}  points=\"{starPoints}\"{tr} />");
                 break;
 
             default:
@@ -194,13 +212,15 @@ public class SvgProjectFormat : IProjectFormat
         }
     }
 
+    // ── Обновление границ для viewBox ───────────────────────────────────────
+
     private static void UpdateBounds(FigureViewModel f, ref double maxX, ref double maxY)
     {
         switch (f)
         {
-            case RectangleViewModel r:
-                maxX = Math.Max(maxX, r.X + r.Width + 20);
-                maxY = Math.Max(maxY, r.Y + r.Height + 20);
+            case RectangleViewModel rr:
+                maxX = Math.Max(maxX, rr.X + rr.Width + 20);
+                maxY = Math.Max(maxY, rr.Y + rr.Height + 20);
                 break;
             case CircleViewModel c:
                 maxX = Math.Max(maxX, c.Center.X + c.Radius + 20);
@@ -214,6 +234,18 @@ public class SvgProjectFormat : IProjectFormat
                 maxX = Math.Max(maxX, Math.Max(l.X1, l.X2) + 20);
                 maxY = Math.Max(maxY, Math.Max(l.Y1, l.Y2) + 20);
                 break;
+            case PenPointViewModel p:
+                var r = Math.Max(2, p.Thickness / 2.0);
+                maxX = Math.Max(maxX, p.X + r + 20);
+                maxY = Math.Max(maxY, p.Y + r + 20);
+                break;
+            case PolygonViewModel poly:
+                foreach (var v in poly.Vertices)
+                {
+                    maxX = Math.Max(maxX, v.X + 20);
+                    maxY = Math.Max(maxY, v.Y + 20);
+                }
+                break;
             case GroupViewModel g:
                 foreach (var child in g.Children)
                     UpdateBounds(child, ref maxX, ref maxY);
@@ -221,27 +253,24 @@ public class SvgProjectFormat : IProjectFormat
         }
     }
 
-    // ── Парсинг фигур ─────────────────────────────────────────────────────────
+    // ── Парсинг фигур ────────────────────────────────────────────────────────
 
     private static FigureViewModel? ParseElement(XElement el,
         Dictionary<string, string>? cssClasses = null)
     {
         cssClasses ??= new Dictionary<string, string>();
 
-        // Приоритет стилей: inline style > CSS-класс > отдельный атрибут
         var inlineCss = ParseStyle(el.Attribute("style")?.Value);
-        var classCss  = ResolveClassStyle(el.Attribute("class")?.Value, cssClasses);
+        var classCss = ResolveClassStyle(el.Attribute("class")?.Value, cssClasses);
 
         string? Get(string prop) =>
             inlineCss.GetValueOrDefault(prop)
             ?? classCss.GetValueOrDefault(prop)
             ?? el.Attribute(prop)?.Value;
 
-        // Цвет + отдельный opacity канала (fill-opacity / stroke-opacity)
-        var fill    = ParseColorWithOpacity(Get("fill"),   Get("fill-opacity"));
-        var stroke  = ParseColorWithOpacity(Get("stroke"), Get("stroke-opacity"));
+        var fill = ParseColorWithOpacity(Get("fill"), Get("fill-opacity"));
+        var stroke = ParseColorWithOpacity(Get("stroke"), Get("stroke-opacity"));
         var sw = ParseDouble(Get("stroke-width"), 1.0);
-        // SVG opacity (0=прозрачный, 1=непрозрачный) → figure.Opacity (0=непрозрачный, 1=прозрачный)
         var opacity = 1.0 - ParseDouble(Get("opacity"), 1.0);
 
         return el.Name.LocalName switch
@@ -273,26 +302,114 @@ public class SvgProjectFormat : IProjectFormat
                 ParseDouble(el.Attribute("y2")?.Value, 100),
                 stroke, sw, fill, opacity),
 
+            "polygon" => ParsePolygon(el, fill, stroke, sw, opacity),
+
             "g" => new GroupViewModel(
                 el.Elements()
                     .Select(e => ParseElement(e, cssClasses))
                     .Where(f => f != null)
                     .Select(f => f!)),
 
-            // <path> — Illustrator конвертирует все фигуры в кривые Безье.
-            // Их нельзя вернуть в rect/circle без трассировки, пропускаем.
-            "path" => null,
+            "path" => null, // Игнорируем пути — их нельзя надёжно конвертировать обратно
 
             _ => null
         };
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    /// <summary>
+    /// Парсит &lt;polygon&gt; и определяет тип фигуры по количеству вершин.
+    /// </summary>
+    private static FigureViewModel? ParsePolygon(XElement el, Color fill, Color stroke, double sw, double opacity)
+    {
+        var pointsAttr = el.Attribute("points")?.Value;
+        if (string.IsNullOrEmpty(pointsAttr)) return null;
+
+        var points = ParsePoints(pointsAttr);
+        if (points.Count < 3) return null;
+
+        // 🔍 Определяем тип по количеству вершин и геометрии
+        return points.Count switch
+        {
+            3 => new TriangleViewModel(points[0], points[1], points[2], stroke, sw, fill, opacity),
+            5 => new PentagonViewModel(AverageCenter(points), DistanceToCenter(points, 0), stroke, sw, fill, opacity),
+            6 => new HexagonViewModel(AverageCenter(points), DistanceToCenter(points, 0), stroke, sw, fill, opacity),
+            7 => new HeptagonViewModel(AverageCenter(points), DistanceToCenter(points, 0), stroke, sw, fill, opacity),
+            8 => new OctagonViewModel(AverageCenter(points), DistanceToCenter(points, 0), stroke, sw, fill, opacity),
+            10 when IsPentagram(points) => new PentagramViewModel(AverageCenter(points), DistanceToCenter(points, 0), stroke, sw, fill, opacity),
+            _ => CreateGenericPolygon(points, stroke, sw, fill, opacity)
+        };
+    }
 
     /// <summary>
-    /// Вытаскивает CSS-классы из &lt;defs&gt;&lt;style&gt;…&lt;/style&gt;&lt;/defs&gt;.
-    /// Возвращает словарь: ".className" → "prop1:val1;prop2:val2"
+    /// Создаёт произвольный полигон, если тип не определён.
     /// </summary>
+    private static FigureViewModel CreateGenericPolygon(List<Point2D> points, Color stroke, double sw, Color fill, double opacity)
+    {
+        // Создаём базовый PolygonViewModel через динамический вызов
+        var polygon = new DynamicPolygonViewModel(points, stroke, sw, fill, opacity);
+        return polygon;
+    }
+
+    /// <summary>
+    /// Временный класс для произвольных полигонов при загрузке.
+    /// </summary>
+    private class DynamicPolygonViewModel : PolygonViewModel
+    {
+        public DynamicPolygonViewModel(IEnumerable<Point2D> points, Color lineColor, double thickness, Color fillColor, double opacity)
+            : base(points, lineColor, thickness, fillColor, opacity)
+        {
+            Name = "Полигон";
+        }
+
+        public override FigureViewModel Clone()
+        {
+            return new DynamicPolygonViewModel(
+                Vertices.Select(v => v.ToPoint()),
+                LineColor, Thickness, FillColor, Opacity);
+        }
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+
+    private static List<Point2D> ParsePoints(string pointsAttr)
+    {
+        var result = new List<Point2D>();
+        foreach (var pair in pointsAttr.Split(new[] { ' ', '\t', '\n', ',' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var coords = pair.Split(',');
+            if (coords.Length == 2 &&
+                double.TryParse(coords[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var x) &&
+                double.TryParse(coords[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var y))
+            {
+                result.Add(new Point2D(x, y));
+            }
+        }
+        return result;
+    }
+
+    private static Point2D AverageCenter(List<Point2D> points) =>
+        new Point2D(points.Average(p => p.X), points.Average(p => p.Y));
+
+    private static double DistanceToCenter(List<Point2D> points, int index)
+    {
+        var center = AverageCenter(points);
+        return Math.Sqrt(Math.Pow(points[index].X - center.X, 2) + Math.Pow(points[index].Y - center.Y, 2));
+    }
+
+    /// <summary>
+    /// Проверяет, является ли набор из 10 точек пентаграммой (чередование радиусов).
+    /// </summary>
+    private static bool IsPentagram(List<Point2D> points)
+    {
+        if (points.Count != 10) return false;
+        var center = AverageCenter(points);
+        var distances = points.Select(p => p.DistanceTo(center)).OrderBy(d => d).ToList();
+        // В пентаграмме 5 коротких и 5 длинных радиусов
+        var shortAvg = distances.Take(5).Average();
+        var longAvg = distances.Skip(5).Average();
+        return longAvg / shortAvg > 2.0; // Коэффициент ~2.618 для правильной звезды
+    }
+
     private static Dictionary<string, string> ParseEmbeddedCss(XElement root)
     {
         var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -302,13 +419,12 @@ public class SvgProjectFormat : IProjectFormat
         foreach (var styleEl in styleElements)
         {
             var css = styleEl.Value;
-            // Ищем паттерн: .className { prop: value; ... }
-            var regex = new System.Text.RegularExpressions.Regex(
+            var regex = new Regex(
                 @"\.([^{,\s]+)\s*\{([^}]+)\}",
-                System.Text.RegularExpressions.RegexOptions.Singleline);
-            foreach (System.Text.RegularExpressions.Match m in regex.Matches(css))
+                RegexOptions.Singleline);
+            foreach (Match m in regex.Matches(css))
             {
-                var key   = "." + m.Groups[1].Value.Trim();
+                var key = "." + m.Groups[1].Value.Trim();
                 var props = m.Groups[2].Value.Trim();
                 result[key] = props;
             }
@@ -316,10 +432,6 @@ public class SvgProjectFormat : IProjectFormat
         return result;
     }
 
-    /// <summary>
-    /// Разрешает значение атрибута class="st0 st1 …" в словарь CSS-свойств.
-    /// Inline style перекрывает класс — приоритет решается в ParseElement.
-    /// </summary>
     private static Dictionary<string, string> ResolveClassStyle(
         string? classAttr, Dictionary<string, string> cssClasses)
     {
@@ -338,7 +450,6 @@ public class SvgProjectFormat : IProjectFormat
         return result;
     }
 
-    /// <summary>Разбирает style="prop1:val1;prop2:val2" в словарь.</summary>
     private static Dictionary<string, string> ParseStyle(string? style)
     {
         var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -352,26 +463,19 @@ public class SvgProjectFormat : IProjectFormat
         return dict;
     }
 
-    /// <summary>
-    /// Возвращает (colorString, opacityProp) для использования в SVG style.
-    /// Пример: FillColor с A=128 → ("#FF0000", ";fill-opacity:0.50")
-    /// </summary>
     private static (string color, string opacityProp) SvgColorWithOpacity(Color c, string propName)
     {
         if (c.A == 0) return ("none", "");
         var rgb = $"#{c.R:X2}{c.G:X2}{c.B:X2}";
-        var op  = c.A < 255 ? $";{propName}-opacity:{F(c.A / 255.0)}" : "";
+        var op = c.A < 255 ? $";{propName}-opacity:{F(c.A / 255.0)}" : "";
         return (rgb, op);
     }
 
-    /// <summary>
-    /// Парсит SVG-цвет с учётом отдельного атрибута fill-opacity / stroke-opacity.
-    /// </summary>
     private static Color ParseColorWithOpacity(string? colorValue, string? opacityValue)
     {
         var c = ParseColor(colorValue);
-        if (c.A == 0) return c;                          // "none" → прозрачный
-        if (string.IsNullOrEmpty(opacityValue)) return c; // нет opacity → как есть
+        if (c.A == 0) return c;
+        if (string.IsNullOrEmpty(opacityValue)) return c;
         var op = ParseDouble(opacityValue, 1.0);
         return Color.FromArgb((int)Math.Round(op * 255), c.R, c.G, c.B);
     }
@@ -408,7 +512,6 @@ public class SvgProjectFormat : IProjectFormat
 
         var named = Color.FromName(value);
         if (named.A != 0) return named;
-
         return Color.Transparent;
     }
 
