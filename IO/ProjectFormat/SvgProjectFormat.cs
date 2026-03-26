@@ -58,14 +58,22 @@ public class SvgProjectFormat : IProjectFormat
 
         canvas.Layers.Clear();
 
-        var groups = root.Elements().Where(e => e.Name.LocalName == "g").ToList();
+        // Парсим встроенные CSS-классы из <defs><style>…</style></defs>
+        var cssClasses = ParseEmbeddedCss(root);
+
+        // Элементы верхнего уровня, игнорируем <defs> и <title>
+        var topLevel = root.Elements()
+            .Where(e => e.Name.LocalName != "defs" && e.Name.LocalName != "title")
+            .ToList();
+
+        var groups = topLevel.Where(e => e.Name.LocalName == "g").ToList();
 
         if (groups.Count == 0)
         {
             var layer = new LayerViewModel("Слой 1");
-            foreach (var el in root.Elements())
+            foreach (var el in topLevel)
             {
-                var fig = ParseElement(el);
+                var fig = ParseElement(el, cssClasses);
                 if (fig != null) layer.Figures.Add(fig);
             }
             canvas.Layers.Add(layer);
@@ -87,7 +95,7 @@ public class SvgProjectFormat : IProjectFormat
 
                 foreach (var el in g.Elements())
                 {
-                    var fig = ParseElement(el);
+                    var fig = ParseElement(el, cssClasses);
                     if (fig != null) layer.Figures.Add(fig);
                 }
                 canvas.Layers.Add(layer);
@@ -208,14 +216,24 @@ public class SvgProjectFormat : IProjectFormat
 
     // ── Парсинг фигур ─────────────────────────────────────────────────────────
 
-    private static FigureViewModel? ParseElement(XElement el)
+    private static FigureViewModel? ParseElement(XElement el,
+        Dictionary<string, string>? cssClasses = null)
     {
-        // Сначала читаем style="..." (Inkscape-формат), затем fallback на отдельные атрибуты
-        var css     = ParseStyle(el.Attribute("style")?.Value);
-        var fill    = ParseColor(css.GetValueOrDefault("fill")         ?? el.Attribute("fill")?.Value);
-        var stroke  = ParseColor(css.GetValueOrDefault("stroke")       ?? el.Attribute("stroke")?.Value);
-        var sw      = ParseDouble(css.GetValueOrDefault("stroke-width") ?? el.Attribute("stroke-width")?.Value, 1.0);
-        var opacity = ParseDouble(css.GetValueOrDefault("opacity")     ?? el.Attribute("opacity")?.Value, 1.0);
+        cssClasses ??= new Dictionary<string, string>();
+
+        // Приоритет стилей: inline style > CSS-класс > отдельный атрибут
+        var inlineCss = ParseStyle(el.Attribute("style")?.Value);
+        var classCss  = ResolveClassStyle(el.Attribute("class")?.Value, cssClasses);
+
+        string? Get(string prop) =>
+            inlineCss.GetValueOrDefault(prop)
+            ?? classCss.GetValueOrDefault(prop)
+            ?? el.Attribute(prop)?.Value;
+
+        var fill    = ParseColor(Get("fill"));
+        var stroke  = ParseColor(Get("stroke"));
+        var sw      = ParseDouble(Get("stroke-width"), 1.0);
+        var opacity = ParseDouble(Get("opacity"), 1.0);
 
         return el.Name.LocalName switch
         {
@@ -248,15 +266,68 @@ public class SvgProjectFormat : IProjectFormat
 
             "g" => new GroupViewModel(
                 el.Elements()
-                    .Select(ParseElement)
+                    .Select(e => ParseElement(e, cssClasses))
                     .Where(f => f != null)
                     .Select(f => f!)),
+
+            // <path> — Illustrator конвертирует все фигуры в кривые Безье.
+            // Их нельзя вернуть в rect/circle без трассировки, пропускаем.
+            "path" => null,
 
             _ => null
         };
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Вытаскивает CSS-классы из &lt;defs&gt;&lt;style&gt;…&lt;/style&gt;&lt;/defs&gt;.
+    /// Возвращает словарь: ".className" → "prop1:val1;prop2:val2"
+    /// </summary>
+    private static Dictionary<string, string> ParseEmbeddedCss(XElement root)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var styleElements = root.Descendants()
+            .Where(e => e.Name.LocalName == "style");
+
+        foreach (var styleEl in styleElements)
+        {
+            var css = styleEl.Value;
+            // Ищем паттерн: .className { prop: value; ... }
+            var regex = new System.Text.RegularExpressions.Regex(
+                @"\.([^{,\s]+)\s*\{([^}]+)\}",
+                System.Text.RegularExpressions.RegexOptions.Singleline);
+            foreach (System.Text.RegularExpressions.Match m in regex.Matches(css))
+            {
+                var key   = "." + m.Groups[1].Value.Trim();
+                var props = m.Groups[2].Value.Trim();
+                result[key] = props;
+            }
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Разрешает значение атрибута class="st0 st1 …" в словарь CSS-свойств.
+    /// Inline style перекрывает класс — приоритет решается в ParseElement.
+    /// </summary>
+    private static Dictionary<string, string> ResolveClassStyle(
+        string? classAttr, Dictionary<string, string> cssClasses)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrEmpty(classAttr)) return result;
+
+        foreach (var cls in classAttr.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var key = "." + cls;
+            if (cssClasses.TryGetValue(key, out var props))
+            {
+                foreach (var kv in ParseStyle(props))
+                    result.TryAdd(kv.Key, kv.Value);
+            }
+        }
+        return result;
+    }
 
     /// <summary>Разбирает style="prop1:val1;prop2:val2" в словарь.</summary>
     private static Dictionary<string, string> ParseStyle(string? style)
