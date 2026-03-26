@@ -110,11 +110,12 @@ public class SvgProjectFormat : IProjectFormat
 
     private static void AppendFigure(StringBuilder sb, FigureViewModel figure, string indent, ref int figId)
     {
-        var fill   = SvgColor(figure.FillColor);
-        var stroke = SvgColor(figure.LineColor);
+        // fill и stroke с поддержкой альфа-канала через fill-opacity / stroke-opacity
+        var (fill,   fillOp)   = SvgColorWithOpacity(figure.FillColor,  "fill");
+        var (stroke, strokeOp) = SvgColorWithOpacity(figure.LineColor,  "stroke");
         var sw     = F(figure.Thickness);
         var opProp = figure.Opacity < 0.9999 ? $";opacity:{F(figure.Opacity)}" : "";
-        var style  = $"fill:{fill};stroke:{stroke};stroke-width:{sw};stroke-linejoin:round;paint-order:markers fill stroke{opProp}";
+        var style  = $"fill:{fill}{fillOp};stroke:{stroke}{strokeOp};stroke-width:{sw};stroke-linejoin:round;paint-order:markers fill stroke{opProp}";
         var tr     = figure.Rotation != 0
             ? $"\n{indent}  transform=\"rotate({F(figure.Rotation)} {F(figure.Center.X)} {F(figure.Center.Y)})\""
             : "";
@@ -172,9 +173,10 @@ public class SvgProjectFormat : IProjectFormat
                 break;
 
             case PenPointViewModel p:
-                // Точки пера — маленькие закрашенные круги
+                // Точки пера — маленькие закрашенные круги; цвет берём из LineColor как fill
+                var (dotColor, dotOp) = SvgColorWithOpacity(p.LineColor, "fill");
                 sb.AppendLine($"{indent}<circle");
-                sb.AppendLine($"{indent}  style=\"fill:{stroke};stroke:none\"");
+                sb.AppendLine($"{indent}  style=\"fill:{dotColor}{dotOp};stroke:none\"");
                 sb.AppendLine($"{indent}  id=\"dot{id}\"");
                 sb.AppendLine($"{indent}  cx=\"{F(p.X)}\"");
                 sb.AppendLine($"{indent}  cy=\"{F(p.Y)}\"");
@@ -230,8 +232,9 @@ public class SvgProjectFormat : IProjectFormat
             ?? classCss.GetValueOrDefault(prop)
             ?? el.Attribute(prop)?.Value;
 
-        var fill    = ParseColor(Get("fill"));
-        var stroke  = ParseColor(Get("stroke"));
+        // Цвет + отдельный opacity канала (fill-opacity / stroke-opacity)
+        var fill    = ParseColorWithOpacity(Get("fill"),   Get("fill-opacity"));
+        var stroke  = ParseColorWithOpacity(Get("stroke"), Get("stroke-opacity"));
         var sw      = ParseDouble(Get("stroke-width"), 1.0);
         var opacity = ParseDouble(Get("opacity"), 1.0);
 
@@ -343,8 +346,29 @@ public class SvgProjectFormat : IProjectFormat
         return dict;
     }
 
-    private static string SvgColor(Color c) =>
-        c.A == 0 ? "none" : $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+    /// <summary>
+    /// Возвращает (colorString, opacityProp) для использования в SVG style.
+    /// Пример: FillColor с A=128 → ("#FF0000", ";fill-opacity:0.50")
+    /// </summary>
+    private static (string color, string opacityProp) SvgColorWithOpacity(Color c, string propName)
+    {
+        if (c.A == 0) return ("none", "");
+        var rgb = $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+        var op  = c.A < 255 ? $";{propName}-opacity:{F(c.A / 255.0)}" : "";
+        return (rgb, op);
+    }
+
+    /// <summary>
+    /// Парсит SVG-цвет с учётом отдельного атрибута fill-opacity / stroke-opacity.
+    /// </summary>
+    private static Color ParseColorWithOpacity(string? colorValue, string? opacityValue)
+    {
+        var c = ParseColor(colorValue);
+        if (c.A == 0) return c;                          // "none" → прозрачный
+        if (string.IsNullOrEmpty(opacityValue)) return c; // нет opacity → как есть
+        var op = ParseDouble(opacityValue, 1.0);
+        return Color.FromArgb((int)Math.Round(op * 255), c.R, c.G, c.B);
+    }
 
     private static Color ParseColor(string? value)
     {
