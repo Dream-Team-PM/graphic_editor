@@ -19,8 +19,7 @@ public abstract class ImageExporterBase
     protected static RenderTargetBitmap RenderControl(Control control)
     {
         var bounds = control.Bounds;
-        var width = (int)Math.Max(bounds.Width, 1);
-        var height = (int)Math.Max(bounds.Height, 1);
+        var width = (int)Math.Max(bounds.Width, 1); var height = (int)Math.Max(bounds.Height, 1);
         
         var bitmap = new RenderTargetBitmap(new PixelSize(width, height), new Vector(96, 96));
         bitmap.Render(control);
