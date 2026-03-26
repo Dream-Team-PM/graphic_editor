@@ -8,7 +8,12 @@
         d:DesignWidth="1920"
         d:DesignHeight="1080"
         x:Class="graphic_editor.MainWindow"
+        xmlns:local="using:graphic_editor.Controls"
+        xmlns:views="using:graphic_editor"
+        xmlns:converters="using:graphic_editor.Converters"
+        xmlns:vm="using:graphic_editor.ViewModels"
         x:DataType="vm:MainWindowViewModel"
+        xmlns:colorPicker="using:Avalonia.Controls"
         Title="INKognida — Безымянный.vec"
         Background="#1C1C1E"
         WindowState="Maximized"
@@ -24,6 +29,15 @@
                 </DrawingGroup>
             </DrawingBrush.Drawing>
         </DrawingBrush>
+		<converters:InvertedBoolConverter x:Key="InvertedBool"/>
+        <converters:IsZeroToVisibleConverter x:Key="IsZeroToVisible"/>
+        <converters:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
+        <converters:DrawingColorConverter x:Key="DrawingColorConverter"/>
+        <converters:PercentToDoubleConverter x:Key="PercentToDoubleConverter"/>
+        <converters:MathSubtractConverter x:Key="MathSubtract"/>
+		<converters:IsGreaterThanOneConverter x:Key="IsGreaterThanOneConverter"/>
+		<converters:BoolToBrushConverter x:Key="BoolToBrushConverter"/>
+		<converters:IsGreaterThanZeroConverter x:Key="IsGreaterThanZeroConverter"/>
     </Window.Resources>
 
     <Window.Styles>
