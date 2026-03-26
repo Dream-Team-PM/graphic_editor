@@ -1,6 +1,5 @@
 ﻿// Commands/AddFigureCommand.cs
-using graphic_editor.ViewModels;
-using graphic_editor.Interfaces;
+
 using graphic_editor.Helpers;
 using graphic_editor.Interfaces;
 using graphic_editor.Models;
