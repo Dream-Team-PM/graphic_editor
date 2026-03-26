@@ -43,18 +43,6 @@ public partial class VectorCanvasControl : UserControl
     /// <summary>Зависимое свойство для привязки ViewModel канваса.</summary>
     public static readonly StyledProperty<CanvasViewModel?> CanvasViewModelProperty =
         AvaloniaProperty.Register<VectorCanvasControl, CanvasViewModel?>(nameof(CanvasViewModel));
- //
-	// public static readonly StyledProperty<ICommand?> PointerPressedCommandProperty =
- //        AvaloniaProperty.Register<VectorCanvasControl, ICommand?>(nameof(PointerPressedCommand));
- //
- //    public static readonly StyledProperty<ICommand?> PointerMovedCommandProperty =
- //        AvaloniaProperty.Register<VectorCanvasControl, ICommand?>(nameof(PointerMovedCommand));
-
-    // public static readonly StyledProperty<ICommand?> PointerReleasedCommandProperty =
-    //     AvaloniaProperty.Register<VectorCanvasControl, ICommand?>(nameof(PointerReleasedCommand));
-    
-    // public static readonly StyledProperty<ObservableCollection<FigureViewModel>?> ActiveFiguresProperty = 
-    //     AvaloniaProperty.Register<VectorCanvasControl, ObservableCollection<FigureViewModel>?>(nameof(ActiveFigures));
 
     /// <summary>Зависимое свойство для коэффициента масштабирования канваса.</summary>
     public static readonly StyledProperty<double> ZoomProperty =
@@ -119,24 +107,6 @@ public partial class VectorCanvasControl : UserControl
         }
         shape.Opacity = Math.Clamp(figure.Opacity, 0.1, 1.0);
     }
-
-	// public ICommand? PointerPressedCommand
- //    {
- //        get => GetValue(PointerPressedCommandProperty);
- //        set => SetValue(PointerPressedCommandProperty, value);
- //    }
- //
- //    public ICommand? PointerMovedCommand
- //    {
- //        get => GetValue(PointerMovedCommandProperty);
- //        set => SetValue(PointerMovedCommandProperty, value);
- //    }
- //
- //    public ICommand? PointerReleasedCommand
- //    {
- //        get => GetValue(PointerReleasedCommandProperty);
- //        set => SetValue(PointerReleasedCommandProperty, value);
- //    }
 
 	/// <summary>
     /// Зависимое свойство для доступа к ViewModel канваса.

@@ -12,7 +12,7 @@ namespace graphic_editor.IO.Export;
 /// </summary>
 public static class RasterExporter
 {
-    public enum Format { Png, Jpeg, Pdf }
+    public enum Format { Png, Bmp, Jpeg, Pdf }
 
     // ── Публичный метод ───────────────────────────────────────────────────────
 

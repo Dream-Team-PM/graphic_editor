@@ -1,4 +1,4 @@
-﻿// // Commands/FigureCommandBase.cs
+﻿// Commands/FigureCommandBase.cs
 using System;
 using System.Collections.Generic;
 using System.Drawing;

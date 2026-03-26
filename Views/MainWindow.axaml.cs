@@ -329,25 +329,26 @@ public partial class MainWindow : Window
         var vectorCanvas = EditorWorkspaceControl.VectorCanvasElement;
         if (vectorCanvas == null) return;
 
-        _viewModel.StatusMessage = "Экспорт изображения...";
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        var format = ext switch
+        {
+            ".jpg" or ".jpeg" => RasterExporter.Format.Jpeg,
+            ".bmp"            => RasterExporter.Format.Bmp,
+            ".pdf"            => RasterExporter.Format.Pdf,
+            _                 => RasterExporter.Format.Png,
+        };
+
+        _viewModel.StatusMessage = $"Экспорт {ext.TrimStart('.').ToUpper()}...";
         try
         {
-            var extension = Path.GetExtension(path).ToLowerInvariant();
-            Task exportTask = extension switch
-            {
-                ".png" => PngExporter.ExportAsync(path, vectorCanvas),
-                ".jpg" or ".jpeg" => JpegExporter.ExportAsync(path, vectorCanvas, quality: 90),
-                ".bmp" => BmpExporter.ExportAsync(path, vectorCanvas),
-                ".pdf" => PdfExporter.ExportAsync(path, vectorCanvas, _viewModel.Canvas),
-                _ => throw new NotSupportedException($"Формат {extension} не поддерживается")
-            };
-            await exportTask;
+            await RasterExporter.ExportAsync(path, vectorCanvas, format);
             _viewModel.StatusMessage = $"Экспортировано: {Path.GetFileName(path)} ✓";
         }
         catch (Exception ex)
         {
             DebugLog.Write($"[ERROR] Export failed: {ex.Message}");
             _viewModel.StatusMessage = $"Ошибка экспорта: {ex.Message} ✗";
+            _ = ex;
         }
     }
 
