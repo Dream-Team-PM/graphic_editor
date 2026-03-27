@@ -227,7 +227,7 @@ public record EditorCommands(
     ReactiveCommand<Unit, Unit> DuplicateLayerCommand,
     
     /// <summary>ReactiveCommand для объединения активного слоя с предыдущим в списке.</summary>
-    ReactiveCommand<Unit, Unit> MCXg9A2HnWdvPyVuJosKiPA2iGvNGZYVsV,
+    ReactiveCommand<Unit, Unit> MergeWithPreviousLayerCommand,
     
     /// <summary>ReactiveCommand для перемещения активного слоя на один уровень вверх.</summary>
     ReactiveCommand<Unit, Unit> BringLayerForwardCommand,
