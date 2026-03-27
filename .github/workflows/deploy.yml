@@ -1,29 +1,28 @@
-﻿name: Graphic Editor
+﻿name: .NET Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ dev_ViewModel ]
   pull_request:
-    branches: [ main ]
+    branches: [ dev_ViewModel ]
 
 jobs:
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0'
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
 
-      - name: Restore dependencies
-        run: dotnet restore
+    - name: Restore dependencies
+      run: dotnet restore
 
-      - name: Build
-        run: dotnet build --no-restore --configuration Release
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
 
-      - name: Run tests
-        run: dotnet test --no-build --verbosity normal
+    - name: Test
+      run: dotnet test --configuration Release --no-build --verbosity normal
