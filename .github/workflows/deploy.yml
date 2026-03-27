@@ -2,11 +2,14 @@
 
 on:
   push:
-    branches: [main]
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -14,10 +17,13 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "9.0.x"
+          dotnet-version: '8.x' # или ваша версия
 
-      - name: Restore
-        run: dotnet restore ./graphic_editor.sln
+      - name: Restore dependencies
+        run: dotnet restore
 
       - name: Build
-        run: dotnet build ./graphic_editor.sln -c Release --no-restore
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run tests
+        run: dotnet test --no-build --verbosity normal
