@@ -33,9 +33,13 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly IFileService _fileService; /// <summary>Сервис для работы с файлами проекта (сохранение/загрузка).</summary>
     private readonly HistoryViewModel _history; /// <summary>Менеджер истории действий для поддержки Undo/Redo.</summary>
 	private readonly LayerViewModel _layer; /// <summary>Менеджер истории действий для поддержки Undo/Redo.</summary>
+    /// <summary>Флаг, указывающий, выполняется ли в данный момент перетаскивание выделенных фигур.</summary>
     private bool _isDragging;
+    
+    /// <summary>Начальная точка перетаскивания для вычисления дельты смещения.</summary>
     private Point2D _dragStart;
-    private Dictionary<Guid, List<(double X, double Y)>> _originalVertices; // для каждой фигуры список исходных координат вершин
+    /// <summary>Словарь исходных координат вершин для каждой фигуры при начале перетаскивания (для Undo).</summary>
+    private Dictionary<Guid, List<(double X, double Y)>> _originalVertices;
     
     /// <summary>
     /// Публичный доступ к ViewModel истории для привязки в UI.
@@ -44,62 +48,72 @@ public partial class MainWindowViewModel : ViewModelBase
 	public LayerViewModel Layer => _layer;
 
     // ========== ПОЛЯ ==========
+    /// <summary>Реактивный хелпер для форматирования и обновления текста координат курсора "X: .. Y: ..".</summary>
+    private readonly ObservableAsPropertyHelper<string> _coordinatesText;
     
-    private readonly ObservableAsPropertyHelper<string> _coordinatesText; 
-    /// <summary>Реактивное свойство для отображения текущих координат курсора в формате "X: .. Y: ..".</summary>
+    /// <summary>Текст сообщения статуса для отображения в нижней панели окна (информация о действиях пользователя).</summary>
+    private string _statusMessage = "Готово";
     
-    private string _statusMessage = "Готово"; 
-    /// <summary>Текст статуса для отображения в нижней панели окна.</summary>
+    /// <summary>Текущий выбранный инструмент рисования из перечисления DrawingTool.</summary>
+    private DrawingTool _selectedTool = DrawingTool.Select;
     
-    private DrawingTool _selectedTool = DrawingTool.Select; 
-    /// <summary>Текущий выбранный инструмент рисования.</summary>
+    /// <summary>Текущий выбранный цвет заливки для новых фигур с поддержкой реактивных уведомлений.</summary>
+    private ColorViewModel _fillColor = new ColorViewModel(Color.FromArgb(255, 74, 144));
+    
+    /// <summary>Текущий выбранный цвет обводки для новых фигур с поддержкой реактивных уведомлений.</summary>
+    private ColorViewModel _strokeColor = new ColorViewModel(Color.Black);
+    
+    /// <summary>Текущая тема оформления интерфейса (светлая ThemeVariant.Light или тёмная ThemeVariant.Dark).</summary>
+    private ThemeVariant _currentTheme = ThemeVariant.Dark;
+    
+    /// <summary>Точка начала операции рисования (координаты при нажатии кнопки мыши на канвасе).</summary>
+    private Point2D _drawingStartPoint;
+    
+    /// <summary>Флаг, указывающий, была ли инициализирована точка начала рисования для текущего примитива.</summary>
+    private bool _hasDrawingStart;
+    
+    /// <summary>Предварительная фигура для визуализации в процессе рисования (удаляется при завершении).</summary>
+    private FigureViewModel? _previewFigure;
+    
+    /// <summary>Инструмент, который в данный момент используется для рисования (может отличаться от _selectedTool).</summary>
+    private DrawingTool _currentDrawingTool;
+    
+    /// <summary>Коллекция точек для инструмента "Перо" при многоточечном рисовании кривой.</summary>
+    private List<Point2D> _penPoints = new();
+    
+    /// <summary>Минимальный допустимый размер фигуры (в пикселях) для предотвращения создания микро-объектов.</summary>
+    private const double MinFigureSize = 5.0;
+    
+    /// <summary>Минимально допустимый коэффициент масштабирования канваса (0.1 = 10% от оригинала).</summary>
+    private const double DefaultZoomMin = 0.1;
+    
+    /// <summary>Максимально допустимый коэффициент масштабирования канваса (10.0 = 1000% от оригинала).</summary>
+    private const double DefaultZoomMax = 10.0;
+    
+    /// <summary>Флаг, указывающий, что пользователь выполняет выделение областью (marquee selection прямоугольником).</summary>
+    private bool _isSelectingArea;
+    
+    /// <summary>Начальная точка выделения областью в координатах канваса.</summary>
+    private Point2D _selectionStart;
+
+    /// <summary>Текущая конечная точка выделения областью (обновляется при движении мыши).</summary>
+    private Point2D _selectionEnd;
+    
+    /// <summary>Флаг, указывающий, открыта ли палитра выбора цвета для заливки фигур.</summary>
+    private bool _isColorPickerOpen;
+    
+    /// <summary>Флаг, указывающий, открыта ли палитра выбора цвета для обводки фигур.</summary>
+    private bool _isStrokeColorPickerOpen;
+    
+    /// <summary>Буфер обмена для операций копирования/вставки фигур.</summary>
+    private List<FigureViewModel> _clipboard = new();
+
+    // ========== СВОЙСТВА ==========
     
     /// <summary>
     /// Получает человеко-читаемое название выбранного инструмента.
     /// </summary>
     public string SelectedToolDisplayName => _selectedTool.ToDisplayName();
-    
-    private ColorViewModel _fillColor = new ColorViewModel(Color.FromArgb(255, 74, 144)); 
-    /// <summary>Текущий выбранный цвет заливки для новых фигур.</summary>
-    
-    private ColorViewModel _strokeColor = new ColorViewModel(Color.Black); 
-    /// <summary>Текущий выбранный цвет обводки для новых фигур.</summary>
-    
-    private ThemeVariant _currentTheme = ThemeVariant.Dark; 
-    /// <summary>Текущая тема оформления интерфейса (светлая или тёмная).</summary>
-    
-    private Point2D _drawingStartPoint; 
-    /// <summary>Точка начала операции рисования (координаты при нажатии мыши).</summary>
-    
-    private bool _hasDrawingStart; 
-    /// <summary>Флаг, указывающий, была ли инициализирована точка начала рисования.</summary>
-    
-    private FigureViewModel? _previewFigure; 
-    /// <summary>Предварительная фигура для визуализации в процессе рисования.</summary>
-    
-    private DrawingTool _currentDrawingTool; 
-    /// <summary>Инструмент, который в данный момент используется для рисования.</summary>
-    
-    private List<Point2D> _penPoints = new(); 
-    /// <summary>Коллекция точек для инструмента "Перо" (многоточечное рисование).</summary>
-    
-    private const double MinFigureSize = 5.0; 
-    /// <summary>Минимальный допустимый размер фигуры для предотвращения создания микро-объектов.</summary>
-    
-    private const double DefaultZoomMin = 0.1; 
-    /// <summary>Минимально допустимый коэффициент масштабирования канваса.</summary>
-    
-    private const double DefaultZoomMax = 10.0; 
-    /// <summary>Максимально допустимый коэффициент масштабирования канваса.</summary>
-    
-    private bool _isSelectingArea; 
-    /// <summary>Флаг, указывающий, что пользователь выполняет выделение областью (marquee selection).</summary>
-    
-    private Point2D _selectionStart; 
-    /// <summary>Начальная точка выделения областью.</summary>
-    
-    private Point2D _selectionEnd; 
-    /// <summary>Текущая конечная точка выделения областью (обновляется при движении мыши).</summary>
     
     /// <summary>
     /// Получает текущий активный инструмент рисования.
@@ -126,14 +140,28 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     public bool HasSelection => Canvas?.HasSelection ?? false;
     
-    private bool _isColorPickerOpen; /// <summary>Флаг открытия палитры цветов для заливки.</summary>
-    private bool _isStrokeColorPickerOpen; /// <summary>Флаг открытия палитры цветов для обводки.</summary>
-    private List<FigureViewModel> _clipboard = new();
-
-    // ========== СВОЙСТВА ==========
+    /// <summary>
+    /// Проверяет, возможно ли выполнение группировки (требуется минимум 2 выделенные фигуры).
+    /// </summary>
+    public bool CanGroup => Canvas?.SelectedFigures?.Count >= 2;
     
     /// <summary>
-    /// Текст сообщения статуса для отображения пользователю.
+    /// Проверяет, возможно ли выполнение разгруппировки (выбрана фигура типа GroupViewModel).
+    /// </summary>
+    public bool CanUngroup => Canvas?.SelectedFigure is GroupViewModel;
+    
+    /// <summary>
+    /// Проверяет, возможно ли выравнивание (требуется минимум 2 выделенные фигуры).
+    /// </summary>
+    public bool CanAlign => Canvas?.SelectedFigures?.Count >= 2;
+    
+    /// <summary>
+    /// Проверяет, возможно ли распределение (требуется минимум 3 выделенные фигуры).
+    /// </summary>
+    public bool CanDistribute => Canvas?.SelectedFigures?.Count >= 3;
+    
+    /// <summary>
+    /// Текст сообщения статуса для отображения пользователю в нижней панели окна.
     /// </summary>
     public string StatusMessage
     {
@@ -142,7 +170,8 @@ public partial class MainWindowViewModel : ViewModelBase
     }
     
     /// <summary>
-    /// Флаг, указывающий, выполняется ли в данный момент выделение областью.
+    /// Флаг, указывающий, выполняется ли в данный момент выделение областью (marquee selection).
+    /// Используется для отображения прямоугольника выделения на канвасе.
     /// </summary>
     public bool IsSelectingArea
     {
@@ -152,6 +181,7 @@ public partial class MainWindowViewModel : ViewModelBase
     
     /// <summary>
     /// Начальная точка выделения областью в координатах канваса.
+    /// Устанавливается при нажатии кнопки мыши и используется для вычисления прямоугольника выделения.
     /// </summary>
     public Point2D SelectionStart
     {
@@ -159,8 +189,10 @@ public partial class MainWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _selectionStart, value);
     }
     
+    
     /// <summary>
     /// Текущая конечная точка выделения областью (обновляется при движении мыши).
+    /// Используется для динамического отображения прямоугольника выделения.
     /// </summary>
     public Point2D SelectionEnd
     {
@@ -170,6 +202,7 @@ public partial class MainWindowViewModel : ViewModelBase
     
     /// <summary>
     /// Флаг, указывающий, что пользователь находится в процессе рисования фигуры.
+    /// Блокирует другие действия до завершения операции (отпускание кнопки мыши).
     /// </summary>
     public bool IsDrawing
     {
@@ -179,6 +212,7 @@ public partial class MainWindowViewModel : ViewModelBase
     
     /// <summary>
     /// Предварительная фигура для визуального отображения в процессе рисования.
+    /// Удаляется при завершении рисования и замене на финальную фигуру.
     /// </summary>
     public FigureViewModel? PreviewFigure
     {
@@ -188,6 +222,7 @@ public partial class MainWindowViewModel : ViewModelBase
     
     /// <summary>
     /// Толщина линии обводки в пикселях для новых и выделенных фигур.
+    /// Применяется реактивно ко всем выделенным объектам при изменении.
     /// </summary>
     public int StrokeWidth 
     {
@@ -197,6 +232,7 @@ public partial class MainWindowViewModel : ViewModelBase
     
     /// <summary>
     /// Коэффициент непрозрачности фигур в процентах (0–100).
+    /// Конвертируется в диапазон 0.0–1.0 при применении к фигурам.
     /// </summary>
     public double Opacity
     {
@@ -206,6 +242,7 @@ public partial class MainWindowViewModel : ViewModelBase
     
     /// <summary>
     /// Модель цвета заливки с поддержкой реактивных уведомлений.
+    /// Используется для новых фигур и реактивного обновления выделенных.
     /// </summary>
     public ColorViewModel FillColor
     {
@@ -215,6 +252,7 @@ public partial class MainWindowViewModel : ViewModelBase
     
     /// <summary>
     /// Модель цвета обводки с поддержкой реактивных уведомлений.
+    /// Используется для новых фигур и реактивного обновления выделенных.
     /// </summary>
     public ColorViewModel StrokeColor
     {
@@ -224,6 +262,7 @@ public partial class MainWindowViewModel : ViewModelBase
     
     /// <summary>
     /// Текущая тема оформления приложения (светлая или тёмная).
+    /// Используется для переключения стилей через RequestedThemeVariant.
     /// </summary>
     public ThemeVariant CurrentTheme
     {
@@ -233,6 +272,7 @@ public partial class MainWindowViewModel : ViewModelBase
     
     /// <summary>
     /// Текущая координата X курсора мыши в координатах канваса.
+    /// Обновляется при движении мыши и используется для отображения в статус-баре.
     /// </summary>
     public double MouseX
     {
@@ -242,6 +282,7 @@ public partial class MainWindowViewModel : ViewModelBase
     
     /// <summary>
     /// Текущая координата Y курсора мыши в координатах канваса.
+    /// Обновляется при движении мыши и используется для отображения в статус-баре.
     /// </summary>
     public double MouseY
     {
@@ -251,6 +292,7 @@ public partial class MainWindowViewModel : ViewModelBase
     
     /// <summary>
     /// Флаг, указывающий, открыта ли палитра выбора цвета заливки.
+    /// Привязан к свойству IsOpen Popup в ToolSettingsBar.
     /// </summary>
     public bool IsColorPickerOpen
     {
@@ -260,6 +302,7 @@ public partial class MainWindowViewModel : ViewModelBase
     
     /// <summary>
     /// Флаг, указывающий, открыта ли палитра выбора цвета обводки.
+    /// Привязан к свойству IsOpen Popup в ToolSettingsBar.
     /// </summary>
     public bool IsStrokeColorPickerOpen
     {
@@ -279,11 +322,101 @@ public partial class MainWindowViewModel : ViewModelBase
         figure.FillColor = solidFill ? StrokeColor.Color : FillColor.Color;
         figure.Thickness = StrokeWidth;
     }
+    
+    /// <summary>
+    /// Команда истории для операции перетаскивания фигур.
+    /// Реализует интерфейс IHistoryAction для поддержки Undo/Redo.
+    /// Сохраняет исходные координаты вершин и дельту смещения для отмены/повтора.
+    /// </summary>
+    public class DragMoveCommand : IHistoryAction
+    {
+        /// <summary>Список идентификаторов перемещаемых фигур.</summary>
+        private readonly List<Guid> _figureIds;
+        
+        /// <summary>Словарь исходных координат вершин для каждой фигуры (для Undo).</summary>
+        private readonly Dictionary<Guid, List<(double X, double Y)>> _originalVertices;
+        
+        /// <summary>Вектор смещения, применённый к фигурам.</summary>
+        private readonly Point2D _delta;
+        
+        /// <summary>Ссылка на CanvasViewModel для доступа к коллекциям фигур.</summary>
+        private CanvasViewModel? _canvas;
 
-    public bool CanGroup => Canvas?.SelectedFigures?.Count >= 2;
-    public bool CanUngroup => Canvas?.SelectedFigure is GroupViewModel;
-     public bool CanAlign => Canvas?.SelectedFigures?.Count >= 2;
-     public bool CanDistribute => Canvas?.SelectedFigures?.Count >= 3;
+        /// <summary>
+        /// Получает человеко-читаемое описание команды для отображения в истории.
+        /// </summary>
+        public string Description => "Перемещение";
+
+        /// <summary>
+        /// Инициализирует новый экземпляр команды перемещения.
+        /// </summary>
+        /// <param name="figureIds">Список идентификаторов перемещаемых фигур.</param>
+        /// <param name="originalVertices">Словарь исходных координат вершин для каждой фигуры.</param>
+        /// <param name="delta">Вектор смещения, применённый к фигурам.</param>
+        public DragMoveCommand(List<Guid> figureIds, Dictionary<Guid, List<(double X, double Y)>> originalVertices, Point2D delta)
+        {
+            _figureIds = figureIds;
+            _originalVertices = originalVertices;
+            _delta = delta;
+        }
+
+        /// <summary>
+        /// Устанавливает ссылку на CanvasViewModel для выполнения команды.
+        /// Вызывается после добавления команды в историю.
+        /// </summary>
+        /// <param name="canvas">Экземпляр CanvasViewModel для доступа к данным.</param>
+        public void SetCanvas(CanvasViewModel canvas) => _canvas = canvas;
+
+        /// <summary>
+        /// Отменяет операцию перемещения: восстанавливает исходные координаты вершин.
+        /// Использует сохранённые данные из _originalVertices для каждой фигуры.
+        /// </summary>
+        public void Undo()
+        {
+            if (_canvas == null) return;
+            foreach (var id in _figureIds)
+            {
+                var figure = FindFigure(id);
+                if (figure != null && _originalVertices.TryGetValue(id, out var verts))
+                {
+                    for (int i = 0; i < figure.Vertices.Count && i < verts.Count; i++)
+                    {
+                        figure.Vertices[i].X = verts[i].X;
+                        figure.Vertices[i].Y = verts[i].Y;
+                    }
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Повторяет операцию перемещения: применяет сохранённое смещение к исходным координатам.
+        /// Использует данные из _originalVertices и _delta для восстановления состояния после Undo.
+        /// </summary>
+        public void Redo()
+        {
+            if (_canvas == null) return;
+            foreach (var id in _figureIds)
+            {
+                var figure = FindFigure(id);
+                if (figure != null && _originalVertices.TryGetValue(id, out var verts))
+                {
+                    for (int i = 0; i < figure.Vertices.Count && i < verts.Count; i++)
+                    {
+                        figure.Vertices[i].X = verts[i].X + _delta.X;
+                        figure.Vertices[i].Y = verts[i].Y + _delta.Y;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Находит фигуру по идентификатору во всех слоях канваса.
+        /// </summary>
+        /// <param name="id">Уникальный идентификатор фигуры типа Guid.</param>
+        /// <returns>Экземпляр FigureViewModel или null, если фигура не найдена.</returns>
+        private FigureViewModel? FindFigure(Guid id) =>
+            _canvas?.Layers.SelectMany(l => l.Figures).FirstOrDefault(f => f.Id == id);
+    }
 
     // ========== КОНСТРУКТОР ==========
     
@@ -318,6 +451,7 @@ public partial class MainWindowViewModel : ViewModelBase
             AddHeptagon: ReactiveCommand.Create(AddHeptagon),
             AddPentagram: ReactiveCommand.Create(AddPentagram),
             AddTriangle: ReactiveCommand.Create(AddTriangle),
+            AddRightTriangle: ReactiveCommand.Create(AddRightTriangle),
             AddRhombus: ReactiveCommand.Create(AddRhombus),
             DeleteSelected: ReactiveCommand.Create(DeleteSelected),
             DuplicateSelected: ReactiveCommand.Create(DuplicateSelected),
@@ -358,42 +492,42 @@ public partial class MainWindowViewModel : ViewModelBase
     		BringLayerToFrontCommand: ReactiveCommand.Create(BringLayerToFront),
     		SendLayerToBackCommand: ReactiveCommand.Create(SendLayerToBack),
             // Выделение
-    CutSelected: ReactiveCommand.Create(CutSelected, this.WhenAnyValue(x => x.HasSelection)),
-    CopySelected: ReactiveCommand.Create(CopySelected, this.WhenAnyValue(x => x.HasSelection)),
-    PasteSelected: ReactiveCommand.Create(PasteSelected),
-    SelectAllCommand: ReactiveCommand.Create(SelectAll),
-    DeselectAllCommand: ReactiveCommand.Create(DeselectAll),
+            CutSelected: ReactiveCommand.Create(CutSelected, this.WhenAnyValue(x => x.HasSelection)),
+            CopySelected: ReactiveCommand.Create(CopySelected, this.WhenAnyValue(x => x.HasSelection)),
+            PasteSelected: ReactiveCommand.Create(PasteSelected),
+            SelectAllCommand: ReactiveCommand.Create(SelectAll),
+            DeselectAllCommand: ReactiveCommand.Create(DeselectAll),
     
-    // Порядок (Z-order)
-    BringToFront: ReactiveCommand.Create(BringSelectedToFront, this.WhenAnyValue(x => x.HasSelection)),
-    SendToBack: ReactiveCommand.Create(SendSelectedToBack, this.WhenAnyValue(x => x.HasSelection)),
-    BringForward: ReactiveCommand.Create(BringSelectedForward, this.WhenAnyValue(x => x.HasSelection)),
-    SendBackward: ReactiveCommand.Create(SendSelectedBackward, this.WhenAnyValue(x => x.HasSelection)),
+            // Порядок (Z-order)
+            BringToFront: ReactiveCommand.Create(BringSelectedToFront, this.WhenAnyValue(x => x.HasSelection)),
+            SendToBack: ReactiveCommand.Create(SendSelectedToBack, this.WhenAnyValue(x => x.HasSelection)),
+            BringForward: ReactiveCommand.Create(BringSelectedForward, this.WhenAnyValue(x => x.HasSelection)),
+            SendBackward: ReactiveCommand.Create(SendSelectedBackward, this.WhenAnyValue(x => x.HasSelection)),
     
-    // Выравнивание
-    AlignLeft: ReactiveCommand.Create(AlignLeft, this.WhenAnyValue(x => x.CanAlign)),
-    AlignCenter: ReactiveCommand.Create(AlignCenter, this.WhenAnyValue(x => x.CanAlign)),
-    AlignRight: ReactiveCommand.Create(AlignRight, this.WhenAnyValue(x => x.CanAlign)),
-    AlignTop: ReactiveCommand.Create(AlignTop, this.WhenAnyValue(x => x.CanAlign)),
-    AlignMiddle: ReactiveCommand.Create(AlignMiddle, this.WhenAnyValue(x => x.CanAlign)),
-    AlignBottom: ReactiveCommand.Create(AlignBottom, this.WhenAnyValue(x => x.CanAlign)),
+            // Выравнивание
+            AlignLeft: ReactiveCommand.Create(AlignLeft, this.WhenAnyValue(x => x.CanAlign)),
+            AlignCenter: ReactiveCommand.Create(AlignCenter, this.WhenAnyValue(x => x.CanAlign)),
+            AlignRight: ReactiveCommand.Create(AlignRight, this.WhenAnyValue(x => x.CanAlign)),
+            AlignTop: ReactiveCommand.Create(AlignTop, this.WhenAnyValue(x => x.CanAlign)),
+            AlignMiddle: ReactiveCommand.Create(AlignMiddle, this.WhenAnyValue(x => x.CanAlign)),
+            AlignBottom: ReactiveCommand.Create(AlignBottom, this.WhenAnyValue(x => x.CanAlign)),
     
-    // Распределение
-    DistributeHorizontal: ReactiveCommand.Create(DistributeHorizontal, this.WhenAnyValue(x => x.CanDistribute)),
-    DistributeVertical: ReactiveCommand.Create(DistributeVertical, this.WhenAnyValue(x => x.CanDistribute)),
+            // Распределение
+            DistributeHorizontal: ReactiveCommand.Create(DistributeHorizontal, this.WhenAnyValue(x => x.CanDistribute)),
+            DistributeVertical: ReactiveCommand.Create(DistributeVertical, this.WhenAnyValue(x => x.CanDistribute)),
     
-    // Масштаб фигур
-    ScaleUp: ReactiveCommand.Create(ScaleSelectedUp, this.WhenAnyValue(x => x.HasSelection)),
-    ScaleDown: ReactiveCommand.Create(ScaleSelectedDown, this.WhenAnyValue(x => x.HasSelection)),
-    ScaleToFit: ReactiveCommand.Create(ScaleSelectedToFit, this.WhenAnyValue(x => x.HasSelection)),
+            // Масштаб фигур
+            ScaleUp: ReactiveCommand.Create(ScaleSelectedUp, this.WhenAnyValue(x => x.HasSelection)),
+            ScaleDown: ReactiveCommand.Create(ScaleSelectedDown, this.WhenAnyValue(x => x.HasSelection)),
+            ScaleToFit: ReactiveCommand.Create(ScaleSelectedToFit, this.WhenAnyValue(x => x.HasSelection)),
     
-    // Стиль
-    SetStrokeWidthCommand: ReactiveCommand.Create<string>(SetStrokeWidth, this.WhenAnyValue(x => x.HasSelection)),
-    SetFillNone: ReactiveCommand.Create(SetFillNone, this.WhenAnyValue(x => x.HasSelection)),
-    SetStrokeNone: ReactiveCommand.Create(SetStrokeNone, this.WhenAnyValue(x => x.HasSelection)),
+            // Стиль
+            SetStrokeWidthCommand: ReactiveCommand.Create<string>(SetStrokeWidth, this.WhenAnyValue(x => x.HasSelection)),
+            SetFillNone: ReactiveCommand.Create(SetFillNone, this.WhenAnyValue(x => x.HasSelection)),
+            SetStrokeNone: ReactiveCommand.Create(SetStrokeNone, this.WhenAnyValue(x => x.HasSelection)),
     
-    // Свойства
-    OpenPropertiesCommand: ReactiveCommand.Create(OpenProperties, this.WhenAnyValue(x => x.HasSelection))
+            // Свойства
+            OpenPropertiesCommand: ReactiveCommand.Create(OpenProperties, this.WhenAnyValue(x => x.HasSelection))
         );
         
         // Реактивная привязка: обновление текста координат при изменении MouseX/MouseY
@@ -425,336 +559,6 @@ public partial class MainWindowViewModel : ViewModelBase
         });
     }
 
-    private void CutSelected()
-{
-    CopySelected();
-    DeleteSelected();
-}
-
-private void CopySelected()
-{
-    _clipboard.Clear();
-    if (Canvas?.SelectedFigures?.Any() == true)
-    {
-        foreach (var figure in Canvas.SelectedFigures)
-        {
-            _clipboard.Add(figure.Clone());
-        }
-    }
-    StatusMessage = $"Скопировано {_clipboard.Count} объектов";
-}
-
-private void PasteSelected()
-{
-    if (_clipboard.Count == 0 || Canvas?.ActiveLayer == null) return;
-    
-    foreach (var original in _clipboard)
-    {
-        var clone = original.Clone();
-        clone.Move(20, 20); // Смещение при вставке
-        Canvas.AddFigure(clone);
-    }
-    StatusMessage = $"Вставлено {_clipboard.Count} объектов";
-}
-
-private void SelectAll()
-{
-    if (Canvas?.ActiveLayer == null) return;
-    
-    foreach (var f in Canvas.SelectedFigures)
-        f.IsSelected = false;
-    Canvas.SelectedFigures.Clear();
-    
-    foreach (var figure in Canvas.ActiveLayer.Figures)
-    {
-        figure.IsSelected = true;
-        Canvas.SelectedFigures.Add(figure);
-    }
-    Canvas.RaisePropertyChanged(nameof(Canvas.SelectedFigures));
-    StatusMessage = $"Выделено {Canvas.SelectedFigures.Count} объектов";
-}
-
-private void DeselectAll()
-{
-    foreach (var f in Canvas.SelectedFigures)
-        f.IsSelected = false;
-    Canvas.SelectedFigures.Clear();
-    Canvas.SelectedFigure = null;
-    StatusMessage = "Выделение снято";
-}
-
-
-// === Порядок отрисовки ===
-private void BringSelectedToFront()
-{
-    if (Canvas?.ActiveLayer == null || !Canvas.SelectedFigures.Any()) return;
-    
-    foreach (var figure in Canvas.SelectedFigures.ToList())
-    {
-        Canvas.ActiveLayer.Figures.Remove(figure);
-        Canvas.ActiveLayer.Figures.Add(figure);
-    }
-    StatusMessage = "На передний план";
-}
-
-private void SendSelectedToBack()
-{
-    if (Canvas?.ActiveLayer == null || !Canvas.SelectedFigures.Any()) return;
-    
-    foreach (var figure in Canvas.SelectedFigures.Reverse().ToList())
-    {
-        Canvas.ActiveLayer.Figures.Remove(figure);
-        Canvas.ActiveLayer.Figures.Insert(0, figure);
-    }
-    StatusMessage = "На задний план";
-}
-
-private void BringSelectedForward()
-{
-    if (Canvas?.ActiveLayer == null || !Canvas.SelectedFigures.Any()) return;
-    
-    foreach (var figure in Canvas.SelectedFigures.ToList())
-    {
-        var index = Canvas.ActiveLayer.Figures.IndexOf(figure);
-        if (index < Canvas.ActiveLayer.Figures.Count - 1)
-        {
-            Canvas.ActiveLayer.Figures.Move(index, index + 1);
-        }
-    }
-    StatusMessage = "Перемещено вперёд";
-}
-
-
-private void SendSelectedBackward()
-{
-    if (Canvas?.ActiveLayer == null || !Canvas.SelectedFigures.Any()) return;
-    
-    foreach (var figure in Canvas.SelectedFigures.ToList())
-    {
-        var index = Canvas.ActiveLayer.Figures.IndexOf(figure);
-        if (index > 0)
-        {
-            Canvas.ActiveLayer.Figures.Move(index, index - 1);
-        }
-    }
-    StatusMessage = "Перемещено назад";
-}
-
-// === Выравнивание ===
-private void AlignLeft() => AlignSelected(AlignType.Left);
-private void AlignCenter() => AlignSelected(AlignType.Center);
-private void AlignRight() => AlignSelected(AlignType.Right);
-private void AlignTop() => AlignSelected(AlignType.Top);
-private void AlignMiddle() => AlignSelected(AlignType.Middle);
-private void AlignBottom() => AlignSelected(AlignType.Bottom);
-
-private enum AlignType { Left, Center, Right, Top, Middle, Bottom }
-
-private void AlignSelected(AlignType type)
-{
-    if (Canvas?.SelectedFigures?.Count < 2) return;
-    
-    var bounds = Canvas.SelectedFigures.Select(f => f.GetBoundingBox()).ToList();
-    double target = type switch
-    {
-        AlignType.Left => bounds.Min(b => b.MinX),
-        AlignType.Center => bounds.Average(b => (b.MinX + b.MaxX) / 2),
-        AlignType.Right => bounds.Max(b => b.MaxX),
-        AlignType.Top => bounds.Min(b => b.MinY),
-        AlignType.Middle => bounds.Average(b => (b.MinY + b.MaxY) / 2),
-        AlignType.Bottom => bounds.Max(b => b.MaxY),
-        _ => 0
-    };
-    foreach (var figure in Canvas.SelectedFigures)
-    {
-        var bbox = figure.GetBoundingBox();
-        double current = type switch
-        {
-            AlignType.Left or AlignType.Right or AlignType.Center => 
-                type == AlignType.Center ? (bbox.MinX + bbox.MaxX) / 2 : 
-                type == AlignType.Left ? bbox.MinX : bbox.MaxX,
-            _ => type == AlignType.Middle ? (bbox.MinY + bbox.MaxY) / 2 : 
-                type == AlignType.Top ? bbox.MinY : bbox.MaxY
-        };
-        
-        double delta = target - current;
-        if (type is AlignType.Left or AlignType.Center or AlignType.Right)
-            figure.Move(delta, 0);
-        else
-            figure.Move(0, delta);
-    }
-    StatusMessage = $"Выровнено по {(type == AlignType.Center || type == AlignType.Middle ? "центру" : type.ToString().ToLower())}";
-}
-
-// === Распределение ===
-private void DistributeHorizontal()
-{
-    if (Canvas?.SelectedFigures?.Count < 3) return;
-    
-    var sorted = Canvas.SelectedFigures
-        .OrderBy(f => f.GetBoundingBox().MinX)
-        .ToList();
-    
-    double min = sorted.First().GetBoundingBox().MinX;
-    double max = sorted.Last().GetBoundingBox().MaxX;
-    double step = (max - min) / (sorted.Count - 1);
-    
-    for (int i = 1; i < sorted.Count - 1; i++)
-    {
-        var figure = sorted[i];
-        var bbox = figure.GetBoundingBox();
-        double target = min + i * step - (bbox.MinX + bbox.MaxX) / 2;
-        figure.Move(target, 0);
-    }
-    StatusMessage = "Распределено горизонтально";
-}
-
-private void DistributeVertical()
-{
-    if (Canvas?.SelectedFigures?.Count < 3) return;
-    
-    var sorted = Canvas.SelectedFigures
-        .OrderBy(f => f.GetBoundingBox().MinY)
-        .ToList();
-    
-    double min = sorted.First().GetBoundingBox().MinY;
-    double max = sorted.Last().GetBoundingBox().MaxY;
-    double step = (max - min) / (sorted.Count - 1);
-    
-    for (int i = 1; i < sorted.Count - 1; i++)
-    {
-        var figure = sorted[i];
-        var bbox = figure.GetBoundingBox();
-        double target = min + i * step - (bbox.MinY + bbox.MaxY) / 2;
-        figure.Move(0, target);
-    }
-    StatusMessage = "Распределено вертикально";
-}
-
-// === Масштаб фигур ===
-private void ScaleSelectedUp() => ScaleSelected(1.1, 1.1);
-private void ScaleSelectedDown() => ScaleSelected(0.9, 0.9);
-
-private void ScaleSelected(double sx, double sy)
-{
-    if (Canvas?.SelectedFigures?.Any() != true) return;
-    
-    foreach (var figure in Canvas.SelectedFigures)
-    {
-        figure.Scale(sx, sy);
-    }
-    StatusMessage = $"Масштаб: {sx:P0}";
-}
-
-private void ScaleSelectedToFit()
-{
-    // Заглушка: масштабирует выделенное под размер видимой области
-    StatusMessage = "Масштабирование по размеру холста (заглушка)";
-}
-
-// === Стиль ===
-private void SetStrokeWidth(string widthStr)
-{
-    if (int.TryParse(widthStr, out var width) && Canvas?.SelectedFigures?.Any() == true)
-    {
-        foreach (var f in Canvas.SelectedFigures)
-            f.Thickness = width;
-        StrokeWidth = width;
-        StatusMessage = $"Толщина: {width} пкс";
-    }
-}
-
-private void SetFillNone()
-{
-    if (Canvas?.SelectedFigures?.Any() == true)
-    {
-        foreach (var f in Canvas.SelectedFigures)
-            f.FillColor = System.Drawing.Color.Transparent;
-        StatusMessage = "Заливка: нет";
-    }
-}
-
-private void SetStrokeNone()
-{
-    if (Canvas?.SelectedFigures?.Any() == true)
-    {
-        foreach (var f in Canvas.SelectedFigures)
-            f.LineColor = System.Drawing.Color.Transparent;
-        StatusMessage = "Обводка: нет";
-    }
-}
-
-private void OpenProperties()
-{
-    // TODO: Открыть панель свойств объекта
-    StatusMessage = "Свойства объекта (заглушка)";
-}
-
-// === Управление слоями ===
-
-private void MergeLayerWithPrevious()
-{
-    if (Canvas?.ActiveLayer == null) return;
-    var index = Canvas.Layers.IndexOf(Canvas.ActiveLayer);
-    if (index <= 0)
-    {
-        StatusMessage = "Нет предыдущего слоя для объединения";
-        return;
-    }
-    
-    var current = Canvas.ActiveLayer;
-    var previous = Canvas.Layers[index - 1];
-    
-    foreach (var figure in current.Figures.ToList())
-    {
-        previous.Figures.Add(figure);
-        current.Figures.Remove(figure);
-    }
-    
-    Canvas.Layers.Remove(current);
-    Canvas.ActiveLayer = previous;
-    
-    StatusMessage = $"Слой '{current.Name}' объединён с '{previous.Name}'";
-}
-
-private void BringActiveLayerToFront()
-{
-    if (Canvas?.ActiveLayer == null) return;
-    Canvas.Layers.Remove(Canvas.ActiveLayer);
-    Canvas.Layers.Add(Canvas.ActiveLayer);
-    StatusMessage = "Слой перемещён на передний план";
-}
-
-private void SendActiveLayerToBack()
-{
-    if (Canvas?.ActiveLayer == null) return;
-    Canvas.Layers.Remove(Canvas.ActiveLayer);
-    Canvas.Layers.Insert(0, Canvas.ActiveLayer);
-    StatusMessage = "Слой перемещён на задний план";
-}
-
-private void BringActiveLayerForward()
-{
-    if (Canvas?.ActiveLayer == null) return;
-    var index = Canvas.Layers.IndexOf(Canvas.ActiveLayer);
-    if (index < Canvas.Layers.Count - 1)
-    {
-        Canvas.Layers.Move(index, index + 1);
-        StatusMessage = "Слой перемещён вперёд";
-    }
-}
-
-private void SendActiveLayerBackward()
-{
-    if (Canvas?.ActiveLayer == null) return;
-    var index = Canvas.Layers.IndexOf(Canvas.ActiveLayer);
-    if (index > 0)
-    {
-        Canvas.Layers.Move(index, index - 1);
-        StatusMessage = "Слой перемещён назад";
-    }
-}
-
     /// <summary>
     /// Создаёт модель проекта из текущего состояния редактора для сохранения.
     /// </summary>
@@ -783,8 +587,9 @@ private void SendActiveLayerBackward()
 
     /// <summary>
     /// Устанавливает инструмент рисования по строковому имени (из Tag кнопки UI).
+    /// Использует DrawingToolExtensions.TryParse для преобразования строки в перечисление.
     /// </summary>
-    /// <param name="toolName">Строковое название инструмента.</param>
+    /// <param name="toolName">Строковое название инструмента (например, "Перо", "Прямоугольник").</param>
     public void SetToolByName(string toolName)
     {
         if (DrawingToolExtensions.TryParse(toolName, out var tool))
@@ -795,6 +600,7 @@ private void SendActiveLayerBackward()
     
     /// <summary>
     /// Устанавливает активный инструмент рисования и сбрасывает состояние рисования при смене.
+    /// Если было активное рисование другим инструментом — очищает предварительную фигуру.
     /// </summary>
     /// <param name="tool">Перечисление DrawingTool для установки.</param>
     public void SetTool(DrawingTool tool)
@@ -819,10 +625,11 @@ private void SendActiveLayerBackward()
     }
 
     /// <summary>
-    /// Перемещает выделенные фигуры на заданный вектор и добавляет действие в историю.
+    /// Перемещает выделенные фигуры на заданный вектор и добавляет действие в историю для Undo.
+    /// Для групп фигур извлекает все вложенные фигуры и перемещает их рекурсивно.
     /// </summary>
-    /// <param name="dx">Смещение по оси X.</param>
-    /// <param name="dy">Смещение по оси Y.</param>
+    /// <param name="dx">Смещение по оси X в координатах канваса.</param>
+    /// <param name="dy">Смещение по оси Y в координатах канваса.</param>
     private void MoveSelected(double dx, double dy)
     {
         if (Canvas?.SelectedFigures?.Any() != true) return;
@@ -848,7 +655,7 @@ private void SendActiveLayerBackward()
 
     /// <summary>
     /// Группирует выделенные фигуры в одну группу (GroupViewModel).
-    /// Требует выделения минимум двух фигур.
+    /// Требует выделения минимум двух фигур, иначе выводит сообщение об ошибке.
     /// </summary>
     public void GroupSelected()
     {
@@ -884,7 +691,8 @@ private void SendActiveLayerBackward()
     }
     
     /// <summary>
-    /// Разгруппировывает выбранную группу, добавляя её дочерние фигуры обратно на слой.
+    /// Разгруппировывает выбранную группу, добавляя её дочерние фигуры обратно на активный слой.
+    /// Если выбрана не группа — выводит сообщение об ошибке.
     /// </summary>
     private void UngroupSelected()
     {
@@ -910,8 +718,9 @@ private void SendActiveLayerBackward()
 
     /// <summary>
     /// Применяет действие изменения стиля ко всем выделенным фигурам и добавляет команду в историю.
+    /// Обрабатывает как отдельные фигуры, так и группы (рекурсивно применяя к дочерним элементам).
     /// </summary>
-    /// <param name="apply">Действие, изменяющее свойства фигуры (цвет, толщина и т.д.).</param>
+    /// <param name="apply">Действие, изменяющее свойства фигуры (цвет, толщина, прозрачность и т.д.).</param>
     private void ApplyStyleToSelected(Action<FigureViewModel> apply)
     {
         if (Canvas?.SelectedFigure is GroupViewModel group)
@@ -994,6 +803,7 @@ private void SendActiveLayerBackward()
     
     /// <summary>
     /// Добавляет круг с текущими настройками стиля на активный слой.
+    /// Создаёт фигуру с центром в (100, 100) и радиусом 150 пикселей.
     /// </summary>
     private void AddCircle()
     {
@@ -1007,6 +817,7 @@ private void SendActiveLayerBackward()
     
     /// <summary>
     /// Добавляет эллипс с текущими настройками стиля на активный слой.
+    /// Создаёт фигуру с центром в (100, 100) и размерами 150×100 пикселей.
     /// </summary>
     private void AddEllipse()
     {
@@ -1020,6 +831,7 @@ private void SendActiveLayerBackward()
     
     /// <summary>
     /// Добавляет линию с текущими настройками стиля на активный слой.
+    /// Создаёт фигуру от точки (100, 100) до точки (300, 300).
     /// </summary>
     private void AddLine()
     {
@@ -1032,6 +844,7 @@ private void SendActiveLayerBackward()
     
     /// <summary>
     /// Добавляет правильный пятиугольник с текущими настройками стиля на активный слой.
+    /// Создаёт фигуру с центром в (200, 200) и радиусом описанной окружности 75 пикселей.
     /// </summary>
     private void AddPentagon()
     {
@@ -1047,6 +860,7 @@ private void SendActiveLayerBackward()
     
     /// <summary>
     /// Добавляет правильный шестиугольник с текущими настройками стиля на активный слой.
+    /// Создаёт фигуру с центром в (200, 200) и радиусом описанной окружности 75 пикселей.
     /// </summary>
     private void AddHexagon()
     {
@@ -1062,6 +876,7 @@ private void SendActiveLayerBackward()
     
     /// <summary>
     /// Добавляет правильный семиугольник с текущими настройками стиля на активный слой.
+    /// Создаёт фигуру с центром в (200, 200) и радиусом описанной окружности 75 пикселей.
     /// </summary>
     private void AddHeptagon()
     {
@@ -1077,6 +892,7 @@ private void SendActiveLayerBackward()
     
     /// <summary>
     /// Добавляет правильный восьмиугольник с текущими настройками стиля на активный слой.
+    /// Создаёт фигуру с центром в (200, 200) и радиусом описанной окружности 75 пикселей.
     /// </summary>
     private void AddOctagon()
     {
@@ -1092,6 +908,7 @@ private void SendActiveLayerBackward()
     
     /// <summary>
     /// Добавляет треугольник по трём вершинам с текущими настройками стиля на активный слой.
+    /// Создаёт фигуру с вершинами в (200,200), (100,200), (200,100).
     /// </summary>
     private void AddTriangle()
     {
@@ -1106,7 +923,29 @@ private void SendActiveLayerBackward()
     }
 
     /// <summary>
+    /// Добавляет прямоугольный треугольник с текущими настройками стиля на активный слой.
+    /// Создаёт фигуру с прямым углом в (100, 100) и катетами 100×100 пикселей.
+    /// </summary>
+    private void AddRightTriangle()
+    {
+        var triangle = new RightTriangleViewModel(
+            100, 100,           // позиция прямого угла
+            100, 100,           // ширина и высота катетов
+            StrokeColor.Color, 
+            StrokeWidth, 
+            FillColor.Color, 
+            Opacity / 100.0);
+    
+        ApplyStyle(triangle);
+        var cmd = new AddFigureCommand(triangle, Canvas.ActiveLayer?.Id);
+        cmd.Execute(Canvas);
+        _history.AddAction(cmd);
+        StatusMessage = "Добавлен прямоугольный треугольник";
+    }
+
+    /// <summary>
     /// Добавляет ромб с текущими настройками стиля на активный слой.
+    /// Создаёт фигуру с центром в (200, 200) и диагоналями 100×100 пикселей.
     /// </summary>
     private void AddRhombus()
     {
@@ -1127,6 +966,7 @@ private void SendActiveLayerBackward()
     
     /// <summary>
     /// Добавляет пентаграмму (пятиконечную звезду) с текущими настройками стиля на активный слой.
+    /// Создаёт фигуру с центром в (200, 200) и радиусом описанной окружности 50 пикселей.
     /// </summary>
     private void AddPentagram()
     {
@@ -1141,7 +981,8 @@ private void SendActiveLayerBackward()
     }
 
     /// <summary>
-    /// Удаляет все выделенные фигуры и добавляет действие в историю.
+    /// Удаляет все выделенные фигуры с активного слоя и добавляет действие в историю для Undo.
+    /// Очищает коллекцию SelectedFigures после удаления.
     /// </summary>
     private void DeleteSelected()
     {
@@ -1156,7 +997,8 @@ private void SendActiveLayerBackward()
     }
     
     /// <summary>
-    /// Дублирует выбранную фигуру со смещением (10, 10) и добавляет в историю.
+    /// Дублирует выбранную фигуру со смещением (10, 10) и добавляет в историю для Undo.
+    /// Использует метод Clone() для создания глубокой копии фигуры.
     /// </summary>
     private void DuplicateSelected()
     {
@@ -1287,7 +1129,8 @@ private void SendActiveLayerBackward()
     }
 
     /// <summary>
-    /// Выполняет вертикальное отражение выделенных фигур.
+    /// Выполняет вертикальное отражение выделенных фигур относительно их центра.
+    /// Добавляет действие в историю для поддержки Undo.
     /// </summary>
     private void FlipVertical()
     {
@@ -1313,7 +1156,8 @@ private void SendActiveLayerBackward()
     }
     
     /// <summary>
-    /// Выполняет горизонтальное отражение выделенных фигур.
+    /// Выполняет горизонтальное отражение выделенных фигур относительно их центра.
+    /// Добавляет действие в историю для поддержки Undo.
     /// </summary>
     private void FlipHorizontal()
     {
@@ -1339,9 +1183,10 @@ private void SendActiveLayerBackward()
     }
 
     /// <summary>
-    /// Обновляет отображаемые координаты курсора мыши.
+    /// Обновляет отображаемые координаты курсора мыши в статус-баре.
     /// </summary>
     /// <param name="coords">Кортеж с координатами (X, Y) в координатах канваса.</param>
+
     private void UpdateCoordinates((double x, double y) coords)
     {
         MouseX = coords.x;
@@ -1351,6 +1196,7 @@ private void SendActiveLayerBackward()
 
     /// <summary>
     /// Обрабатывает клик по канвасу: активирует слой, выбирает фигуру или начинает рисование.
+    /// Логика зависит от текущего выбранного инструмента (Select, примитивы, Pen).
     /// </summary>
     /// <param name="point">Точка клика в координатах канваса.</param>
     public void CanvasClicked(Point2D point)
@@ -1409,7 +1255,8 @@ private void SendActiveLayerBackward()
     }
     
     /// <summary>
-    /// Создаёт новый слой и делает его активным для рисования.
+    /// Создаёт новый слой с уникальным именем и делает его активным для рисования.
+    /// Активирует канвас и выводит сообщение о готовности к рисованию.
     /// </summary>
     private void CreateNewLayer()
     {
@@ -1424,8 +1271,9 @@ private void SendActiveLayerBackward()
 
     /// <summary>
     /// Публичный обработчик события нажатия кнопки мыши на канвасе.
+    /// Делегирует вызов приватному методу CanvasPointerPressed.
     /// </summary>
-    /// <param name="e">Аргументы события PointerPressedEventArgs.</param>
+    /// <param name="e">Аргументы события PointerPressedEventArgs с данными о нажатии.</param>
     public void HandlePointerPressed(PointerPressedEventArgs e)
     {
         CanvasPointerPressed(e);
@@ -1433,8 +1281,9 @@ private void SendActiveLayerBackward()
     
     /// <summary>
     /// Публичный обработчик события перемещения мыши над канвасом.
+    /// Делегирует вызов приватному методу CanvasPointerMoved.
     /// </summary>
-    /// <param name="e">Аргументы события PointerEventArgs.</param>
+    /// <param name="e">Аргументы события PointerEventArgs с данными о позиции курсора.</param>
     public void HandlePointerMoved(PointerEventArgs e)
     {
         CanvasPointerMoved(e);
@@ -1442,8 +1291,9 @@ private void SendActiveLayerBackward()
     
     /// <summary>
     /// Публичный обработчик события отпускания кнопки мыши на канвасе.
+    /// Делегирует вызов приватному методу CanvasPointerReleased.
     /// </summary>
-    /// <param name="e">Аргументы события PointerReleasedEventArgs.</param>
+    /// <param name="e">Аргументы события PointerReleasedEventArgs с данными об отпускании.</param>
     public void HandlePointerReleased(PointerReleasedEventArgs e)
     {
         CanvasPointerReleased(e);
@@ -1452,10 +1302,13 @@ private void SendActiveLayerBackward()
     private bool s_area = false;
     private Point2D s_start = null;
     private Point2D s_end = null;
+    
     /// <summary>
-    /// Обрабатывает нажатие кнопки мыши: начинает рисование, выделение или выбор фигуры.
+    /// Обрабатывает нажатие кнопки мыши: начинает рисование, выделение областью или выбор фигуры.
+    /// Логика зависит от текущего инструмента: примитивы, перо, выделение или текст.
     /// </summary>
-    /// <param name="e">Аргументы события PointerPressedEventArgs.</param>
+    /// <param name="e">Аргументы события PointerPressedEventArgs с данными о нажатии.</param>
+
     private void CanvasPointerPressed(PointerPressedEventArgs e)
     {
         if (Canvas == null) return;
@@ -1577,8 +1430,9 @@ private void SendActiveLayerBackward()
 
     /// <summary>
     /// Инициализирует режим рисования пером: создаёт первую точку и предварительную фигуру.
+    /// Добавляет точку в коллекцию _penPoints и отображает preview на канвасе.
     /// </summary>
-    /// <param name="startPoint">Точка начала рисования.</param>
+    /// <param name="startPoint">Точка начала рисования в координатах канваса.</param>
     private void StartPenDrawing(Point2D startPoint)
     {
         IsDrawing = true;
@@ -1598,8 +1452,9 @@ private void SendActiveLayerBackward()
 
     /// <summary>
     /// Обрабатывает перемещение мыши: обновляет предварительную фигуру или область выделения.
+    /// Также обновляет координаты курсора в статус-баре.
     /// </summary>
-    /// <param name="e">Аргументы события PointerEventArgs.</param>
+    /// <param name="e">Аргументы события PointerEventArgs с данными о позиции курсора.</param>
     private void CanvasPointerMoved(PointerEventArgs e)
     {
         if (Canvas == null) return;
@@ -1657,8 +1512,9 @@ private void SendActiveLayerBackward()
 
     /// <summary>
     /// Обрабатывает отпускание кнопки мыши: завершает рисование или выделение областью.
+    /// Для перетаскивания фигур добавляет команду DragMoveCommand в историю.
     /// </summary>
-    /// <param name="e">Аргументы события PointerReleasedEventArgs.</param>
+    /// <param name="e">Аргументы события PointerReleasedEventArgs с данными об отпускании.</param>
     private void CanvasPointerReleased(PointerReleasedEventArgs e)
     {
         if (Canvas == null) return;
@@ -1701,67 +1557,13 @@ private void SendActiveLayerBackward()
             e.Handled = true;
         }
     }
-    
-    public class DragMoveCommand : IHistoryAction
-    {
-        private readonly List<Guid> _figureIds;
-        private readonly Dictionary<Guid, List<(double X, double Y)>> _originalVertices;
-        private readonly Point2D _delta;
-        private CanvasViewModel? _canvas;
-
-        public string Description => "Перемещение";
-
-        public DragMoveCommand(List<Guid> figureIds, Dictionary<Guid, List<(double X, double Y)>> originalVertices, Point2D delta)
-        {
-            _figureIds = figureIds;
-            _originalVertices = originalVertices;
-            _delta = delta;
-        }
-
-        public void SetCanvas(CanvasViewModel canvas) => _canvas = canvas;
-
-        public void Undo()
-        {
-            if (_canvas == null) return;
-            foreach (var id in _figureIds)
-            {
-                var figure = FindFigure(id);
-                if (figure != null && _originalVertices.TryGetValue(id, out var verts))
-                {
-                    for (int i = 0; i < figure.Vertices.Count && i < verts.Count; i++)
-                    {
-                        figure.Vertices[i].X = verts[i].X;
-                        figure.Vertices[i].Y = verts[i].Y;
-                    }
-                }
-            }
-        }
-        public void Redo()
-        {
-            if (_canvas == null) return;
-            foreach (var id in _figureIds)
-            {
-                var figure = FindFigure(id);
-                if (figure != null && _originalVertices.TryGetValue(id, out var verts))
-                {
-                    for (int i = 0; i < figure.Vertices.Count && i < verts.Count; i++)
-                    {
-                        figure.Vertices[i].X = verts[i].X + _delta.X;
-                        figure.Vertices[i].Y = verts[i].Y + _delta.Y;
-                    }
-                }
-            }
-        }
-
-        private FigureViewModel? FindFigure(Guid id) =>
-            _canvas?.Layers.SelectMany(l => l.Figures).FirstOrDefault(f => f.Id == id);
-    }
 
     /// <summary>
     /// Выделяет все фигуры, полностью попавшие в прямоугольную область выделения.
+    /// Снимает предыдущее выделение и обновляет коллекцию SelectedFigures.
     /// </summary>
-    /// <param name="start">Начальная точка области выделения.</param>
-    /// <param name="end">Конечная точка области выделения.</param>
+    /// <param name="start">Начальная точка области выделения в координатах канваса.</param>
+    /// <param name="end">Конечная точка области выделения в координатах канваса.</param>
     private void SelectFiguresInArea(Point2D start, Point2D end)
     {
         if (Canvas?.ActiveLayer == null) return;
@@ -1792,9 +1594,10 @@ private void SendActiveLayerBackward()
 
     /// <summary>
     /// Инициализирует режим рисования примитива: создаёт предварительную фигуру.
+    /// Сбрасывает предыдущее состояние рисования, если активен другой инструмент.
     /// </summary>
-    /// <param name="startPoint">Точка начала рисования.</param>
-    /// <param name="tool">Инструмент для рисования.</param>
+    /// <param name="startPoint">Точка начала рисования в координатах канваса.</param>
+    /// <param name="tool">Инструмент DrawingTool для создания соответствующей предварительной фигуры.</param>
     private void StartDrawing(Point2D startPoint, DrawingTool tool)
     {
         if (IsDrawing && _currentDrawingTool != tool)
@@ -1819,8 +1622,9 @@ private void SendActiveLayerBackward()
 
     /// <summary>
     /// Завершает рисование примитива: создаёт финальную фигуру и добавляет её на слой.
+    /// Проверяет минимальный размер фигуры для предотвращения создания микро-объектов.
     /// </summary>
-    /// <param name="endPoint">Конечная точка рисования.</param>
+    /// <param name="endPoint">Конечная точка рисования в координатах канваса.</param>
     private void FinishDrawingPrimitive(Point2D endPoint)
     {
         var start = _drawingStartPoint;
@@ -1847,9 +1651,10 @@ private void SendActiveLayerBackward()
     }
 
     /// <summary>
-    /// Добавляет новую точку в режиме рисования пером.
+    /// Добавляет новую точку в режиме рисования пером и обновляет предварительную фигуру.
+    /// Сохраняет точку в коллекции _penPoints для последующего использования.
     /// </summary>
-    /// <param name="point">Координаты добавляемой точки.</param>
+    /// <param name="point">Координаты добавляемой точки в координатах канваса.</param>
     private void AddPenPoint(Point2D point)
     {
         _penPoints.Add(point);
@@ -1869,8 +1674,9 @@ private void SendActiveLayerBackward()
 
     /// <summary>
     /// Обновляет координаты предварительной точки пера при движении мыши.
+    /// Вызывает RaisePropertyChanged для реактивного обновления UI.
     /// </summary>
-    /// <param name="point">Новые координаты для предварительной точки.</param>
+    /// <param name="point">Новые координаты для предварительной точки в координатах канваса.</param>
     private void UpdatePreviewPoint(Point2D point)
     {
         if (_previewFigure is PenPointViewModel previewPoint)
@@ -1884,6 +1690,7 @@ private void SendActiveLayerBackward()
 
     /// <summary>
     /// Завершает режим рисования пером: удаляет предварительную фигуру и сбрасывает состояние.
+    /// Выводит сообщение с количеством созданных точек.
     /// </summary>
     private void FinishPenDrawing()
     {
@@ -1924,6 +1731,12 @@ private void SendActiveLayerBackward()
                 new Point2D(center.X - radius, center.Y + radius),
                 new Point2D(center.X + radius, center.Y + radius),
                 StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+            DrawingTool.RightTriangle => new RightTriangleViewModel(
+                Math.Min(start.X, end.X),
+                Math.Min(start.Y, end.Y),
+                Math.Abs(end.X - start.X),
+                Math.Abs(end.Y - start.Y),
+                StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
             DrawingTool.Rhombus => new RhombusViewModel(
                 center.X, center.Y,
                 Math.Abs(end.X - start.X),
@@ -1946,6 +1759,7 @@ private void SendActiveLayerBackward()
 
     /// <summary>
     /// Сбрасывает все флаги и поля, связанные с режимом рисования.
+    /// Используется при завершении рисования или смене инструмента.
     /// </summary>
     private void ResetDrawingState()
     {
@@ -1985,6 +1799,12 @@ private void SendActiveLayerBackward()
                 new Point2D(center.X, center.Y - Math.Max(1, radius)),
                 new Point2D(center.X - Math.Max(1, radius), center.Y + Math.Max(1, radius)),
                 new Point2D(center.X + Math.Max(1, radius), center.Y + Math.Max(1, radius)),
+                StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
+            DrawingTool.RightTriangle => new RightTriangleViewModel(
+                Math.Min(start.X, end.X),
+                Math.Min(start.Y, end.Y),
+                Math.Abs(end.X - start.X),
+                Math.Abs(end.Y - start.Y),
                 StrokeColor.Color, StrokeWidth, FillColor.Color, Opacity / 100.0),
             DrawingTool.Rhombus => new RhombusViewModel(
                 center.X, center.Y,
@@ -2113,6 +1933,13 @@ private void SendActiveLayerBackward()
             case TriangleViewModel triangle:
                 UpdatePolygonBoundingBox(triangle, start, end);
                 break;
+            case RightTriangleViewModel rt:
+                rt.UpdateVertices(
+                    Math.Min(start.X, end.X),
+                    Math.Min(start.Y, end.Y),
+                    Math.Abs(end.X - start.X),
+                    Math.Abs(end.Y - start.Y));
+                break;
         }
     }
 
@@ -2150,6 +1977,462 @@ private void SendActiveLayerBackward()
         polygon.RaisePropertyChanged(nameof(PolygonViewModel.Vertices));
     }
     
+    // === Буфер обмена ===
+    
+    /// <summary>
+    /// Вырезает выделенные фигуры: копирует их в буфер обмена и удаляет с канваса.
+    /// Комбинирует методы CopySelected() и DeleteSelected() для операции Cut.
+    /// </summary>
+    private void CutSelected()
+	{
+    	CopySelected();
+    	DeleteSelected();
+	}
+
+    /// <summary>
+    /// Копирует выделенные фигуры во внутренний буфер обмена _clipboard.
+    /// Использует метод Clone() для создания глубокой копии каждой фигуры.
+    /// </summary>
+	private void CopySelected()
+	{
+    	_clipboard.Clear();
+    	if (Canvas?.SelectedFigures?.Any() == true)
+    	{
+        	foreach (var figure in Canvas.SelectedFigures)
+        	{
+            	_clipboard.Add(figure.Clone());
+        	}
+    	}
+    	StatusMessage = $"Скопировано {_clipboard.Count} объектов";
+	}
+
+    /// <summary>
+    /// Вставляет фигуры из буфера обмена на активный слой со смещением (20, 20).
+    /// Использует метод Clone() для создания независимых копий вставляемых фигур.
+    /// </summary>
+	private void PasteSelected()
+	{
+    	if (_clipboard.Count == 0 || Canvas?.ActiveLayer == null) return;
+    
+    	foreach (var original in _clipboard)
+    	{
+        	var clone = original.Clone();
+        	clone.Move(20, 20); // Смещение при вставке
+        	Canvas.AddFigure(clone);
+    	}
+    	StatusMessage = $"Вставлено {_clipboard.Count} объектов";
+	}
+    
+    // === Выделение ===
+
+    /// <summary>
+    /// Выделяет все фигуры на активном слое.
+    /// Снимает предыдущее выделение, затем добавляет все фигуры в SelectedFigures.
+    /// </summary>
+	private void SelectAll()
+	{
+    	if (Canvas?.ActiveLayer == null) return;
+    
+    	foreach (var f in Canvas.SelectedFigures)
+        	f.IsSelected = false;
+    	Canvas.SelectedFigures.Clear();
+    
+    	foreach (var figure in Canvas.ActiveLayer.Figures)
+    	{
+        	figure.IsSelected = true;
+        	Canvas.SelectedFigures.Add(figure);
+    	}
+    	Canvas.RaisePropertyChanged(nameof(Canvas.SelectedFigures));
+    	StatusMessage = $"Выделено {Canvas.SelectedFigures.Count} объектов";
+	}
+
+    /// <summary>
+    /// Снимает выделение со всех фигур и очищает коллекцию SelectedFigures.
+    /// Устанавливает SelectedFigure в null для сброса состояния выбора.
+    /// </summary>
+	private void DeselectAll()
+	{
+    	foreach (var f in Canvas.SelectedFigures)
+        	f.IsSelected = false;
+    	Canvas.SelectedFigures.Clear();
+    	Canvas.SelectedFigure = null;
+    	StatusMessage = "Выделение снято";
+	}
+    
+    // === Порядок отрисовки (Z-order) ===
+
+    /// <summary>
+    /// Перемещает выделенные фигуры на передний план активного слоя.
+    /// Фигуры, добавленные последними, отрисовываются поверх остальных.
+    /// </summary>
+    private void BringSelectedToFront()
+    {
+        if (Canvas?.ActiveLayer == null || !Canvas.SelectedFigures.Any()) return;
+        
+        foreach (var figure in Canvas.SelectedFigures.ToList())
+        {
+            Canvas.ActiveLayer.Figures.Remove(figure);
+            Canvas.ActiveLayer.Figures.Add(figure);
+        }
+        StatusMessage = "На передний план";
+    }
+
+    /// <summary>
+    /// Перемещает выделенные фигуры на задний план активного слоя.
+    /// Фигуры, добавленные первыми, отрисовываются под остальными.
+    /// </summary>
+    private void SendSelectedToBack()
+    {
+        if (Canvas?.ActiveLayer == null || !Canvas.SelectedFigures.Any()) return;
+        
+        foreach (var figure in Canvas.SelectedFigures.Reverse().ToList())
+        {
+            Canvas.ActiveLayer.Figures.Remove(figure);
+            Canvas.ActiveLayer.Figures.Insert(0, figure);
+        }
+        StatusMessage = "На задний план";
+    }
+
+    /// <summary>
+    /// Перемещает выделенные фигуры на один уровень вверх в порядке отрисовки.
+    /// Меняет местами фигуру со следующей в коллекции, если это возможно.
+    /// </summary>
+    private void BringSelectedForward()
+    {
+        if (Canvas?.ActiveLayer == null || !Canvas.SelectedFigures.Any()) return;
+        
+        foreach (var figure in Canvas.SelectedFigures.ToList())
+        {
+            var index = Canvas.ActiveLayer.Figures.IndexOf(figure);
+            if (index < Canvas.ActiveLayer.Figures.Count - 1)
+            {
+                Canvas.ActiveLayer.Figures.Move(index, index + 1);
+            }
+        }
+        StatusMessage = "Перемещено вперёд";
+    }
+
+    /// <summary>
+    /// Перемещает выделенные фигуры на один уровень вниз в порядке отрисовки.
+    /// Меняет местами фигуру с предыдущей в коллекции, если это возможно.
+    /// </summary>
+    private void SendSelectedBackward()
+    {
+        if (Canvas?.ActiveLayer == null || !Canvas.SelectedFigures.Any()) return;
+        
+        foreach (var figure in Canvas.SelectedFigures.ToList())
+        {
+            var index = Canvas.ActiveLayer.Figures.IndexOf(figure);
+            if (index > 0)
+            {
+                Canvas.ActiveLayer.Figures.Move(index, index - 1);
+            }
+        }
+        StatusMessage = "Перемещено назад";
+    }
+
+    // === Выравнивание ===
+    
+    /// <summary>Перечисление типов выравнивания для метода AlignSelected.</summary>
+    private enum AlignType { Left, Center, Right, Top, Middle, Bottom }
+
+    /// <summary>Выравнивает выделенные фигуры по левому краю.</summary>
+    private void AlignLeft() => AlignSelected(AlignType.Left);
+
+    /// <summary>Выравнивает выделенные фигуры по центру горизонтально.</summary>
+    private void AlignCenter() => AlignSelected(AlignType.Center);
+
+    /// <summary>Выравнивает выделенные фигуры по правому краю.</summary>
+    private void AlignRight() => AlignSelected(AlignType.Right);
+
+    /// <summary>Выравнивает выделенные фигуры по верхнему краю.</summary>
+    private void AlignTop() => AlignSelected(AlignType.Top);
+
+    /// <summary>Выравнивает выделенные фигуры по центру вертикально.</summary>
+    private void AlignMiddle() => AlignSelected(AlignType.Middle);
+
+    /// <summary>Выравнивает выделенные фигуры по нижнему краю.</summary>
+    private void AlignBottom() => AlignSelected(AlignType.Bottom);
+
+    /// <summary>
+    /// Выравнивает выделенные фигуры по заданному типу.
+    /// Вычисляет целевую координату на основе ограничивающих прямоугольников всех фигур,
+    /// затем смещает каждую фигуру к этой координате по соответствующей оси.
+    /// </summary>
+    /// <param name="type">Тип выравнивания из перечисления AlignType.</param>
+    private void AlignSelected(AlignType type)
+    {
+        if (Canvas?.SelectedFigures?.Count < 2) return;
+        
+        var bounds = Canvas.SelectedFigures.Select(f => f.GetBoundingBox()).ToList();
+        double target = type switch
+        {
+            AlignType.Left => bounds.Min(b => b.MinX),
+            AlignType.Center => bounds.Average(b => (b.MinX + b.MaxX) / 2),
+            AlignType.Right => bounds.Max(b => b.MaxX),
+            AlignType.Top => bounds.Min(b => b.MinY),
+            AlignType.Middle => bounds.Average(b => (b.MinY + b.MaxY) / 2),
+            AlignType.Bottom => bounds.Max(b => b.MaxY),
+            _ => 0
+        };
+        foreach (var figure in Canvas.SelectedFigures)
+        {
+            var bbox = figure.GetBoundingBox();
+            double current = type switch
+            {
+                AlignType.Left or AlignType.Right or AlignType.Center => 
+                    type == AlignType.Center ? (bbox.MinX + bbox.MaxX) / 2 : 
+                    type == AlignType.Left ? bbox.MinX : bbox.MaxX,
+                _ => type == AlignType.Middle ? (bbox.MinY + bbox.MaxY) / 2 : 
+                    type == AlignType.Top ? bbox.MinY : bbox.MaxY
+            };
+            
+            double delta = target - current;
+            if (type is AlignType.Left or AlignType.Center or AlignType.Right)
+                figure.Move(delta, 0);
+            else
+                figure.Move(0, delta);
+        }
+        StatusMessage = $"Выровнено по {(type == AlignType.Center || type == AlignType.Middle ? "центру" : type.ToString().ToLower())}";
+    }
+
+    // === Распределение ===
+    
+    /// <summary>
+    /// Равномерно распределяет выделенные фигуры по горизонтали.
+    /// Вычисляет шаг между крайними фигурами и позиционирует промежуточные фигуры с равными интервалами.
+    /// Требует минимум 3 выделенные фигуры.
+    /// </summary>
+    private void DistributeHorizontal()
+    {
+        if (Canvas?.SelectedFigures?.Count < 3) return;
+        
+        var sorted = Canvas.SelectedFigures
+            .OrderBy(f => f.GetBoundingBox().MinX)
+            .ToList();
+        
+        double min = sorted.First().GetBoundingBox().MinX;
+        double max = sorted.Last().GetBoundingBox().MaxX;
+        double step = (max - min) / (sorted.Count - 1);
+        
+        for (int i = 1; i < sorted.Count - 1; i++)
+        {
+            var figure = sorted[i];
+            var bbox = figure.GetBoundingBox();
+            double target = min + i * step - (bbox.MinX + bbox.MaxX) / 2;
+            figure.Move(target, 0);
+        }
+        StatusMessage = "Распределено горизонтально";
+    }
+
+    /// <summary>
+    /// Равномерно распределяет выделенные фигуры по вертикали.
+    /// Вычисляет шаг между крайними фигурами и позиционирует промежуточные фигуры с равными интервалами.
+    /// Требует минимум 3 выделенные фигуры.
+    /// </summary>
+    private void DistributeVertical()
+    {
+        if (Canvas?.SelectedFigures?.Count < 3) return;
+        
+        var sorted = Canvas.SelectedFigures
+            .OrderBy(f => f.GetBoundingBox().MinY)
+            .ToList();
+        
+        double min = sorted.First().GetBoundingBox().MinY;
+        double max = sorted.Last().GetBoundingBox().MaxY;
+        double step = (max - min) / (sorted.Count - 1);
+        
+        for (int i = 1; i < sorted.Count - 1; i++)
+        {
+            var figure = sorted[i];
+            var bbox = figure.GetBoundingBox();
+            double target = min + i * step - (bbox.MinY + bbox.MaxY) / 2;
+            figure.Move(0, target);
+        }
+        StatusMessage = "Распределено вертикально";
+    }
+
+    // === Масштаб фигур ===
+    /// <summary>
+    /// Увеличивает масштаб выделенных фигур на 10% (коэффициент 1.1).
+    /// </summary>
+    private void ScaleSelectedUp() => ScaleSelected(1.1, 1.1);
+
+    /// <summary>
+    /// Уменьшает масштаб выделенных фигур на 10% (коэффициент 0.9).
+    /// </summary>
+    private void ScaleSelectedDown() => ScaleSelected(0.9, 0.9);
+
+    /// <summary>
+    /// Масштабирует выделенные фигуры по заданным коэффициентам по осям X и Y.
+    /// Применяет метод Scale() к каждой фигуре в коллекции SelectedFigures.
+    /// </summary>
+    /// <param name="sx">Коэффициент масштабирования по оси X (1.0 = 100%).</param>
+    /// <param name="sy">Коэффициент масштабирования по оси Y (1.0 = 100%).</param>
+    private void ScaleSelected(double sx, double sy)
+    {
+        if (Canvas?.SelectedFigures?.Any() != true) return;
+    
+        foreach (var figure in Canvas.SelectedFigures)
+        {
+            figure.Scale(sx, sy);
+        }
+        StatusMessage = $"Масштаб: {sx:P0}";
+    }
+
+    /// <summary>
+    /// Заглушка для масштабирования выделенных фигур под размер видимой области канваса.
+    /// Планируется реализация автоматического подбора коэффициентов масштабирования.
+    /// </summary>
+    private void ScaleSelectedToFit()
+    {
+        // Заглушка: масштабирует выделенное под размер видимой области
+        StatusMessage = "Масштабирование по размеру холста (заглушка)";
+    }
+
+    // === Стиль ===
+    
+    /// <summary>
+    /// Устанавливает толщину обводки для выделенных фигур.
+    /// Парсит строковое значение в целое число и применяет ко всем выделенным фигурам.
+    /// </summary>
+    /// <param name="widthStr">Строковое представление толщины в пикселях.</param>
+    private void SetStrokeWidth(string widthStr)
+    {
+        if (int.TryParse(widthStr, out var width) && Canvas?.SelectedFigures?.Any() == true)
+        {
+            foreach (var f in Canvas.SelectedFigures)
+                f.Thickness = width;
+            StrokeWidth = width;
+            StatusMessage = $"Толщина: {width} пкс";
+        }
+    }
+
+    /// <summary>
+    /// Отменяет заливку выделенных фигур, устанавливая прозрачный цвет.
+    /// </summary>
+    private void SetFillNone()
+    {
+        if (Canvas?.SelectedFigures?.Any() == true)
+        {
+            foreach (var f in Canvas.SelectedFigures)
+                f.FillColor = System.Drawing.Color.Transparent;
+            StatusMessage = "Заливка: нет";
+        }
+    }
+
+    /// <summary>
+    /// Отменяет обводку выделенных фигур, устанавливая прозрачный цвет.
+    /// </summary>
+    private void SetStrokeNone()
+    {
+        if (Canvas?.SelectedFigures?.Any() == true)
+        {
+            foreach (var f in Canvas.SelectedFigures)
+                f.LineColor = System.Drawing.Color.Transparent;
+            StatusMessage = "Обводка: нет";
+        }
+    }
+
+    /// <summary>
+    /// Заглушка для открытия панели свойств выделенного объекта.
+    /// Планируется реализация диалога с расширенными настройками фигуры.
+    /// </summary>
+    private void OpenProperties()
+    {
+        // TODO: Открыть панель свойств объекта
+        StatusMessage = "Свойства объекта (заглушка)";
+    }
+
+    // === Управление слоями ===
+
+    /// <summary>
+    /// Объединяет активный слой с предыдущим в списке слоёв.
+    /// Переносит все фигуры из текущего слоя в предыдущий, затем удаляет текущий слой.
+    /// Если активный слой первый в списке — выводит сообщение об ошибке.
+    /// </summary>
+    private void MergeLayerWithPrevious()
+    {
+        if (Canvas?.ActiveLayer == null) return;
+        var index = Canvas.Layers.IndexOf(Canvas.ActiveLayer);
+        if (index <= 0)
+        {
+            StatusMessage = "Нет предыдущего слоя для объединения";
+            return;
+        }
+        
+        var current = Canvas.ActiveLayer;
+        var previous = Canvas.Layers[index - 1];
+        
+        foreach (var figure in current.Figures.ToList())
+        {
+            previous.Figures.Add(figure);
+            current.Figures.Remove(figure);
+        }
+        
+        Canvas.Layers.Remove(current);
+        Canvas.ActiveLayer = previous;
+        
+        StatusMessage = $"Слой '{current.Name}' объединён с '{previous.Name}'";
+    }
+    
+    /// <summary>
+    /// Перемещает активный слой на самый передний план отрисовки (последний в коллекции).
+    /// </summary>
+    private void BringActiveLayerToFront()
+    {
+        if (Canvas?.ActiveLayer == null) return;
+        Canvas.Layers.Remove(Canvas.ActiveLayer);
+        Canvas.Layers.Add(Canvas.ActiveLayer);
+        StatusMessage = "Слой перемещён на передний план";
+    }
+
+    /// <summary>
+    /// Перемещает активный слой на самый задний план отрисовки (первый в коллекции).
+    /// </summary>
+    private void SendActiveLayerToBack()
+    {
+        if (Canvas?.ActiveLayer == null) return;
+        Canvas.Layers.Remove(Canvas.ActiveLayer);
+        Canvas.Layers.Insert(0, Canvas.ActiveLayer);
+        StatusMessage = "Слой перемещён на задний план";
+    }
+
+    /// <summary>
+    /// Перемещает активный слой на один уровень вверх в порядке отрисовки.
+    /// Меняет местами слой со следующим в коллекции, если это возможно.
+    /// </summary>
+    private void BringActiveLayerForward()
+    {
+        if (Canvas?.ActiveLayer == null) return;
+        var index = Canvas.Layers.IndexOf(Canvas.ActiveLayer);
+        if (index < Canvas.Layers.Count - 1)
+        {
+            Canvas.Layers.Move(index, index + 1);
+            StatusMessage = "Слой перемещён вперёд";
+        }
+    }
+
+    /// <summary>
+    /// Перемещает активный слой на один уровень вниз в порядке отрисовки.
+    /// Меняет местами слой с предыдущим в коллекции, если это возможно.
+    /// </summary>
+    private void SendActiveLayerBackward()
+    {
+        if (Canvas?.ActiveLayer == null) return;
+        var index = Canvas.Layers.IndexOf(Canvas.ActiveLayer);
+        if (index > 0)
+        {
+            Canvas.Layers.Move(index, index - 1);
+            StatusMessage = "Слой перемещён назад";
+        }
+    }
+    
+    /// <summary>
+    /// Инициализирует режим ввода текста: создаёт предварительный TextViewModel и активирует ввод.
+    /// Выводит подсказку о доступных клавишах (Enter для завершения, Esc для отмены).
+    /// </summary>
+    /// <param name="point">Точка вставки текста в координатах канваса.</param>
     private void StartTextInput(Point2D point)
     {
         IsDrawing = true;
@@ -2169,14 +2452,15 @@ private void SendActiveLayerBackward()
     
         Canvas?.AddFigure(_previewFigure);
         StatusMessage = "Введите текст (Enter для завершения, Esc для отмены)";
-		// TopLevel.GetTopLevel(...)?.Activate();
+        // TopLevel.GetTopLevel(...)?.Activate();
     }
 
     /// <summary>
     /// Преобразует экранные координаты события мыши в координаты канваса с учётом зума и смещения.
+    /// Учитывает текущие значения Canvas.Zoom, Canvas.OffsetX и Canvas.OffsetY.
     /// </summary>
-    /// <param name="e">Аргументы события PointerEventArgs.</param>
-    /// <returns>Точка в координатах канваса.</returns>
+    /// <param name="e">Аргументы события PointerEventArgs с экранными координатами.</param>
+    /// <returns>Точка в координатах канваса типа Point2D.</returns>
     private Point2D GetCanvasPoint(PointerEventArgs e)
     {
         var screenPos = e.GetPosition((Avalonia.Visual?)e.Source);
@@ -2190,227 +2474,242 @@ private void SendActiveLayerBackward()
         return new Point2D(screenPos.X, screenPos.Y);
     }
 
-/// <summary>
-/// Удаляет указанный слой (если он не последний).
-/// </summary>
-private void DeleteLayer(LayerViewModel layer)
-{
-    if (Canvas?.Layers.Count <= 1)
+    /// <summary>
+    /// Удаляет указанный слой (если он не последний в коллекции).
+    /// При удалении активного слоя переключает на соседний слой.
+    /// </summary>
+    private void DeleteLayer(LayerViewModel layer)
     {
-        StatusMessage = "Нельзя удалить последний слой";
-        return;
+        if (Canvas?.Layers.Count <= 1)
+        {
+            StatusMessage = "Нельзя удалить последний слой";
+            return;
+        }
+    
+        // Если удаляем активный слой — переключаем на другой
+        if (Canvas.ActiveLayer == layer)
+        {
+            var index = Canvas.Layers.IndexOf(layer);
+            Canvas.ActiveLayer = index > 0 ? Canvas.Layers[index - 1] : Canvas.Layers[1];
+        }
+    
+        Canvas.Layers.Remove(layer);
+        StatusMessage = $"Слой '{layer.Name}' удалён";
     }
     
-    // Если удаляем активный слой — переключаем на другой
-    if (Canvas.ActiveLayer == layer)
+    /// <summary>
+    /// Переключает блокировку слоя: если заблокирован — разблокирует, и наоборот.
+    /// Обновляет статус-сообщение и уведомляет об изменении коллекции слоёв.
+    /// </summary>
+    /// <param name="layer">Экземпляр LayerViewModel для изменения состояния блокировки.</param>
+    private void ToggleLockLayer(LayerViewModel layer)
     {
+	    DebugLog.Write($"[DEBUG] ToggleLockLayer: {layer.Name} -> {layer.IsLocked}");
+        StatusMessage = layer.IsLocked 
+            ? $"Слой '{layer.Name}' заблокирован" 
+            : $"Слой '{layer.Name}' разблокирован";
+	    Canvas?.RaisePropertyChanged(nameof(Canvas.Layers));
+    }
+
+    /// <summary>
+    /// Переключает видимость слоя: если скрыт — показывает, и наоборот.
+    /// Обновляет статус-сообщение и уведомляет об изменении коллекции слоёв.
+    /// </summary>
+    /// <param name="layer">Экземпляр LayerViewModel для изменения состояния видимости.</param>
+    private void ToggleVisibilityLayer(LayerViewModel layer)
+    {
+        DebugLog.Write($"[DEBUG] ToggleVisibilityLayer: {layer.Name} -> {layer.IsVisible}");
+        
+        StatusMessage = layer.IsVisible 
+            ? $"Слой '{layer.Name}' показан" 
+            : $"Слой '{layer.Name}' скрыт";
+	    Canvas?.RaisePropertyChanged(nameof(Canvas.Layers));
+    }
+
+    /// <summary>
+    /// Дублирует активный слой с сохранением всех фигур через глубокое клонирование.
+    /// Вставляет копию после текущего слоя и делает её активной.
+    /// </summary>
+    private void DuplicateLayer()
+    {
+        if (Canvas?.ActiveLayer == null) return;
+        
+        var source = Canvas.ActiveLayer;
+        var duplicate = new LayerViewModel($"Копия {source.Name}")
+        {
+            IsVisible = source.IsVisible,
+            IsLocked = source.IsLocked
+        };
+        
+        // Копируем фигуры (глубокое клонирование)
+        foreach (var figure in source.Figures)
+        {
+            var clone = figure.Clone();
+            duplicate.Figures.Add(clone);
+        }
+        
+        // Вставляем после текущего слоя
+        var index = Canvas.Layers.IndexOf(source);
+        Canvas.Layers.Insert(index + 1, duplicate);
+        Canvas.ActiveLayer = duplicate;
+        
+        StatusMessage = $"Слой '{source.Name}' дублирован";
+        DebugLog.Write($"[DEBUG] Layer duplicated: {source.Name} -> {duplicate.Name}");
+    }
+
+    /// <summary>
+    /// Объединяет активный слой с предыдущим: переносит все фигуры и удаляет текущий слой.
+    /// Делает предыдущий слой активным после объединения.
+    /// </summary>
+    private void MergeWithPreviousLayer()
+    {
+        if (Canvas?.ActiveLayer == null) return;
+        
+        var current = Canvas.ActiveLayer;
+        var index = Canvas.Layers.IndexOf(current);
+        
+        if (index <= 0)
+        {
+            StatusMessage = "Нет предыдущего слоя для объединения";
+            return;
+        }
+        
+        var previous = Canvas.Layers[index - 1];
+        
+        // Переносим все фигуры из текущего в предыдущий
+        foreach (var figure in current.Figures.ToList())
+        {
+            current.Figures.Remove(figure);
+            previous.Figures.Add(figure);
+        }
+        
+        // Удаляем текущий слой
+        Canvas.Layers.Remove(current);
+        Canvas.ActiveLayer = previous;
+        
+        StatusMessage = $"Слои '{current.Name}' и '{previous.Name}' объединены";
+    }
+
+    /// <summary>
+    /// Перемещает активный слой на один уровень вверх (ближе к переднему плану отрисовки).
+    /// Если слой уже на переднем плане — выводит соответствующее сообщение.
+    /// </summary>
+    private void BringLayerForward()
+    {
+        if (Canvas?.ActiveLayer == null) return;
+        
+        var layer = Canvas.ActiveLayer;
         var index = Canvas.Layers.IndexOf(layer);
-        Canvas.ActiveLayer = index > 0 ? Canvas.Layers[index - 1] : Canvas.Layers[1];
-    }
-    
-    Canvas.Layers.Remove(layer);
-    StatusMessage = $"Слой '{layer.Name}' удалён";
-}
-
-/// <summary>
-/// Переключает блокировку слоя.
-/// </summary>
-private void ToggleLockLayer(LayerViewModel layer)
-{
-	DebugLog.Write($"[DEBUG] ToggleLockLayer: {layer.Name} -> {layer.IsLocked}");
-    StatusMessage = layer.IsLocked 
-        ? $"Слой '{layer.Name}' заблокирован" 
-        : $"Слой '{layer.Name}' разблокирован";
-	Canvas?.RaisePropertyChanged(nameof(Canvas.Layers));
-}
-
-/// <summary>
-/// Переключает видимость слоя.
-/// </summary>
-private void ToggleVisibilityLayer(LayerViewModel layer)
-{
-    DebugLog.Write($"[DEBUG] ToggleVisibilityLayer: {layer.Name} -> {layer.IsVisible}");
-    
-    StatusMessage = layer.IsVisible 
-        ? $"Слой '{layer.Name}' показан" 
-        : $"Слой '{layer.Name}' скрыт";
-	Canvas?.RaisePropertyChanged(nameof(Canvas.Layers));
-}
-
-/// <summary>
-/// Дублирует активный слой с сохранением всех фигур.
-/// </summary>
-private void DuplicateLayer()
-{
-    if (Canvas?.ActiveLayer == null) return;
-    
-    var source = Canvas.ActiveLayer;
-    var duplicate = new LayerViewModel($"Копия {source.Name}")
-    {
-        IsVisible = source.IsVisible,
-        IsLocked = source.IsLocked
-    };
-    
-    // Копируем фигуры (глубокое клонирование)
-    foreach (var figure in source.Figures)
-    {
-        var clone = figure.Clone();
-        duplicate.Figures.Add(clone);
-    }
-    
-    // Вставляем после текущего слоя
-    var index = Canvas.Layers.IndexOf(source);
-    Canvas.Layers.Insert(index + 1, duplicate);
-    Canvas.ActiveLayer = duplicate;
-    
-    StatusMessage = $"Слой '{source.Name}' дублирован";
-    DebugLog.Write($"[DEBUG] Layer duplicated: {source.Name} -> {duplicate.Name}");
-}
-
-/// <summary>
-/// Объединяет активный слой с предыдущим.
-/// </summary>
-private void MergeWithPreviousLayer()
-{
-    if (Canvas?.ActiveLayer == null) return;
-    
-    var current = Canvas.ActiveLayer;
-    var index = Canvas.Layers.IndexOf(current);
-    
-    if (index <= 0)
-    {
-        StatusMessage = "Нет предыдущего слоя для объединения";
-        return;
-    }
-    
-    var previous = Canvas.Layers[index - 1];
-    
-    // Переносим все фигуры из текущего в предыдущий
-    foreach (var figure in current.Figures.ToList())
-    {
-        current.Figures.Remove(figure);
-        previous.Figures.Add(figure);
-    }
-    
-    // Удаляем текущий слой
-    Canvas.Layers.Remove(current);
-    Canvas.ActiveLayer = previous;
-    
-    StatusMessage = $"Слои '{current.Name}' и '{previous.Name}' объединены";
-}
-
-/// <summary>
-/// Перемещает активный слой на один уровень вверх (ближе к переднему плану).
-/// </summary>
-private void BringLayerForward()
-{
-    if (Canvas?.ActiveLayer == null) return;
-    
-    var layer = Canvas.ActiveLayer;
-    var index = Canvas.Layers.IndexOf(layer);
-    
-    if (index < Canvas.Layers.Count - 1)
-    {
-        Canvas.Layers.Move(index, index + 1);
-        StatusMessage = $"Слой '{layer.Name}' перемещён вверх";
-    }
-    else
-    {
-        StatusMessage = "Слой уже на переднем плане";
-    }
-}
-
-/// <summary>
-/// Перемещает активный слой на один уровень вниз.
-/// </summary>
-private void SendLayerBackward()
-{
-    if (Canvas?.ActiveLayer == null) return;
-    
-    var layer = Canvas.ActiveLayer;
-    var index = Canvas.Layers.IndexOf(layer);
-    
-    if (index > 0)
-    {
-        Canvas.Layers.Move(index, index - 1);
-        StatusMessage = $"Слой '{layer.Name}' перемещён вниз";
-    }
-    else
-    {
-        StatusMessage = "Слой уже на заднем плане";
-    }
-}
-
-/// <summary>
-/// Перемещает активный слой на самый передний план.
-/// </summary>
-private void BringLayerToFront()
-{
-    if (Canvas?.ActiveLayer == null) return;
-    
-    var layer = Canvas.ActiveLayer;
-    var index = Canvas.Layers.IndexOf(layer);
-    
-    if (index < Canvas.Layers.Count - 1)
-    {
-        Canvas.Layers.Move(index, Canvas.Layers.Count - 1);
-        StatusMessage = $"Слой '{layer.Name}' перемещён на передний план";
-    }
-}
-
-/// <summary>
-/// Перемещает активный слой на самый задний план.
-/// </summary>
-private void SendLayerToBack()
-{
-    if (Canvas?.ActiveLayer == null) return;
-    
-    var layer = Canvas.ActiveLayer;
-    var index = Canvas.Layers.IndexOf(layer);
-    
-    if (index > 0)
-    {
-        Canvas.Layers.Move(index, 0);
-        StatusMessage = $"Слой '{layer.Name}' перемещён на задний план";
-    }
-}
-
-public void FinishTextInput()
-{
-    if (_previewFigure is TextViewModel text && !string.IsNullOrWhiteSpace(text.Text))
-    {
-        // Создаём финальную копию с введённым текстом
-        var finalText = new TextViewModel(
-            text.Vertices[0].X, text.Vertices[0].Y,
-            text.Text,
-            text.FontSize,
-            text.FontFamily,
-            text.LineColor,
-            text.FillColor,
-            text.Opacity);
         
-        // Удаляем превью и добавляем финальный текст
-        Canvas?.ActiveLayer?.Figures.Remove(_previewFigure);
-        Canvas?.AddFigure(finalText);
-        
-        StatusMessage = "Текст добавлен";
-    }
-    else
-    {
-        // Если текст пустой — просто удаляем превью
-        Canvas?.ActiveLayer?.Figures.Remove(_previewFigure);
-        StatusMessage = "Ввод текста отменён (пустой)";
+        if (index < Canvas.Layers.Count - 1)
+        {
+            Canvas.Layers.Move(index, index + 1);
+            StatusMessage = $"Слой '{layer.Name}' перемещён вверх";
+        }
+        else
+        {
+            StatusMessage = "Слой уже на переднем плане";
+        }
     }
     
-    ResetDrawingState();
-}
+    /// <summary>
+    /// Перемещает активный слой на один уровень вниз (ближе к заднему плану отрисовки).
+    /// Если слой уже на заднем плане — выводит соответствующее сообщение.
+    /// </summary>
+    private void SendLayerBackward()
+    {
+        if (Canvas?.ActiveLayer == null) return;
+        
+        var layer = Canvas.ActiveLayer;
+        var index = Canvas.Layers.IndexOf(layer);
+        
+        if (index > 0)
+        {
+            Canvas.Layers.Move(index, index - 1);
+            StatusMessage = $"Слой '{layer.Name}' перемещён вниз";
+        }
+        else
+        {
+            StatusMessage = "Слой уже на заднем плане";
+        }
+    }
 
-public void CancelTextInput()
-{
-    Canvas?.ActiveLayer?.Figures.Remove(_previewFigure);
-    ResetDrawingState();
-    StatusMessage = "Ввод текста отменён";
-}
+    /// <summary>
+    /// Перемещает активный слой на самый передний план отрисовки (последний в коллекции).
+    /// </summary>
+    private void BringLayerToFront()
+    {
+        if (Canvas?.ActiveLayer == null) return;
+        
+        var layer = Canvas.ActiveLayer;
+        var index = Canvas.Layers.IndexOf(layer);
+        
+        if (index < Canvas.Layers.Count - 1)
+        {
+            Canvas.Layers.Move(index, Canvas.Layers.Count - 1);
+            StatusMessage = $"Слой '{layer.Name}' перемещён на передний план";
+        }
+    }
 
+    /// <summary>
+    /// Перемещает активный слой на самый задний план отрисовки (первый в коллекции).
+    /// </summary>
+    private void SendLayerToBack()
+    {
+        if (Canvas?.ActiveLayer == null) return;
+        
+        var layer = Canvas.ActiveLayer;
+        var index = Canvas.Layers.IndexOf(layer);
+        
+        if (index > 0)
+        {
+            Canvas.Layers.Move(index, 0);
+            StatusMessage = $"Слой '{layer.Name}' перемещён на задний план";
+        }
+    }
 
+    /// <summary>
+    /// Завершает ввод текста: создаёт финальную фигуру с введённым текстом или отменяет ввод.
+    /// Удаляет предварительную фигуру и сбрасывает состояние рисования.
+    /// </summary>
+    public void FinishTextInput()
+    {
+        if (_previewFigure is TextViewModel text && !string.IsNullOrWhiteSpace(text.Text))
+        {
+            // Создаём финальную копию с введённым текстом
+            var finalText = new TextViewModel(
+                text.Vertices[0].X, text.Vertices[0].Y,
+                text.Text,
+                text.FontSize,
+                text.FontFamily,
+                text.LineColor,
+                text.FillColor,
+                text.Opacity);
+            
+            // Удаляем превью и добавляем финальный текст
+            Canvas?.ActiveLayer?.Figures.Remove(_previewFigure);
+            Canvas?.AddFigure(finalText);
+            
+            StatusMessage = "Текст добавлен";
+        }
+        else
+        {
+            // Если текст пустой — просто удаляем превью
+            Canvas?.ActiveLayer?.Figures.Remove(_previewFigure);
+            StatusMessage = "Ввод текста отменён (пустой)";
+        }
+        
+        ResetDrawingState();
+    }
+
+    /// <summary>
+    /// Отменяет ввод текста: удаляет предварительную фигуру и сбрасывает состояние рисования.
+    /// Выводит сообщение об отмене операции.
+    /// </summary>
+    public void CancelTextInput()
+    {
+        Canvas?.ActiveLayer?.Figures.Remove(_previewFigure);
+        ResetDrawingState();
+        StatusMessage = "Ввод текста отменён";
+    }
 }

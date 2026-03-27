@@ -26,6 +26,7 @@
                 <RadioButton Classes="ToolButton" Content="★" Tag="Пентаграмма" ToolTip.Tip="Пентаграмма" Checked="OnToolButtonChecked" GroupName="ToolsGroup"/>
                 <RadioButton Classes="ToolButton" Content="△" Tag="Треугольник" ToolTip.Tip="Треугольник" Checked="OnToolButtonChecked" GroupName="ToolsGroup"/>
                 <RadioButton Classes="ToolButton" Content="◆" Tag="Ромб" ToolTip.Tip="Ромб (Rh)" Checked="OnToolButtonChecked" GroupName="ToolsGroup"/>
+                <RadioButton Classes="ToolButton" Content="📐" Tag="Прямоугольный треугольник" ToolTip.Tip="Прямоугольный треугольник (Rt)" Checked="OnToolButtonChecked" GroupName="ToolsGroup"/>
                 <Separator Margin="8,4" Height="1" Background="#3F3F46"/>
                 <RadioButton Classes="ToolButton" Content="🔤" Tag="Текст" ToolTip.Tip="Текст (T)" Checked="OnToolButtonChecked" GroupName="ToolsGroup"/>
                 <RadioButton Classes="ToolButton" Content="✋" Tag="Рука" ToolTip.Tip="Рука (H)" Checked="OnToolButtonChecked" GroupName="ToolsGroup"/>

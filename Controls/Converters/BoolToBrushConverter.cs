@@ -1,4 +1,4 @@
-﻿// Converters/BoolToBrushConverter.cs
+﻿// Controls/Converters/BoolToBrushConverter.cs
 using System;
 using System.Globalization;
 using Avalonia.Data.Converters;

@@ -213,6 +213,14 @@ public class SvgProjectFormat : IProjectFormat
                 sb.AppendLine($"{indent}  id=\"rhombus{id}\"");
                 sb.AppendLine($"{indent}  points=\"{rhombusPoints}\"{tr} />");
                 break;
+            
+            case RightTriangleViewModel rt:
+                var rtPoints = string.Join(" ", rt.Vertices.Take(3).Select(v => $"{F(v.X)},{F(v.Y)}"));
+                sb.AppendLine($"{indent}<polygon");
+                sb.AppendLine($"{indent}  style=\"{style}\"");
+                sb.AppendLine($"{indent}  id=\"righttri{id}\"");
+                sb.AppendLine($"{indent}  points=\"{rtPoints}\"{tr} />");
+                break;
 
             default:
                 sb.AppendLine($"{indent}<!-- {Esc(figure.GetType().Name)} -->");
@@ -338,11 +346,18 @@ public class SvgProjectFormat : IProjectFormat
         // 🔍 Определяем тип по количеству вершин и геометрии
         return points.Count switch
         {
+            3 when IsRightTriangle(points) => new RightTriangleViewModel(
+                points.Min(p => p.X), 
+                points.Min(p => p.Y),
+                points.Max(p => p.X) - points.Min(p => p.X),
+                points.Max(p => p.Y) - points.Min(p => p.Y),
+                stroke, sw, fill, opacity),
             3 => new TriangleViewModel(points[0], points[1], points[2], stroke, sw, fill, opacity),
             4 when IsRhombus(points) => new RhombusViewModel(
                 AverageCenter(points).X, AverageCenter(points).Y,
                 MaxHorizontalDistance(points), MaxVerticalDistance(points),
                 stroke, sw, fill, opacity),
+			4 => CreateGenericPolygon(points, stroke, sw, fill, opacity),
             5 => new PentagonViewModel(AverageCenter(points), DistanceToCenter(points, 0), stroke, sw, fill, opacity),
             6 => new HexagonViewModel(AverageCenter(points), DistanceToCenter(points, 0), stroke, sw, fill, opacity),
             7 => new HeptagonViewModel(AverageCenter(points), DistanceToCenter(points, 0), stroke, sw, fill, opacity),
@@ -420,6 +435,22 @@ public class SvgProjectFormat : IProjectFormat
         var shortAvg = distances.Take(5).Average();
         var longAvg = distances.Skip(5).Average();
         return longAvg / shortAvg > 2.0; // Коэффициент ~2.618 для правильной звезды
+    }
+    
+    /// <summary>
+    /// Проверяет, является ли треугольник прямоугольным (по теореме Пифагора).
+    /// </summary>
+    private static bool IsRightTriangle(List<Point2D> points)
+    {
+        if (points.Count != 3) return false;
+    
+        var a = points[0].DistanceTo(points[1]);
+    	var b = points[1].DistanceTo(points[2]);
+    	var c = points[2].DistanceTo(points[0]);
+    
+        var sides = new[] { a, b, c }.OrderBy(x => x).ToArray();
+        // Проверка: a² + b² ≈ c² (с допуском 1%)
+        return Math.Abs(sides[0]*sides[0] + sides[1]*sides[1] - sides[2]*sides[2]) < 0.01 * sides[2]*sides[2];
     }
     
     /// <summary>

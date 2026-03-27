@@ -86,7 +86,6 @@ public class StyleChangeCommand : FigureCommandBase
                 }
                 else
                 {
-                    // Обычная фигура
                     if (NewLineColor.HasValue) figure.LineColor = NewLineColor.Value;
                     if (NewFillColor.HasValue) figure.FillColor = NewFillColor.Value;
                     if (NewThickness.HasValue) figure.Thickness = NewThickness.Value;

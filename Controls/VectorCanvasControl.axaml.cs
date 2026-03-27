@@ -308,7 +308,6 @@ public partial class VectorCanvasControl : UserControl
         }
 		else if (e.PropertyName == nameof(CanvasViewModel.PreviewFigure))
     	{
-        	// Обновляем предварительный просмотр
         	Dispatcher.UIThread.Post(() => 
             	ShowPreviewFigure(CanvasViewModel?.PreviewFigure)
         	);
@@ -518,7 +517,6 @@ public partial class VectorCanvasControl : UserControl
     
         // Обработка клика для редактирования (опционально)
         textBlock.Tapped += OnTextDoubleTapped;
-    
         return textBlock;
     }
     
@@ -702,7 +700,7 @@ public partial class VectorCanvasControl : UserControl
                         break;
                 }
             };
-            return;  // 🔥 Выходим, не обрабатываем как Shape
+            return;
         }
         if (control is TextBlock tb && figure is TextViewModel txt)
         {
@@ -894,7 +892,7 @@ public partial class VectorCanvasControl : UserControl
                 tb.FontSize = txt.FontSize;
                 tb.FontFamily = new FontFamily(txt.FontFamily);
                 tb.Foreground = new SolidColorBrush(ToAvaloniaColor(txt.FillColor));
-                if (Math.Abs(txt.Rotation) > 0.01) // Избегаем дребезга при малых углах
+                if (Math.Abs(txt.Rotation) > 0.01)
                 {
                     var center = txt.Center;
                     // Поворот вокруг центра текста (относительно левого-верхнего угла)
@@ -1131,7 +1129,6 @@ public partial class VectorCanvasControl : UserControl
     {
         if (sender is Control control && control.Tag is FigureViewModel figure)
         {
-            // Проверяем, выбран ли инструмент ластика
             var layer = CanvasViewModel?.Layers.FirstOrDefault(l => l.Figures.Contains(figure));
             if (layer?.IsLocked == true)
             {
@@ -1154,10 +1151,8 @@ public partial class VectorCanvasControl : UserControl
             }
             else
             {
-                // Обычная логика выделения (уже существующая у вас)
                 var addToSelection = e.KeyModifiers.HasFlag(KeyModifiers.Control);
                 CanvasViewModel?.SelectFigureAt(figure.Center, addToSelection);
-
                 e.Handled = true;
                 DebugLog.Write("[DEBUG] Selection: Handled in OnFigurePointerPressed");
             }

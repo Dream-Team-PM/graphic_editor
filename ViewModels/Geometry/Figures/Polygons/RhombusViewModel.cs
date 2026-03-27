@@ -74,6 +74,30 @@ public class RhombusViewModel : PolygonViewModel
     /// Центральная точка ромба.
     /// </summary>
     public override Point2D Center => new Point2D(CenterX, CenterY);
+    
+    public override void Rotate(double angle)
+    {
+        var center = Center;
+        foreach (var vertex in Vertices)
+        {
+            var rotated = vertex.ToPoint().Rotate(center, angle);
+            vertex.X = rotated.X;
+            vertex.Y = rotated.Y;
+        }
+        NotifyPropertyChanged();
+    }
+
+    public override void Scale(double sx, double sy)
+    {
+        var center = Center;
+        foreach (var vertex in Vertices)
+        {
+            var scaled = vertex.ToPoint().Scale(center, sx, sy);
+            vertex.X = scaled.X;
+            vertex.Y = scaled.Y;
+        }
+        NotifyPropertyChanged();
+    }
 
     /// <summary>
     /// Перемещает ромб на заданный вектор.

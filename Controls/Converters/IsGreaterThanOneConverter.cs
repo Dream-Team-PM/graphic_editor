@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Controls/Converters/IsGreaterThanOneConverter.cs
+
+using System;
 using System.Globalization;
 using Avalonia.Data.Converters;
 

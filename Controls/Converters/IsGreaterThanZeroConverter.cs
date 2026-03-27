@@ -1,4 +1,4 @@
-﻿// Converters/IsGreaterThanZeroConverter.cs
+﻿// Controls/Converters/IsGreaterThanZeroConverter.cs
 using System;
 using System.Globalization;
 using Avalonia.Data.Converters;

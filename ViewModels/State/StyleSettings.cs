@@ -1,4 +1,4 @@
-﻿// Models/StyleSettings.cs (DTO для передачи стиля)
+﻿// State/StyleSettings.cs (DTO для передачи стиля)
 using graphic_editor.Geometry;
 using graphic_editor.ViewModels;
 namespace graphic_editor.State;
