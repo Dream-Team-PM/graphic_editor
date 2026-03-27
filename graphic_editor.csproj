@@ -5,15 +5,13 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <LangVersion>preview</LangVersion>
-	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <!-- ✅ Убран дублирующий OutputType=Exe -->
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="graphic_editorTests\ViewModels\" />
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
@@ -43,12 +41,11 @@
   <ItemGroup>
     <!-- Исключаем Playwright-тесты из основной сборки -->
     <Compile Remove="PlaywrightTests\**\*.cs" />
-    <Compile Include="graphic_editorTests\GlobalUsings.cs" />
     <None Remove="PlaywrightTests\**\*" />
     <EmbeddedResource Remove="PlaywrightTests\**\*" />
-	<Compile Remove="**\*tests.cs" />
-	<Compile Remove="**\*Tests.cs" />
-	<Compile Remove="**\graphic_editorTests\**\*.cs" />
+    <Compile Remove="tests\**" />
+    <EmbeddedResource Remove="tests\**" />
+    <None Remove="tests\**" />
   </ItemGroup>
   
   <PropertyGroup>
