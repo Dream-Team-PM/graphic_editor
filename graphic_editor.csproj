@@ -13,6 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="graphic_editorTests\ViewModels\" />
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
@@ -42,6 +43,7 @@
   <ItemGroup>
     <!-- Исключаем Playwright-тесты из основной сборки -->
     <Compile Remove="PlaywrightTests\**\*.cs" />
+    <Compile Include="graphic_editorTests\GlobalUsings.cs" />
     <None Remove="PlaywrightTests\**\*" />
     <EmbeddedResource Remove="PlaywrightTests\**\*" />
 	<Compile Remove="**\*tests.cs" />

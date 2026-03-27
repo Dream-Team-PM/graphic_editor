@@ -10,23 +10,21 @@
     </PropertyGroup>
 
     <ItemGroup>
-  <!-- ✅ Тестовые пакеты - с PrivateAssets -->
+  <!-- ✅ Тестовые пакеты - БЕЗ PrivateAssets для Xunit! -->
   <PackageReference Include="coverlet.collector" Version="6.0.2">
     <PrivateAssets>all</PrivateAssets>
-    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
   </PackageReference>
   <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0">
     <PrivateAssets>all</PrivateAssets>
   </PackageReference>
-  <PackageReference Include="xunit" Version="2.9.2">
-    <PrivateAssets>all</PrivateAssets>
-  </PackageReference>
+  
+  <!-- ❌ УБЕРИТЕ PrivateAssets с xunit - он НУЖЕН для компиляции тестов! -->
+  <PackageReference Include="xunit" Version="2.9.2" />
   <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
-    <PrivateAssets>all</PrivateAssets>
     <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
   </PackageReference>
   
-  <!-- ❌ УБЕРИТЕ PrivateAssets с общих пакетов - они НУЖНЫ тестам! -->
+  <!-- Общие пакеты - без PrivateAssets -->
   <PackageReference Include="ReactiveUI" Version="22.3.1" />
   <PackageReference Include="ReactiveUI.Avalonia" Version="11.3.8" />
   <PackageReference Include="ReactiveUI.Fody" Version="19.5.41" />
