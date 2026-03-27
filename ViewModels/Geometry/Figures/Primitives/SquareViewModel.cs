@@ -17,11 +17,11 @@ namespace graphic_editor.Geometry;
 public class SquareViewModel: RectangleViewModel
 {
     /// <summary>Конструктор по умолчанию: квадрат в (0,0) с длиной и шириной стороны 100</summary>
-    public SquareViewModel(): this(0, 0, 100, Color.Black, 1, Color.Green, 1.0) {}
+    public SquareViewModel(): this(0, 0, 100, System.Drawing.Color.Black, 1, System.Drawing.Color.Green, 1.0) {}
 
     /// <summary>Конструктор с ограничивающим прямоугольником (для drag-отрисовки)</summary>
     public SquareViewModel(double x, double y, double width, double height, 
-        Color lineColor, double thickness, Color fillColor, double opacity)
+        System.Drawing.Color lineColor, double thickness, System.Drawing.Color fillColor, double opacity)
         : base(x, y, width, height, lineColor, thickness, fillColor, opacity)
     {
         Name = "Квадрат";
@@ -43,7 +43,7 @@ public class SquareViewModel: RectangleViewModel
     
     /// <summary>Конструктор квадрата с левым-верхним углом и стороной</summary>
     public SquareViewModel(double x, double y, double side, 
-        Color lineColor, double thickness, Color fillColor, double opacity)
+        System.Drawing.Color lineColor, double thickness, System.Drawing.Color fillColor, double opacity)
         : this(x, y, side, side, lineColor, thickness, fillColor, opacity) {}
     
     /// <summary>Длина стороны квадрата</summary>

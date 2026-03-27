@@ -16,16 +16,16 @@ namespace graphic_editor.Geometry;
 /// </summary>
 public class LineViewModel: FigureViewModel
 {
-    public LineViewModel(): this(0, 0, 100, 100, Color.Black, 1, Color.Transparent, 1.0) {}
+    public LineViewModel(): this(0, 0, 100, 100, System.Drawing.Color.Black, 1, System.Drawing.Color.Transparent, 1.0) {}
 
-    public LineViewModel(double x1, double y1, double x2, double y2, Color lineColor, double thickness, Color fillColor, double opacity)
+    public LineViewModel(double x1, double y1, double x2, double y2, System.Drawing.Color lineColor, double thickness, System.Drawing.Color fillColor, double opacity)
     {
         Name = "Линия";
         Vertices.Add(new PointViewModel(x1, y1));
         Vertices.Add(new PointViewModel(x2, y2));
 		LineColor = lineColor;
 		Thickness = thickness;
-		FillColor = Color.Transparent;
+		FillColor = System.Drawing.Color.Transparent;
         Opacity = opacity;
     }
     public double X1 => Vertices[0].X;

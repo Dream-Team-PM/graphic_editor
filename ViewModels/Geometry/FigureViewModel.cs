@@ -18,7 +18,7 @@ namespace graphic_editor.ViewModels;
 /// <see cref="ICloneableFigure"/>, <see cref="IRenderable"/>, <see cref="IFigure"/>.
 /// Предоставляет общую функциональность: свойства стиля, вершины, выделение, клонирование.
 /// </summary>
-public abstract class FigureViewModel: ViewModelBase, ITransformable, ISelectable, ICloneableFigure, IRenderable, IFigure
+public abstract class FigureViewModel: ViewModelBase, ITransformable, graphic_editor.Interfaces.ISelectable, ICloneableFigure, IRenderable, IFigure
 {
     private Guid _id; 
     /// <summary>Уникальный идентификатор фигуры, генерируемый при создании.</summary>
@@ -69,7 +69,7 @@ public abstract class FigureViewModel: ViewModelBase, ITransformable, ISelectabl
     /// <summary>
     /// Цвет контура (обводки) фигуры в формате System.Drawing.Color.
     /// </summary>
-    public Color LineColor
+    public System.Drawing.Color LineColor
     {
         get => field;
         set => this.RaiseAndSetIfChanged(ref field, value);
@@ -79,7 +79,7 @@ public abstract class FigureViewModel: ViewModelBase, ITransformable, ISelectabl
     /// Цвет заливки фигуры в формате System.Drawing.Color.
     /// Если альфа-канал равен 0, заливка не отображается.
     /// </summary>
-    public Color FillColor
+    public System.Drawing.Color FillColor
     {
         get => field;
         set => this.RaiseAndSetIfChanged(ref field, value);

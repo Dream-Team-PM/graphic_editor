@@ -20,7 +20,7 @@ public class PenPointViewModel : FigureViewModel
     /// <summary>
     /// Конструктор по умолчанию (точка в (100, 100)).
     /// </summary>
-    public PenPointViewModel(): this(100, 100, Color.Black, 1, Color.Transparent, 1.0) {}
+    public PenPointViewModel(): this(100, 100, System.Drawing.Color.Black, 1, System.Drawing.Color.Transparent, 1.0) {}
     
     /// <summary>
     /// Инициализирует новую точку пера.
@@ -31,13 +31,13 @@ public class PenPointViewModel : FigureViewModel
     /// <param name="thickness">Размер точки (влияет на радиус отображения).</param>
     /// <param name="fillColor">Цвет заливки (не используется, всегда Transparent).</param>
     /// <param name="opacity">Непрозрачность (0.0–1.0).</param>
-    public PenPointViewModel(double x, double y, Color lineColor, double thickness, Color fillColor, double opacity = 1.0)
+    public PenPointViewModel(double x, double y, System.Drawing.Color lineColor, double thickness, System.Drawing.Color fillColor, double opacity = 1.0)
     {
         Name = "Точка пера";
         Vertices.Add(new PointViewModel(x, y));
         LineColor = lineColor;
         Thickness = thickness;
-        FillColor = Color.Transparent;
+        FillColor = System.Drawing.Color.Transparent;
         Opacity = opacity;
     }
 

@@ -10,7 +10,7 @@ namespace graphic_editor.Geometry;
 public class TriangleViewModel : PolygonViewModel
 {
     public TriangleViewModel(Point2D a, Point2D b, Point2D c,
-        Color lineColor, double thickness, Color fillColor, double opacity)
+        System.Drawing.Color lineColor, double thickness, System.Drawing.Color fillColor, double opacity)
         : base(new List<Point2D> { a, b, c }, 
             lineColor, thickness, fillColor, opacity)
     {

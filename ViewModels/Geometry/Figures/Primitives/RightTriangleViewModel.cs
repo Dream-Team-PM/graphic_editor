@@ -17,7 +17,7 @@ public class RightTriangleViewModel : PolygonViewModel
 {
    /// <summary>Конструктор по умолчанию.</summary>
     public RightTriangleViewModel() 
-        : this(0, 0, 100, 100, Color.Black, 1, Color.Transparent, 1.0) {}
+        : this(0, 0, 100, 100, System.Drawing.Color.Black, 1, System.Drawing.Color.Transparent, 1.0) {}
 
     /// <summary>
     /// Инициализирует прямоугольный треугольник.
@@ -25,7 +25,7 @@ public class RightTriangleViewModel : PolygonViewModel
     public RightTriangleViewModel(
         double x, double y, 
         double width, double height,
-        Color lineColor, double thickness, Color fillColor, double opacity = 1.0)
+        System.Drawing.Color lineColor, double thickness, System.Drawing.Color fillColor, double opacity = 1.0)
         // ✅ ВЫЗЫВАЕМ БАЗОВЫЙ КОНСТРУКТОР С 3 ВЕРШИНАМИ
         : base(CreateRightTrianglePoints(x, y, width, height), 
                lineColor, thickness, fillColor, opacity)

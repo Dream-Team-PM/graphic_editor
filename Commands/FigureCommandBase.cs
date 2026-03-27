@@ -38,7 +38,7 @@ public abstract class FigureCommandBase : IHistoryAction
     /// <param name="VertexCoordinates">Список координат вершин фигуры.</param>
     protected record FigureState(
         double MinX, double MaxX, double MinY, double MaxY, double Rotation,
-        Color LineColor, Color FillColor, double Thickness, double Opacity,
+        System.Drawing.Color LineColor, System.Drawing.Color FillColor, double Thickness, double Opacity,
         List<(double X, double Y)> VertexCoordinates);
     
 	/// <inheritdoc/>

@@ -19,12 +19,12 @@ public class StyleChangeCommand : FigureCommandBase
     /// <summary>
     /// Новый цвет обводки (null = не изменять).
     /// </summary>
-    public Color? NewLineColor { get; }
+    public System.Drawing.Color? NewLineColor { get; }
     
     /// <summary>
     /// Новый цвет заливки (null = не изменять).
     /// </summary>
-    public Color? NewFillColor { get; }
+    public System.Drawing.Color? NewFillColor { get; }
     
     /// <summary>
     /// Новая толщина обводки (null = не изменять).
@@ -46,8 +46,8 @@ public class StyleChangeCommand : FigureCommandBase
     /// <param name="newOpacity">Новая непрозрачность или null.</param>
     public StyleChangeCommand(
         List<Guid> figureIds, 
-        Color? newLineColor, 
-        Color? newFillColor, 
+        System.Drawing.Color? newLineColor, 
+        System.Drawing.Color? newFillColor, 
         double? newThickness, 
         double? newOpacity)
     {

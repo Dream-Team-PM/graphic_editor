@@ -19,7 +19,7 @@ public class EllipseViewModel: FigureViewModel
     /// <summary>
     /// Конструктор по умолчанию (эллипс 100×100 в начале координат).
     /// </summary>
-    public EllipseViewModel(): this(0, 0, 100, 100, Color.Black, 1, Color.Green, 1.0) {}
+    public EllipseViewModel(): this(0, 0, 100, 100, System.Drawing.Color.Black, 1, System.Drawing.Color.Green, 1.0) {}
 
     /// <summary>
     /// Инициализирует новый экземпляр эллипса.
@@ -32,7 +32,7 @@ public class EllipseViewModel: FigureViewModel
     /// <param name="thickness">Толщина обводки.</param>
     /// <param name="fillColor">Цвет заливки.</param>
     /// <param name="opacity">Непрозрачность (0.0–1.0).</param>
-    public EllipseViewModel(double x, double y, double width, double height, Color lineColor, double thickness, Color fillColor, double opacity)
+    public EllipseViewModel(double x, double y, double width, double height, System.Drawing.Color lineColor, double thickness, System.Drawing.Color fillColor, double opacity)
     {
         Name = "Эллипс";
         Vertices.Add(new PointViewModel(x, y));
@@ -41,7 +41,7 @@ public class EllipseViewModel: FigureViewModel
         Vertices.Add(new PointViewModel(x, y + height));
         LineColor = lineColor;
         Thickness = thickness;
-        FillColor = fillColor == default ? Color.Transparent : fillColor;
+        FillColor = fillColor == default ? System.Drawing.Color.Transparent : fillColor;
         Opacity = opacity;
     }
 

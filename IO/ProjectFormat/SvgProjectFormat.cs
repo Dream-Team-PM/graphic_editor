@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using System.Globalization;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
@@ -335,7 +336,7 @@ public class SvgProjectFormat : IProjectFormat
     /// <summary>
     /// Парсит &lt;polygon&gt; и определяет тип фигуры по количеству вершин.
     /// </summary>
-    private static FigureViewModel? ParsePolygon(XElement el, Color fill, Color stroke, double sw, double opacity)
+    private static FigureViewModel? ParsePolygon(XElement el, System.Drawing.Color fill, System.Drawing.Color stroke, double sw, double opacity)
     {
         var pointsAttr = el.Attribute("points")?.Value;
         if (string.IsNullOrEmpty(pointsAttr)) return null;
@@ -370,7 +371,7 @@ public class SvgProjectFormat : IProjectFormat
     /// <summary>
     /// Создаёт произвольный полигон, если тип не определён.
     /// </summary>
-    private static FigureViewModel CreateGenericPolygon(List<Point2D> points, Color stroke, double sw, Color fill, double opacity)
+    private static FigureViewModel CreateGenericPolygon(List<Point2D> points, System.Drawing.Color stroke, double sw, System.Drawing.Color fill, double opacity)
     {
         // Создаём базовый PolygonViewModel через динамический вызов
         var polygon = new DynamicPolygonViewModel(points, stroke, sw, fill, opacity);
@@ -382,7 +383,7 @@ public class SvgProjectFormat : IProjectFormat
     /// </summary>
     private class DynamicPolygonViewModel : PolygonViewModel
     {
-        public DynamicPolygonViewModel(IEnumerable<Point2D> points, Color lineColor, double thickness, Color fillColor, double opacity)
+        public DynamicPolygonViewModel(IEnumerable<Point2D> points, System.Drawing.Color lineColor, double thickness, System.Drawing.Color fillColor, double opacity)
             : base(points, lineColor, thickness, fillColor, opacity)
         {
             Name = "Полигон";
@@ -525,7 +526,7 @@ public class SvgProjectFormat : IProjectFormat
         return dict;
     }
 
-    private static (string color, string opacityProp) SvgColorWithOpacity(Color c, string propName)
+    private static (string color, string opacityProp) SvgColorWithOpacity(System.Drawing.Color c, string propName)
     {
         if (c.A == 0) return ("none", "");
         var rgb = $"#{c.R:X2}{c.G:X2}{c.B:X2}";
@@ -533,30 +534,30 @@ public class SvgProjectFormat : IProjectFormat
         return (rgb, op);
     }
 
-    private static Color ParseColorWithOpacity(string? colorValue, string? opacityValue)
+    private static System.Drawing.Color ParseColorWithOpacity(string? colorValue, string? opacityValue)
     {
         var c = ParseColor(colorValue);
         if (c.A == 0) return c;
         if (string.IsNullOrEmpty(opacityValue)) return c;
         var op = ParseDouble(opacityValue, 1.0);
-        return Color.FromArgb((int)Math.Round(op * 255), c.R, c.G, c.B);
+        return System.Drawing.Color.FromArgb((int)Math.Round(op * 255), c.R, c.G, c.B);
     }
 
-    private static Color ParseColor(string? value)
+    private static System.Drawing.Color ParseColor(string? value)
     {
         if (string.IsNullOrEmpty(value) || value == "none")
-            return Color.Transparent;
+            return System.Drawing.Color.Transparent;
 
         if (value.StartsWith('#'))
         {
             var hex = value.TrimStart('#');
             if (hex.Length == 6)
-                return Color.FromArgb(255,
+                return System.Drawing.Color.FromArgb(255,
                     Convert.ToInt32(hex[..2], 16),
                     Convert.ToInt32(hex[2..4], 16),
                     Convert.ToInt32(hex[4..6], 16));
             if (hex.Length == 3)
-                return Color.FromArgb(255,
+                return System.Drawing.Color.FromArgb(255,
                     Convert.ToInt32(new string(hex[0], 2), 16),
                     Convert.ToInt32(new string(hex[1], 2), 16),
                     Convert.ToInt32(new string(hex[2], 2), 16));
@@ -569,12 +570,12 @@ public class SvgProjectFormat : IProjectFormat
                 int.TryParse(parts[0].Trim(), out int r) &&
                 int.TryParse(parts[1].Trim(), out int g) &&
                 int.TryParse(parts[2].Trim(), out int b))
-                return Color.FromArgb(255, r, g, b);
+                return System.Drawing.Color.FromArgb(255, r, g, b);
         }
 
-        var named = Color.FromName(value);
+        var named = System.Drawing.Color.FromName(value);
         if (named.A != 0) return named;
-        return Color.Transparent;
+        return System.Drawing.Color.Transparent;
     }
 
     private static double ParseDouble(string? value, double fallback) =>

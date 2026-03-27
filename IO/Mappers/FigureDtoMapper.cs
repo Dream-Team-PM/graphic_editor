@@ -104,15 +104,15 @@ public static class FigureDtoMapper
         return dto switch
         {
             RectangleDto r => new RectangleViewModel(r.X, r.Y, r.Width, r.Height,
-                Color.FromArgb(r.LineColorArgb), r.Thickness, Color.FromArgb(r.FillColorArgb), r.Opacity),
+                System.Drawing.Color.FromArgb(r.LineColorArgb), r.Thickness, System.Drawing.Color.FromArgb(r.FillColorArgb), r.Opacity),
             EllipseDto e => new EllipseViewModel(e.X, e.Y, e.Width, e.Height,
-                Color.FromArgb(e.LineColorArgb), e.Thickness, Color.FromArgb(e.FillColorArgb), e.Opacity),
+                System.Drawing.Color.FromArgb(e.LineColorArgb), e.Thickness, System.Drawing.Color.FromArgb(e.FillColorArgb), e.Opacity),
             CircleDto c => new CircleViewModel(c.CenterX, c.CenterY, c.Radius,
-                Color.FromArgb(c.LineColorArgb), c.Thickness, Color.FromArgb(c.FillColorArgb), c.Opacity),
+                System.Drawing.Color.FromArgb(c.LineColorArgb), c.Thickness, System.Drawing.Color.FromArgb(c.FillColorArgb), c.Opacity),
             LineDto l => new LineViewModel(l.X1, l.Y1, l.X2, l.Y2,
-                Color.FromArgb(l.LineColorArgb), l.Thickness, Color.FromArgb(l.FillColorArgb), l.Opacity),
+                System.Drawing.Color.FromArgb(l.LineColorArgb), l.Thickness, System.Drawing.Color.FromArgb(l.FillColorArgb), l.Opacity),
             PenPointDto p => new PenPointViewModel(p.X, p.Y,
-                Color.FromArgb(p.LineColorArgb), p.Thickness, Color.FromArgb(p.FillColorArgb), p.Opacity),
+                System.Drawing.Color.FromArgb(p.LineColorArgb), p.Thickness, System.Drawing.Color.FromArgb(p.FillColorArgb), p.Opacity),
             GroupDto g => new GroupViewModel(g.Children.Select(ToViewModel)),
             _ => throw new NotSupportedException($"Неизвестный DTO: {dto.GetType().Name}")
         };

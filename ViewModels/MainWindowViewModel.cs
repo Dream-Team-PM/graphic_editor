@@ -58,10 +58,10 @@ public partial class MainWindowViewModel : ViewModelBase
     private DrawingTool _selectedTool = DrawingTool.Select;
     
     /// <summary>Текущий выбранный цвет заливки для новых фигур с поддержкой реактивных уведомлений.</summary>
-    private ColorViewModel _fillColor = new ColorViewModel(Color.FromArgb(255, 74, 144));
+    private ColorViewModel _fillColor = new ColorViewModel(System.Drawing.Color.FromArgb(255, 74, 144));
     
     /// <summary>Текущий выбранный цвет обводки для новых фигур с поддержкой реактивных уведомлений.</summary>
-    private ColorViewModel _strokeColor = new ColorViewModel(Color.Black);
+    private ColorViewModel _strokeColor = new ColorViewModel(System.Drawing.Color.Black);
     
     /// <summary>Текущая тема оформления интерфейса (светлая ThemeVariant.Light или тёмная ThemeVariant.Dark).</summary>
     private ThemeVariant _currentTheme = ThemeVariant.Dark;
@@ -1123,8 +1123,8 @@ public partial class MainWindowViewModel : ViewModelBase
     public void ToggleTheme()
     {
         CurrentTheme = CurrentTheme == ThemeVariant.Dark
-            ? ThemeVariant.Dark
-            : ThemeVariant.Light;
+            ? ThemeVariant.Light
+            : ThemeVariant.Dark;
         StatusMessage = $"Тема: {(CurrentTheme == ThemeVariant.Light ? "Светлая ☀️" : "Тёмная 🌙")}";
     }
 

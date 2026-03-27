@@ -18,7 +18,7 @@ public class RectangleViewModel: FigureViewModel
     /// <summary>
     /// Конструктор по умолчанию (прямоугольник 100×100 в начале координат).
     /// </summary>
-    public RectangleViewModel(): this(0, 0, 100, 100, Color.Black, 1, Color.Green, 1.0) {}
+    public RectangleViewModel(): this(0, 0, 100, 100, System.Drawing.Color.Black, 1, System.Drawing.Color.Green, 1.0) {}
 
     /// <summary>
     /// Инициализирует новый экземпляр прямоугольника.
@@ -31,7 +31,7 @@ public class RectangleViewModel: FigureViewModel
     /// <param name="thickness">Толщина обводки.</param>
     /// <param name="fillColor">Цвет заливки.</param>
     /// <param name="opacity">Непрозрачность (0.0–1.0).</param>
-    public RectangleViewModel(double x, double y, double width, double height, Color lineColor, double thickness, Color fillColor, double opacity)
+    public RectangleViewModel(double x, double y, double width, double height, System.Drawing.Color lineColor, double thickness, System.Drawing.Color fillColor, double opacity)
     {
         Name = "Прямоугольник";
         Vertices.Add(new PointViewModel(x, y));
@@ -40,7 +40,7 @@ public class RectangleViewModel: FigureViewModel
         Vertices.Add(new PointViewModel(x, y + height));
         LineColor = lineColor;
         Thickness = thickness;
-        FillColor = fillColor == default ? Color.Transparent : fillColor;
+        FillColor = fillColor == default ? System.Drawing.Color.Transparent : fillColor;
         Opacity = opacity;
     }
 

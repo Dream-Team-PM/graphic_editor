@@ -20,7 +20,7 @@ public class RhombusViewModel : PolygonViewModel
     /// Конструктор по умолчанию (ромб 100×100 в точке (100,100)).
     /// </summary>
     public RhombusViewModel() 
-        : this(100, 100, 100, 100, Color.Black, 1, Color.Transparent, 1.0) {}
+        : this(100, 100, 100, 100, System.Drawing.Color.Black, 1, System.Drawing.Color.Transparent, 1.0) {}
 
     /// <summary>
     /// Инициализирует новый ромб.
@@ -28,7 +28,7 @@ public class RhombusViewModel : PolygonViewModel
     public RhombusViewModel(
         double centerX, double centerY, 
         double width, double height,
-        Color lineColor, double thickness, Color fillColor, double opacity = 1.0)
+        System.Drawing.Color lineColor, double thickness, System.Drawing.Color fillColor, double opacity = 1.0)
         // ✅ ВЫЗЫВАЕМ БАЗОВЫЙ КОНСТРУКТОР С 4 ВЕРШИНАМИ
         : base(CreateRhombusPoints(centerX, centerY, width, height), 
                lineColor, thickness, fillColor, opacity)

@@ -13,7 +13,7 @@ public class CircleViewModel : EllipseViewModel
 {
     /// <summary>Конструктор по умолчанию: круг в (0,0) радиусом 50</summary>
     public CircleViewModel() 
-        : this(0, 0, 50, Color.Black, 1, Color.Transparent, 1.0) {}
+        : this(0, 0, 50, System.Drawing.Color.Black, 1, System.Drawing.Color.Transparent, 1.0) {}
 
     /// <summary>Конструктор с ограничивающим прямоугольником (для drag-отрисовки)</summary>
     /// <param name="x">Левый-верхний угол X ограничивающего прямоугольника</param>
@@ -21,7 +21,7 @@ public class CircleViewModel : EllipseViewModel
     /// <param name="width">Ширина ограничивающего прямоугольника</param>
     /// <param name="height">Высота ограничивающего прямоугольника</param>
     public CircleViewModel(double x, double y, double width, double height, 
-        Color lineColor, double thickness, Color fillColor, double opacity)
+        System.Drawing.Color lineColor, double thickness, System.Drawing.Color fillColor, double opacity)
         : base(x, y, width, height, lineColor, thickness, fillColor, opacity)
     {
         Name = "Круг";
@@ -31,7 +31,7 @@ public class CircleViewModel : EllipseViewModel
     
     /// <summary>Конструктор круга с центром и радиусом (для программного создания)</summary>
     public CircleViewModel(double centerX, double centerY, double radius, 
-        Color lineColor, double thickness, Color fillColor, double opacity)
+        System.Drawing.Color lineColor, double thickness, System.Drawing.Color fillColor, double opacity)
         : this(centerX - radius, centerY - radius, radius * 2, radius * 2, 
             lineColor, thickness, fillColor, opacity) {}
 
