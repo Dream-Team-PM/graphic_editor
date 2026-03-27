@@ -2,9 +2,9 @@
 
 on:
   push:
-    branches: [ dev_ViewModel ]
+    branches: [ main, dev_IO, develop ]
   pull_request:
-    branches: [ dev_ViewModel ]
+    branches: [ main, dev_IO, develop ]
 
 jobs:
   test:
@@ -19,10 +19,14 @@ jobs:
         dotnet-version: 9.0.x
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: |
+        dotnet restore graphic_editor.csproj
+        dotnet restore tests/graphic_editor.Tests/graphic_editor.Tests.csproj
 
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: |
+        dotnet build graphic_editor.csproj --configuration Release --no-restore
+        dotnet build tests/graphic_editor.Tests/graphic_editor.Tests.csproj --configuration Release --no-restore
 
     - name: Test
-      run: dotnet test --configuration Release --no-build --verbosity normal
+      run: dotnet test tests/graphic_editor.Tests/graphic_editor.Tests.csproj --configuration Release --no-build --verbosity normal
