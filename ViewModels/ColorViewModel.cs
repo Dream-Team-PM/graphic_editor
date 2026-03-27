@@ -12,15 +12,15 @@ namespace graphic_editor.ViewModels;
 /// </summary>
 public class ColorViewModel: ViewModelBase
 {
-    private Color _color; /// <summary>Приватное свойство цвета.</summary>
+    private System.Drawing.Color _color; /// <summary>Приватное свойство цвета.</summary>
     
-    public ColorViewModel() : this(Color.Black) {} /// <summary>Конструктор ColorViewModel.</summary>
+    public ColorViewModel() : this(System.Drawing.Color.Black) {} /// <summary>Конструктор ColorViewModel.</summary>
     
 	/// <summary>Конструктор ColorViewModel по цвету.</summary>
-    public ColorViewModel(Color color) => _color = color;
+    public ColorViewModel(System.Drawing.Color color) => _color = color;
 
 	/// <summary>Публичное свойство - цвет.</summary>
-    public Color Color
+    public System.Drawing.Color Color
     {
         get => _color;
         set => this.RaiseAndSetIfChanged(ref _color, value);
@@ -40,7 +40,7 @@ public class ColorViewModel: ViewModelBase
                 byte.TryParse(hex.Substring(2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var g) &&
                 byte.TryParse(hex.Substring(4, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var b))
             {
-                Color = Color.FromArgb(r, g, b);
+                Color = System.Drawing.Color.FromArgb(r, g, b);
             }
             // Поддержка формата #RRGGBBAA
             else if (hex.Length == 8 && 
@@ -49,7 +49,7 @@ public class ColorViewModel: ViewModelBase
                      byte.TryParse(hex.Substring(4, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out g) &&
                      byte.TryParse(hex.Substring(6, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out b))
             {
-                Color = Color.FromArgb(a, r, g, b);
+                Color = System.Drawing.Color.FromArgb(a, r, g, b);
             }
         }
     }
@@ -58,30 +58,30 @@ public class ColorViewModel: ViewModelBase
     public byte R
     {
         get => _color.R;
-        set => Color = Color.FromArgb(_color.A, value, _color.G, _color.B);
+        set => Color = System.Drawing.Color.FromArgb(_color.A, value, _color.G, _color.B);
     }
     
 	/// <summary>Публичное свойство - байт G.</summary>
     public byte G
     {
         get => _color.G;
-        set => Color = Color.FromArgb(_color.A, _color.R, value, _color.B);
+        set => Color = System.Drawing.Color.FromArgb(_color.A, _color.R, value, _color.B);
     }
     
 	/// <summary>Публичное свойство - байт B.</summary>
     public byte B
     {
         get => _color.B;
-        set => Color = Color.FromArgb(_color.A, _color.R, _color.G, value);
+        set => Color = System.Drawing.Color.FromArgb(_color.A, _color.R, _color.G, value);
     }
     
 	/// <summary>Публичное свойство - байт A.</summary>
     public byte A
     {
         get => _color.A;
-        set => Color = Color.FromArgb(value, _color.R, _color.G, _color.B);
+        set => Color = System.Drawing.Color.FromArgb(value, _color.R, _color.G, _color.B);
     }
     
 	/// <summary>Публичное свойство - конвертация из цвета в ColorViewModel.</summary>
-    public static ColorViewModel FromColor(Color color) => new ColorViewModel(color);
+    public static ColorViewModel FromColor(System.Drawing.Color color) => new ColorViewModel(color);
 }

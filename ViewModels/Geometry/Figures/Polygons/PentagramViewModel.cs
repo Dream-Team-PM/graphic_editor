@@ -30,7 +30,7 @@ public class PentagramViewModel : PolygonViewModel
     /// <param name="fillColor">Цвет заливки.</param>
     /// <param name="opacity">Непрозрачность (0.0–1.0).</param>
     public PentagramViewModel(Point2D center, double outerRadius,
-        Color lineColor, double thickness, Color fillColor, double opacity)
+        System.Drawing.Color lineColor, double thickness, System.Drawing.Color fillColor, double opacity)
         : base(CreateVertices(center, outerRadius), 
             lineColor, thickness, fillColor, opacity)
     {

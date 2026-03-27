@@ -21,7 +21,7 @@ public class PentagonViewModel : RegularPolygonViewModel
     /// <param name="fillColor">Цвет заливки.</param>
     /// <param name="opacity">Непрозрачность (0.0–1.0).</param>
     public PentagonViewModel(Point2D center, double radius,
-        Color lineColor, double thickness, Color fillColor, double opacity)
+        System.Drawing.Color lineColor, double thickness, System.Drawing.Color fillColor, double opacity)
         : base(center, 5, radius, lineColor, thickness, fillColor, opacity)
     {
         Name = "Пятиугольник";

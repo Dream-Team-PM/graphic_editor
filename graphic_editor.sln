@@ -5,6 +5,8 @@ VisualStudioVersion = 17.12.35521.163 d17.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "graphic_editor", "graphic_editor.csproj", "{DFC8088B-CAD7-4CFD-95CC-710C108B5B44}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphicEditor", "GraphicEditor\GraphicEditor.csproj", "{57DC803A-2092-4789-B3C9-4C1BD4D9430C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{DFC8088B-CAD7-4CFD-95CC-710C108B5B44}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DFC8088B-CAD7-4CFD-95CC-710C108B5B44}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DFC8088B-CAD7-4CFD-95CC-710C108B5B44}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57DC803A-2092-4789-B3C9-4C1BD4D9430C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57DC803A-2092-4789-B3C9-4C1BD4D9430C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57DC803A-2092-4789-B3C9-4C1BD4D9430C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57DC803A-2092-4789-B3C9-4C1BD4D9430C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

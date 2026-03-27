@@ -39,7 +39,7 @@ public abstract class RegularPolygonViewModel : PolygonViewModel
     /// Выбрасывается, если <paramref name="sides"/> &lt; 3.
     /// </exception>
     protected RegularPolygonViewModel(Point2D center, int sides, double radius,
-        Color lineColor, double thickness, Color fillColor, double opacity)
+        System.Drawing.Color lineColor, double thickness, System.Drawing.Color fillColor, double opacity)
         : base(CreateVertices(center, sides, radius), 
             lineColor, thickness, fillColor, opacity)
     {
